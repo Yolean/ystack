@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-kaniko-init
+  labels: &labels
+    kontrakt: completion
+spec:
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      initContainers:
+      - name: build
+        image: gcr.io/kaniko-project/executor:debug-v0.10.0@sha256:7587952834538c83a73b881def2f1bbb8ad73d545699105a96a2a5e370fa56bc
+        workingDir: /workspace
+        env:
+        - name: IMAGE
+          value: &image builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-kaniko-init:latest
+        command:
+        - /busybox/sh
+        - -ce
+        - |
+          echo "Built at $(date)" > ./timestamp;
+          echo "FROM busybox@sha256:c94cf1b87ccb80f2e6414ef913c748b105060debda482058d2b8d0fce39f11b9" > Dockerfile;
+          echo "COPY timestamp /timestamp" >> Dockerfile;
+          echo 'ENTRYPOINT ["cat","/timestamp"]' >> Dockerfile
+          /kaniko/executor --destination=$IMAGE
+      containers:
+      - name: run-that-build
+        image: *image
+      restartPolicy: Never
+  backoffLimit: 2

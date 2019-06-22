@@ -1,0 +1,8 @@
+bases:
+- ../generic
+resources:
+- rbac.yaml
+- job.yaml
+patchesStrategicMerge:
+- service-builds-add-https.yaml
+- add-tls-container.yaml

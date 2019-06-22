@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  template:
+    spec:
+      containers:
+      - name: docker-v2-tls
+        image: registry:2.7.1@sha256:a54bc9be148764891c44676ce8c44f1e53514c43b1bfbab87b896f4b9f0b5d99
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 200Mi
+        ports:
+        - containerPort: 443
+          name: registry
+          protocol: TCP
+        env:
+        - name: REGISTRY_HTTP_SECRET
+          value: TODO_GET_FROM_SECRET
+        - name: REGISTRY_HTTP_ADDR
+          value: 0.0.0.0:443
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: /certs/tls.crt
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: /certs/tls.key
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 443
+            scheme: HTTPS
+        volumeMounts:
+        - name: etc-registry
+          mountPath: /etc/docker/registry
+        - name: certs
+          mountPath: /certs
+        - name: storage-temporary
+          mountPath: /var/lib/registry
+      volumes:
+      - name: certs
+        secret:
+          secretName: registry-tls

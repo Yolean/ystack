@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: registry
+  name: cert-mgmt
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cert-requester-for-registry
+rules:
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - get
+  - create
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: registry
+  name: cert-secret-updater
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - update
+  - patch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cert-request
+  namespace: registry
+subjects:
+- kind: ServiceAccount
+  name: cert-mgmt
+  namespace: registry
+roleRef:
+  kind: ClusterRole
+  name: cert-requester-for-registry
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cert-secret-update
+  namespace: registry
+subjects:
+- kind: ServiceAccount
+  name: cert-mgmt
+  namespace: registry
+roleRef:
+  kind: Role
+  name: cert-secret-updater
+  apiGroup: rbac.authorization.k8s.io

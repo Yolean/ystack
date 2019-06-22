@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: registry-cert-cluster-ca
+  namespace: registry
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccount: cert-mgmt
+      containers:
+      - name: bash
+        image: solsson/kubectl-cfssl@sha256:7ad7718a32b9fe2cb09629260f2e2c4bf05423a1ee3d4e0425f49d70dba48a49
+        command:
+        - /bin/bash
+        args:
+        - -cex
+        - |
+          kubectl get secret registry-tls -o wide --ignore-not-found=true
+          kubectl get csr registry-tls -o wide --ignore-not-found=true
+
+          cat <<EOF | cfssl genkey - | cfssljson -bare server
+          {
+            "hosts": [
+              "prod.registry.svc.cluster.local",
+              "builds.registry.svc.cluster.local",
+              "knative.registry.svc.cluster.local"
+            ],
+            "CN": "registry.svc.cluster.local",
+            "key": {
+              "algo": "ecdsa",
+              "size": 256
+            }
+          }
+          EOF
+
+          cat <<EOF | kubectl create -f -
+          apiVersion: certificates.k8s.io/v1beta1
+          kind: CertificateSigningRequest
+          metadata:
+            name: registry-tls
+          spec:
+            request: $(cat server.csr | base64 | tr -d '\n')
+            usages:
+            - digital signature
+            - key encipherment
+            - server auth
+          EOF
+          
+          kubectl get csr registry-tls -o wide
+
+          until [ "$(kubectl get csr registry-tls -o jsonpath='{.status.conditions[0].type}')" == 'Approved' ]; do
+            echo ""
+            echo "Waiting for someone/somebot to run:"
+            echo "kubectl certificate approve registry-tls"
+            sleep 10
+          done
+
+          kubectl get csr registry-tls -o jsonpath='{.status.certificate}' | base64 --decode > server.crt
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          type: Opaque
+          metadata:
+            name: registry-tls
+            namespace: registry
+          data:
+            tls.crt: $(cat server.crt | base64 | tr -d '\n')
+            tls.key: $(cat server-key.pem | base64 | tr -d '\n')
+          EOF
+
+          kubectl describe secret registry-tls || echo "\nFailed to create secret (RBAC issue probably)\n"
