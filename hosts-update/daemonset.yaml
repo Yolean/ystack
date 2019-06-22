@@ -30,7 +30,8 @@ spec:
           NL=$'\n'
           HOSTS="$(cat /host-etc/hosts)"
           for H in $REGISTRY_SERVICE_HOSTS; do
-            ent=$(getent hosts $H);
+            [ ! -z "$FIXED_IP" ] && ent="$FIXED_IP   $H";
+            [ -z "$ent" ] && ent=$(getent hosts $H);
             [ -z "$ent" ] && echo "Failed to get hosts entry for $H" && exit 1;
             echo "$HOSTS" | grep " $H"  || HOSTS="$HOSTS$NL$ent";
             echo "$HOSTS" | grep "$ent" || HOSTS=$(echo "$HOSTS" | sed "s|.* $H|$ent|");
