@@ -1,0 +1,53 @@
+# Until init containers can have sidecars
+# this test won't pull the resulting image
+# because we can't build during init
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-buildkit
+  labels: &labels
+    kontrakt: readiness
+spec:
+  template:
+    metadata:
+      labels: *labels
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
+        container.seccomp.security.alpha.kubernetes.io/buildkitd: unconfined
+    spec:
+      containers:
+      - name: buildkitd
+        image: moby/buildkit:master-rootless@sha256:e0871752631c6236c0c933cc2986f6b8f212d50a4d79d8f96ae1c3aba8a99d63
+        args:
+        - --addr
+        - unix:///run/user/1000/buildkit/buildkitd.sock
+        - --addr
+        - tcp://127.0.0.1:1234
+        - --oci-worker-no-process-sandbox
+        ports:
+        - containerPort: 1234
+          hostPort: 1234
+      - name: build
+        image: moby/buildkit:master-rootless@sha256:e0871752631c6236c0c933cc2986f6b8f212d50a4d79d8f96ae1c3aba8a99d63
+        workingDir: /tmp
+        env:
+        - name: BUILDKIT_HOST
+          value: tcp://127.0.0.1:1234
+        - name: IMAGE
+          value: &image builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:latest
+        command:
+        - sh
+        - -ce
+        - |
+          echo "Built at $(date)" > ./timestamp;
+          echo "FROM busybox@sha256:c94cf1b87ccb80f2e6414ef913c748b105060debda482058d2b8d0fce39f11b9" > Dockerfile;
+          echo "COPY timestamp /timestamp" >> Dockerfile;
+          echo 'ENTRYPOINT ["cat","/timestamp"]' >> Dockerfile
+          buildctl build \
+            --frontend dockerfile.v0 \
+            --local context="." \
+            --local dockerfile="." \
+            --opt filename=Dockerfile \
+            --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
+      restartPolicy: Never
+  backoffLimit: 0
