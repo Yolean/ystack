@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: registry
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+spec:
+  tls:
+  - secretName: tls-local
+  rules:
+  - host: builds.registry.svc.cluster.local
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: builds
+          servicePort: 80
