@@ -1,0 +1,4 @@
+bases:
+- ../../registry/variant-buildkit/
+resources:
+- ./buildkitd-rootless-statefulset.yaml
