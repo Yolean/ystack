@@ -48,3 +48,9 @@ microk8s.kubectl wait --timeout=120s --for condition=ready -n kube-system pods -
 
 microk8s.enable ingress
 '
+
+if [ ! -z "$KUBECONFIG" ] && [ ! -f "$KUBECONFIG" ]
+then
+  (multipass exec "$VM_NAME" -- /snap/bin/microk8s.config) > $KUBECONFIG
+  echo "Created KUBECONFIG=$KUBECONFIG"
+fi
