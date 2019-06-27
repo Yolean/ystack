@@ -1,0 +1,14 @@
+namespace: default
+bases:
+- ../ingress-tls-local
+resources:
+- ingress.yaml
+# You'll normally just set namespace + base and then add the tls snippet to ingress yaml
+# because the patch isn't reusable anyway, due to Kustomize's path rules
+patchesJson6902:
+- target:
+    group: networking.k8s.io
+    version: v1beta1
+    kind: Ingress
+    name: testing-ystack-ingress-tls-local
+  path: ingress-tls-local.json

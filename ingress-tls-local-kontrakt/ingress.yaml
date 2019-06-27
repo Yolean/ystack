@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: testing-ystack-ingress-tls-local
+spec:
+  rules:
+  - host: testing-ystack-ingress-tls-local.dev.local
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: testing-ystack-ingress-tls-local
+          servicePort: 80

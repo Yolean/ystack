@@ -5,6 +5,7 @@ generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
 - name: tls-local
+  # See ../tls-local.sh for an example of how to generate a cert
   files:
   - tls.crt
   - tls.key
