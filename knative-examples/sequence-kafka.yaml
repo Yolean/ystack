@@ -1,0 +1,92 @@
+# https://github.com/knative/docs/blob/master/docs/eventing/samples/sequence/sequence-reply-to-event-display/README.md
+---
+apiVersion: serving.knative.dev/v1beta1
+kind: Service
+metadata:
+  name: first
+spec:
+  template:
+    spec:
+      containers:
+        - image: us.gcr.io/probable-summer-223122/cmd-03315b715ae8f3e08e3a9378df706fbb@sha256:2656f39a7fcb6afd9fc79e7a4e215d14d651dc674f38020d1d18c6f04b220700
+          env:
+            - name: STEP
+              value: "0"
+
+---
+apiVersion: serving.knative.dev/v1beta1
+kind: Service
+metadata:
+  name: second
+spec:
+  template:
+    spec:
+      containers:
+        - image: us.gcr.io/probable-summer-223122/cmd-03315b715ae8f3e08e3a9378df706fbb@sha256:2656f39a7fcb6afd9fc79e7a4e215d14d651dc674f38020d1d18c6f04b220700
+          env:
+            - name: STEP
+              value: "1"
+---
+apiVersion: serving.knative.dev/v1beta1
+kind: Service
+metadata:
+  name: third
+spec:
+  template:
+    spec:
+      containers:
+        - image: us.gcr.io/probable-summer-223122/cmd-03315b715ae8f3e08e3a9378df706fbb@sha256:2656f39a7fcb6afd9fc79e7a4e215d14d651dc674f38020d1d18c6f04b220700
+          env:
+            - name: STEP
+              value: "2"
+---
+apiVersion: messaging.knative.dev/v1alpha1
+kind: Sequence
+metadata:
+  name: sequence
+spec:
+  channelTemplate:
+    apiVersion: messaging.knative.dev/v1alpha1
+    kind: KafkaChannel
+    spec:
+      numPartitions: 1
+      replicationFactor: 1
+  steps:
+    - ref:
+        apiVersion: serving.knative.dev/v1alpha1
+        kind: Service
+        name: first
+    - ref:
+        apiVersion: serving.knative.dev/v1alpha1
+        kind: Service
+        name: second
+    - ref:
+        apiVersion: serving.knative.dev/v1alpha1
+        kind: Service
+        name: third
+  reply:
+    kind: Service
+    apiVersion: serving.knative.dev/v1alpha1
+    name: event-display
+---
+apiVersion: serving.knative.dev/v1beta1
+kind: Service
+metadata:
+  name: event-display
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/knative-releases/github.com/knative/eventing-sources/cmd/event_display
+---
+apiVersion: sources.eventing.knative.dev/v1alpha1
+kind: CronJobSource
+metadata:
+  name: cronjob-source
+spec:
+  schedule: "*/2 * * * *"
+  data: '{"message": "Hello world!"}'
+  sink:
+    apiVersion: messaging.knative.dev/v1alpha1
+    kind: Sequence
+    name: sequence
