@@ -24,15 +24,23 @@ if ! [ -f /usr/local/share/ca-certificates/microk8s-local-ca.crt ]
 then
   ln -s /var/snap/microk8s/current/certs/ca.crt /usr/local/share/ca-certificates/microk8s-local-ca.crt
   update-ca-certificates
+  CONTANIERD_RESTART=true
 fi
 # Registry /etc/hosts update but plain http instead of implicit https
-grep registry.svc.cluster.local /var/snap/microk8s/current/args/containerd-template.toml || sed -i "s|      \[plugins.cri.registry.mirrors\]|      [plugins.cri.registry.mirrors]\\
+if ! grep registry.svc.cluster.local /var/snap/microk8s/current/args/containerd-template.toml
+then
+  sed -i "s|      \[plugins.cri.registry.mirrors\]|      [plugins.cri.registry.mirrors]\\
         [plugins.cri.registry.mirrors.\"builds.registry.svc.cluster.local\"]\\
           endpoint = [\"http://builds.registry.svc.cluster.local\"]\\
         [plugins.cri.registry.mirrors.\"prod.registry.svc.cluster.local\"]\\
-          endpoint = [\"http://prod.registry.svc.cluster.local\"]|" /var/snap/microk8s/current/args/containerd-template.toml 
-# Both of the above require containerd restart
-systemctl reload-or-restart snap.microk8s.daemon-containerd
+          endpoint = [\"http://prod.registry.svc.cluster.local\"]|" /var/snap/microk8s/current/args/containerd-template.toml
+  CONTANIERD_RESTART=true
+fi
+
+if [ "$CONTAINERD_RESTART" = "true" ]
+then
+  systemctl reload-or-restart snap.microk8s.daemon-containerd
+fi
 
 while ! microk8s.kubectl wait --for=condition=ready --all nodes
 do
