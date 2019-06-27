@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+[ -z "$DEBUG" ] || set -x
 set -e
 
 [ -z "$VM_NAME" ] && VM_NAME="ystack"
@@ -11,11 +11,9 @@ then
   multipass launch -n "$VM_NAME" $VM_RESOURCES
 fi
 
-multipass exec "$VM_NAME" -- sudo K8S_CHANNEL=$K8S_CHANNEL bash -cex '
+echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
 
-function kubectl() {
-  microk8s.kubectl "$@"
-}
+multipass exec "$VM_NAME" -- sudo K8S_CHANNEL=$K8S_CHANNEL bash -cex '
 
 sudo snap install --channel=$K8S_CHANNEL --classic microk8s
 
@@ -27,13 +25,13 @@ then
   ln -s /var/snap/microk8s/current/certs/ca.crt /usr/local/share/ca-certificates/microk8s-local-ca.crt
   update-ca-certificates
 fi
-# NodePort
+# Registry /etc/hosts update but plain http instead of implicit https
 grep registry.svc.cluster.local /var/snap/microk8s/current/args/containerd-template.toml || sed -i "s|      \[plugins.cri.registry.mirrors\]|      [plugins.cri.registry.mirrors]\\
         [plugins.cri.registry.mirrors.\"builds.registry.svc.cluster.local\"]\\
-          endpoint = [\"http://localhost:32050\"]\\
+          endpoint = [\"http://builds.registry.svc.cluster.local\"]\\
         [plugins.cri.registry.mirrors.\"prod.registry.svc.cluster.local\"]\\
-          endpoint = [\"http://localhost:32055\"]|" /var/snap/microk8s/current/args/containerd-template.toml 
-# Both of the above require containerd restart (or even microk8s restart?)
+          endpoint = [\"http://prod.registry.svc.cluster.local\"]|" /var/snap/microk8s/current/args/containerd-template.toml 
+# Both of the above require containerd restart
 systemctl reload-or-restart snap.microk8s.daemon-containerd
 
 while ! microk8s.kubectl wait --for=condition=ready --all nodes
@@ -43,17 +41,18 @@ do
 done
 ! grep registry.svc.cluster.local -A 1 /var/snap/microk8s/current/args/containerd.toml && echo "Containerd config template failed to propagate to effective" && false
 
-microk8s.enable dns
-sleep 1
-microk8s.kubectl wait --timeout=120s --for condition=ready -n kube-system pods -l k8s-app=kube-dns
+if ! microk8s.kubectl -n kube-system wait --timeout=1s --for=condition=ready pods -l k8s-app=kube-dns
+then
+  microk8s.enable dns
+  sleep 10
+  microk8s.kubectl wait --timeout=120s --for condition=ready -n kube-system pods -l k8s-app=kube-dns
+fi
 
-microk8s.enable ingress
+if ! microk8s.kubectl -n default wait --timeout=1s --for=condition=ready pods -l name=nginx-ingress-microk8s
+then
+  microk8s.enable ingress
+fi
 ';
 
-echo "# VM part of the setup is completed. Running on host again."
-
-if [ ! -z "$KUBECONFIG" ] && [ ! -f "$KUBECONFIG" ]
-then
-  (multipass exec "$VM_NAME" -- /snap/bin/microk8s.config) > $KUBECONFIG
-  echo "Created KUBECONFIG=$KUBECONFIG"
-fi
+echo "# Done. The cluster should be ready for y-stack installation now."
+echo "# To get a kubeconfig: multipass exec "$VM_NAME" -- /snap/bin/microk8s.config"

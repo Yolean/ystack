@@ -1,0 +1,4 @@
+bases:
+- ../ingress
+patchesStrategicMerge:
+- ingress-tls-patch.yaml
