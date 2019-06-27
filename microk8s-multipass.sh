@@ -60,6 +60,18 @@ if ! microk8s.kubectl -n default wait --timeout=1s --for=condition=ready pods -l
 then
   microk8s.enable ingress
 fi
+
+if ! microk8s.kubectl -n kube-system wait --timeout=1s --for=condition=ready pods -l k8s-app=hostpath-provisioner
+then
+  microk8s.enable storage
+  cat << EOF | microk8s.kubectl create -f -
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: standard
+provisioner: microk8s.io/hostpath
+EOF
+fi
 ';
 
 echo "# Done. The cluster should be ready for y-stack installation now."
