@@ -12,7 +12,6 @@ spec:
           env:
             - name: STEP
               value: "0"
-
 ---
 apiVersion: serving.knative.dev/v1beta1
 kind: Service
@@ -84,7 +83,7 @@ kind: CronJobSource
 metadata:
   name: cronjob-source
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "* * * * *"
   data: '{"message": "Hello world!"}'
   sink:
     apiVersion: messaging.knative.dev/v1alpha1
