@@ -8,7 +8,7 @@ set -e
 
 if ! multipass info "$VM_NAME" 2>/dev/null
 then
-  multipass launch -n "$VM_NAME" $VM_RESORCES
+  multipass launch -n "$VM_NAME" $VM_RESOURCES
 fi
 
 multipass exec "$VM_NAME" -- sudo K8S_CHANNEL=$K8S_CHANNEL bash -cex '
@@ -44,10 +44,13 @@ done
 ! grep registry.svc.cluster.local -A 1 /var/snap/microk8s/current/args/containerd.toml && echo "Containerd config template failed to propagate to effective" && false
 
 microk8s.enable dns
+sleep 1
 microk8s.kubectl wait --timeout=120s --for condition=ready -n kube-system pods -l k8s-app=kube-dns
 
 microk8s.enable ingress
-'
+';
+
+echo "# VM part of the setup is completed. Running on host again."
 
 if [ ! -z "$KUBECONFIG" ] && [ ! -f "$KUBECONFIG" ]
 then
