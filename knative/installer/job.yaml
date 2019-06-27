@@ -1,0 +1,104 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ystack-installer-knative
+  labels: &labels
+    kontrakt: completion
+  annotations:
+    image-registry: &registry builds.registry.svc.cluster.local/knative-serving
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: ystack-installer-knative
+      initContainers:
+      - name: istio
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        command:
+        - sh
+        - -cex
+        - |
+          kubectl apply -k github.com/Yolean/unhelm/istio/crds?ref=7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25
+          sleep 5
+          kubectl apply -k github.com/Yolean/unhelm/istio/namespace?ref=7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25
+          kubectl apply -f https://github.com/Yolean/unhelm/raw/7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25/istio/knative-istio-lean.yaml
+          # this apply was added due to a missing Image resource type from serving's ko apply
+          kubectl apply -f https://github.com/knative/serving/raw/9faddd878c8bbed628bf8f5d655874eec22733af/config/999-cache.yaml
+      - name: serving
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        env:
+        - name: KO_DOCKER_REPO
+          value: *registry
+        - name: KO_SOURCE
+          value: github.com/knative/serving
+        - name: KO_REVISION
+          value: 65b7d9ab6841af06c69c04f93f63db04e071f94f
+      - name: serving-config
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        command:
+        - sh
+        - -cex
+        - |
+          cat << EOF | kubectl apply -f -
+          # avoid subdomains as they are impractical wrt SSL cert management
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: config-network
+            namespace: knative-serving
+          data:
+            domainTemplate: "{{.Name}}--{{.Namespace}}.{{.Domain}}"
+          EOF
+      - name: eventing
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        env:
+        - name: KO_DOCKER_REPO
+          value: *registry
+        - name: KO_SOURCE
+          value: github.com/knative/eventing
+        - name: KO_REVISION
+          value: 108d062deb9d52955d866a75c5955df2d21f4cf0
+      - name: eventing-channel-inmemory
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        env:
+        - name: KO_DOCKER_REPO
+          value: *registry
+        - name: KO_SOURCE
+          value: github.com/knative/eventing
+        - name: KO_REVISION
+          value: 108d062deb9d52955d866a75c5955df2d21f4cf0
+        - name: KO_APPLY_PATH
+          value: config/provisioners/in-memory-channel/in-memory-channel.yaml
+      - name: eventing-channel-kafka
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        env:
+        - name: KO_DOCKER_REPO
+          value: *registry
+        - name: KO_SOURCE
+          value: github.com/knative/eventing
+        - name: KO_REVISION
+          value: 108d062deb9d52955d866a75c5955df2d21f4cf0
+        - name: KO_APPLY_PATH
+          value: contrib/kafka/config
+      - name: eventing-config-kafka
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        command:
+        - sh
+        - -cex
+        - |
+          cat << EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: config-kafka
+            namespace: knative-eventing
+          data:
+            bootstrapServers: bootstrap.kafka:9092
+          EOF
+      containers:
+      - name: done
+        image: busybox
+        command: ["echo", "Installation done. See init container logs for details."]
+      restartPolicy: Never
