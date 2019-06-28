@@ -24,8 +24,6 @@ spec:
           sleep 5
           kubectl apply -k github.com/Yolean/unhelm/istio/namespace?ref=7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25
           kubectl apply -f https://github.com/Yolean/unhelm/raw/7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25/istio/knative-istio-lean.yaml
-          # this apply was added due to a missing Image resource type from serving's ko apply
-          kubectl apply -f https://github.com/knative/serving/raw/9faddd878c8bbed628bf8f5d655874eec22733af/config/999-cache.yaml
       - name: serving
         image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
         env:
