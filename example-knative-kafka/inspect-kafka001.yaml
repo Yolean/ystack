@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inspect-kafka001
+  labels: &labels
+    app: inspect
+    category: eventing
+    type: broker
+    ref: kafka001
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *labels
+  template:
+    metadata:
+      labels: *labels
+      annotations:
+        kafka-bootstrap: bootstrap.kafka:9092
+    spec:
+      containers:
+      - name: kafkacat
+        image: solsson/kafkacat:alpine@sha256:0d8cc772fea8399b17c6a62d7618a045ca5adc1b050eefdcc104a9c53b658b96
+        env:
+        - name: BOOTSTRAP
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['kafka-bootstrap']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: TRIGGER_TO_INSPECT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ref']
+        args:
+        - -b
+        - $(BOOTSTRAP)
+        - -C
+        - -t
+        - knative-messaging-kafka.$(NAMESPACE).$(TRIGGER_TO_INSPECT)-kn-trigger
+        - -f
+        - |-
+          \nKey (%K bytes): %k
+            Value (%S bytes): %s
+            Timestamp: %T
+            Partition: %p
+            Offset: %o
+            Headers: %h\n

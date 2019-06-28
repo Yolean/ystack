@@ -42,8 +42,10 @@ spec:
 apiVersion: messaging.knative.dev/v1alpha1
 kind: Sequence
 metadata:
-  name: sequence
+  name: sequence01
 spec:
+  # Broker uses spec
+  #channelTemplateSpec:
   channelTemplate:
     apiVersion: messaging.knative.dev/v1alpha1
     kind: KafkaChannel
@@ -81,11 +83,11 @@ spec:
 apiVersion: sources.eventing.knative.dev/v1alpha1
 kind: CronJobSource
 metadata:
-  name: cronjob-source
+  name: every-minute-to-sequence01
 spec:
   schedule: "* * * * *"
   data: '{"message": "Hello world!"}'
   sink:
     apiVersion: messaging.knative.dev/v1alpha1
     kind: Sequence
-    name: sequence
+    name: sequence01
