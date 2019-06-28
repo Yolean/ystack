@@ -33,7 +33,7 @@ const binding = new Cloudevent.bindings["http-binary0.2"](config);
 
 binding.emit(workerStartEvent)
   .then(response => {
-    console.log('Response from event emit', JSON.stringify(response));
+    console.log('Response from event emit', Object.keys(response));
   }).catch(err => {
     console.error('Error from event emit', err);
     process.exit(1);

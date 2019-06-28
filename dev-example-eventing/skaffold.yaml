@@ -3,16 +3,17 @@ kind: Config
 build:
   artifacts:
   - image: builds.registry.svc.cluster.local/ystack-examples/api-nodejs
-    context: .
+    context: ./api-nodejs
     custom:
       buildCommand: ../ystack-build.sh
       dependencies:
         dockerfile:
           path: ./Dockerfile
-    sync:
-      manual:
-      - src: src/**
-        dest: /usr/src/app
+    # TODO nodemon and verify sync path
+    #sync:
+    #  manual:
+    #  - src: src/**
+    #    dest: /usr/src/app
 deploy:
   kustomize:
     path: ./variant-dev
