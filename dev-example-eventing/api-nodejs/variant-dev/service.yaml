@@ -1,0 +1,9 @@
+apiVersion: serving.knative.dev/v1beta1
+kind: Service
+metadata:
+  name: api-nodejs
+spec:
+  template:
+    spec:
+      containers:
+      - image: builds.registry.svc.cluster.local/ystack-examples/api-nodejs

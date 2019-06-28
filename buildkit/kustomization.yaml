@@ -1,4 +1,4 @@
-bases:
-- ../../registry/variant-buildkit/
+namespace: buildkit
 resources:
-- ./buildkitd-rootless-statefulset.yaml
+- service.yaml
+- statefulset.yaml

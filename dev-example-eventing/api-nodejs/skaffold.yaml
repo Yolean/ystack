@@ -1,0 +1,18 @@
+apiVersion: skaffold/v1beta11
+kind: Config
+build:
+  artifacts:
+  - image: builds.registry.svc.cluster.local/ystack-examples/api-nodejs
+    context: .
+    custom:
+      buildCommand: ../ystack-build.sh
+      dependencies:
+        dockerfile:
+          path: ./Dockerfile
+    sync:
+      manual:
+      - src: src/**
+        dest: /usr/src/app
+deploy:
+  kustomize:
+    path: ./variant-dev
