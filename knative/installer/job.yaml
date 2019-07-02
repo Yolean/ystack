@@ -39,7 +39,7 @@ spec:
         - name: KO_SOURCE
           value: github.com/knative/serving
         - name: KO_REVISION
-          value: 65b7d9ab6841af06c69c04f93f63db04e071f94f
+          value: cb5c1810f2690efa0c434bc81aab3a1d45df497f
       - name: serving-config
         image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
         command:
@@ -64,7 +64,7 @@ spec:
         - name: KO_SOURCE
           value: github.com/knative/eventing
         - name: KO_REVISION
-          value: 108d062deb9d52955d866a75c5955df2d21f4cf0
+          value: ab2600952f58339a0c8f673a712c4acdd5912757
       - name: eventing-channel-inmemory
         image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
         env:
@@ -73,7 +73,7 @@ spec:
         - name: KO_SOURCE
           value: github.com/knative/eventing
         - name: KO_REVISION
-          value: 108d062deb9d52955d866a75c5955df2d21f4cf0
+          value: ab2600952f58339a0c8f673a712c4acdd5912757
         - name: KO_APPLY_PATH
           value: config/provisioners/in-memory-channel/in-memory-channel.yaml
       - name: eventing-channel-kafka
@@ -84,7 +84,7 @@ spec:
         - name: KO_SOURCE
           value: github.com/knative/eventing
         - name: KO_REVISION
-          value: 108d062deb9d52955d866a75c5955df2d21f4cf0
+          value: ab2600952f58339a0c8f673a712c4acdd5912757
         - name: KO_APPLY_PATH
           value: contrib/kafka/config
       - name: eventing-config-kafka
