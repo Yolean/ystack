@@ -24,9 +24,6 @@ spec:
         - --addr
         - tcp://127.0.0.1:1234
         - --oci-worker-no-process-sandbox
-        ports:
-        - containerPort: 1234
-          hostPort: 1234
       - name: build
         image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         workingDir: /tmp

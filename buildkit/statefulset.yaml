@@ -7,6 +7,7 @@ metadata:
   name: buildkitd
 spec:
   serviceName: buildkitd
+  # More replicas requires type=registry build cache or ReadWriteMany volume below
   replicas: 1
   selector:
     matchLabels:
@@ -22,7 +23,7 @@ spec:
     spec:
       containers:
       - name: buildkitd
-        image: moby/buildkit:master-rootless@sha256:179ddb26c75fb9eb3c57c21e976104b258572431565fe0e52f638d607f8c357b
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         args:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock
@@ -32,3 +33,16 @@ spec:
         ports:
         - containerPort: 1234
           hostPort: 1234
+        volumeMounts:
+        - name: buildcache
+          mountPath: /buildcache
+  volumeClaimTemplates:
+  - metadata:
+      name: buildcache
+    spec:
+      #accessModes: [ "ReadWriteMany" ]
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi

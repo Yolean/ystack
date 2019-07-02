@@ -10,6 +10,8 @@ BUILDKIT_NAMESPACE=buildkit
 REGISTRY=builds.registry.svc.cluster.local
 BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.5.1 646fc0af6d283397b9e47cd0a18779e9d0376e0e"
 [ "$(buildctl -v)" != "$BUILDCTL_VERSION"  ] && echo "Requires buildctl '$BUILDCTL_VERSION'; see https://github.com/moby/buildkit/releases" && exit 1
+BUILD_CACHE_EXPORT="type=local,dest=/buildcache"
+BUILD_CACHE_IMPORT="$(echo $BUILD_CACHE_EXPORT | sed 's/,dest=/,src=/')"
 
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
@@ -45,4 +47,6 @@ KUBECONFIG=$KUBECONFIG buildctl build \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT" \
     --opt filename=$FILENAME \
+    --import-cache $BUILD_CACHE_IMPORT \
+    --export-cache $BUILD_CACHE_EXPORT \
     --output "$OUTPUT"
