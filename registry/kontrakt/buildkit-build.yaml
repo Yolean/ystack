@@ -69,12 +69,14 @@ spec:
             --local context="." \
             --local dockerfile="." \
             --opt filename=Dockerfile \
-            --export-cache type=registry,ref=builds.registry.svc.cluster.local/y-stack/test-buildkit-cache,registry.insecure=true \
+            --export-cache type=local,dest=/buildcache \
             --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
           touch /messages/cache-build-completed
         volumeMounts:
         - name: messages
           mountPath: /messages
+        - name: buildcache
+          mountPath: /buildcache
       - name: build-cache-use
         image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         workingDir: /tmp
@@ -97,14 +99,18 @@ spec:
             --local context="." \
             --local dockerfile="." \
             --opt filename=Dockerfile \
-            --export-cache type=registry,ref=builds.registry.svc.cluster.local/y-stack/test-buildkit-cache,registry.insecure=true \
-            --import-cache type=registry,ref=builds.registry.svc.cluster.local/y-stack/test-buildkit-cache,registry.insecure=true \
+            --import-cache type=local,src=/buildcache \
+            --export-cache type=local,dest=/buildcache \
             --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
         volumeMounts:
         - name: messages
           mountPath: /messages
+        - name: buildcache
+          mountPath: /buildcache
       volumes:
       - name: messages
+        emptyDir: {}
+      - name: buildcache
         emptyDir: {}
       restartPolicy: Never
   backoffLimit: 0
