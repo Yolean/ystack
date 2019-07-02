@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: buildkitd
-        image: moby/buildkit:master-rootless@sha256:e0871752631c6236c0c933cc2986f6b8f212d50a4d79d8f96ae1c3aba8a99d63
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         args:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock
@@ -28,7 +28,7 @@ spec:
         - containerPort: 1234
           hostPort: 1234
       - name: build
-        image: moby/buildkit:master-rootless@sha256:e0871752631c6236c0c933cc2986f6b8f212d50a4d79d8f96ae1c3aba8a99d63
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         workingDir: /tmp
         env:
         - name: BUILDKIT_HOST
