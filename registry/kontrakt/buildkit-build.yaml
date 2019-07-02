@@ -49,5 +49,62 @@ spec:
             --local dockerfile="." \
             --opt filename=Dockerfile \
             --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
+      - name: build-cache-warm
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
+        workingDir: /tmp
+        env:
+        - name: BUILDKIT_HOST
+          value: tcp://127.0.0.1:1234
+        - name: IMAGE
+          value: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached1
+        command:
+        - sh
+        - -ce
+        - |
+          echo "FROM alpine:3.10@sha256:ca1c944a4f8486a153024d9965aafbe24f5723c1d5c02f4964c045a16d19dc54" > Dockerfile;
+          echo "RUN apk add --no-cache curl" >> Dockerfile;
+          echo 'ENTRYPOINT ["stat","/usr/bin/curl"]' >> Dockerfile
+          buildctl build \
+            --frontend dockerfile.v0 \
+            --local context="." \
+            --local dockerfile="." \
+            --opt filename=Dockerfile \
+            --export-cache type=registry,ref=builds.registry.svc.cluster.local/y-stack/test-buildkit-cache,registry.insecure=true \
+            --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
+          touch /messages/cache-build-completed
+        volumeMounts:
+        - name: messages
+          mountPath: /messages
+      - name: build-cache-use
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
+        workingDir: /tmp
+        env:
+        - name: BUILDKIT_HOST
+          value: tcp://127.0.0.1:1234
+        - name: IMAGE
+          value: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached2
+        command:
+        - sh
+        - -ce
+        - |
+          until [ -f /messages/cache-build-completed ]; do echo "Waiting for cache build" && sleep 1; done
+          echo "FROM alpine:3.10@sha256:ca1c944a4f8486a153024d9965aafbe24f5723c1d5c02f4964c045a16d19dc54" > Dockerfile;
+          echo "RUN apk add --no-cache curl" >> Dockerfile;
+          echo 'ENTRYPOINT ["stat","/usr/bin/curl"]' >> Dockerfile
+          echo "RUN touch not-cached" >> Dockerfile;
+          buildctl build \
+            --frontend dockerfile.v0 \
+            --local context="." \
+            --local dockerfile="." \
+            --opt filename=Dockerfile \
+            --export-cache type=registry,ref=builds.registry.svc.cluster.local/y-stack/test-buildkit-cache,registry.insecure=true \
+            --import-cache type=registry,ref=builds.registry.svc.cluster.local/y-stack/test-buildkit-cache,registry.insecure=true \
+            --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
+        volumeMounts:
+        - name: messages
+          mountPath: /messages
+      volumes:
+      - name: messages
+        emptyDir: {}
       restartPolicy: Never
   backoffLimit: 0
