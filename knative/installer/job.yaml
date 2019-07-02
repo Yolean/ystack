@@ -21,13 +21,16 @@ spec:
         - -cex
         - |
           kubectl apply -k github.com/Yolean/unhelm/istio/crds?ref=7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25
-
-          kubectl apply -f https://github.com/knative/serving/blob/9faddd878c8bbed628bf8f5d655874eec22733af/vendor/github.com/knative/caching/config/image.yaml
           sleep 5
-          kubectl apply -f https://github.com/knative/serving/raw/9faddd878c8bbed628bf8f5d655874eec22733af/config/999-cache.yaml
-
           kubectl apply -k github.com/Yolean/unhelm/istio/namespace?ref=7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25
           kubectl apply -f https://github.com/Yolean/unhelm/raw/7ab305e9b55bbdd1b7aa6c9d2915aac9dfe15a25/istio/knative-istio-lean.yaml
+      - name: serving-crd-fix
+        image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
+        command:
+        - sh
+        - -cex
+        - |
+          kubectl apply -f https://github.com/knative/serving/raw/cb5c1810f2690efa0c434bc81aab3a1d45df497f/vendor/github.com/knative/caching/config/image.yaml
       - name: serving
         image: solsson/go-ko-runner@sha256:cd41533cc951f7baba33dca2282d248045196f9afd41e2780d5c64f151194788
         env:
