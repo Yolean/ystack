@@ -68,7 +68,7 @@ spec:
             --opt filename=Dockerfile \
             --export-cache type=local,dest=/buildcache \
             --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
-          touch /messages/cache-build-completed
+          touch /messages/cache-local-completed
         volumeMounts:
         - name: messages
           mountPath: /messages
@@ -86,7 +86,7 @@ spec:
         - sh
         - -ce
         - |
-          until [ -f /messages/cache-build-completed ]; do echo "Waiting for cache build" && sleep 1; done
+          until [ -f /messages/cache-local-completed ]; do echo "Waiting for cache build" && sleep 1; done
           echo "FROM alpine:3.10@sha256:ca1c944a4f8486a153024d9965aafbe24f5723c1d5c02f4964c045a16d19dc54" > Dockerfile;
           echo "RUN apk add --no-cache curl" >> Dockerfile;
           echo 'ENTRYPOINT ["stat","/usr/bin/curl"]' >> Dockerfile

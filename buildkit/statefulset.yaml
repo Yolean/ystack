@@ -33,16 +33,3 @@ spec:
         ports:
         - containerPort: 1234
           hostPort: 1234
-        volumeMounts:
-        - name: buildcache
-          mountPath: /buildcache
-  volumeClaimTemplates:
-  - metadata:
-      name: buildcache
-    spec:
-      #accessModes: [ "ReadWriteMany" ]
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: standard
-      resources:
-        requests:
-          storage: 1Gi
