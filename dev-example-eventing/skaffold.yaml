@@ -5,9 +5,9 @@ build:
   - image: builds.registry.svc.cluster.local/ystack-examples/api-nodejs
     context: ./api-nodejs
     custom:
-      buildCommand: ../ystack-build.sh
+      buildCommand: ../../ystack-build.sh
       # To use a non-default dockerfile or layer:
-      #buildCommand: ../ystack-build.sh --opt filename=dev.Dockerfile --opt target=target1
+      #buildCommand: ../../ystack-build.sh --opt filename=dev.Dockerfile --opt target=target1
       dependencies:
         dockerfile:
           path: ./Dockerfile
