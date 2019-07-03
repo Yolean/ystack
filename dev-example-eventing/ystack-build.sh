@@ -2,6 +2,8 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
+BUILDCTL_OPTS="$@"
+
 # Needed until Skaffold supports buildctl, or the buildkit that comes with Docker supports BUILDKIT_HOST
 # We could also build usinig Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
 
@@ -45,7 +47,7 @@ KUBECONFIG=$KUBECONFIG buildctl build \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT" \
-    --opt filename=$FILENAME \
     --import-cache $BUILDKIT_CACHE \
     --export-cache $BUILDKIT_CACHE \
+    $BUILDCTL_OPTS \
     --output "$OUTPUT"
