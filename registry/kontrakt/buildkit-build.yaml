@@ -11,36 +11,25 @@ spec:
   template:
     metadata:
       labels: *labels
-      annotations:
-        container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
-        container.seccomp.security.alpha.kubernetes.io/buildkitd: unconfined
     spec:
-      containers:
-      - name: buildkitd
-        image: moby/buildkit:master-rootless@sha256:e0871752631c6236c0c933cc2986f6b8f212d50a4d79d8f96ae1c3aba8a99d63
-        args:
-        - --addr
-        - unix:///run/user/1000/buildkit/buildkitd.sock
-        - --addr
-        - tcp://127.0.0.1:1234
-        - --oci-worker-no-process-sandbox
-        ports:
-        - containerPort: 1234
-          hostPort: 1234
+      initContainers:
       - name: build
-        image: moby/buildkit:master-rootless@sha256:e0871752631c6236c0c933cc2986f6b8f212d50a4d79d8f96ae1c3aba8a99d63
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         workingDir: /tmp
         env:
         - name: BUILDKIT_HOST
-          value: tcp://127.0.0.1:1234
+          value: tcp://buildkitd.buildkit:8080
+        - name: BUILDKIT_CACHE
+          value: type=registry,ref=localhost:80/y-stack:buildcache
         - name: IMAGE
-          value: &image builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:latest
+          value: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached1
         command:
         - sh
         - -ce
         - |
           echo "Built at $(date)" > ./timestamp;
-          echo "FROM busybox@sha256:c94cf1b87ccb80f2e6414ef913c748b105060debda482058d2b8d0fce39f11b9" > Dockerfile;
+          echo "FROM alpine:3.10@sha256:ca1c944a4f8486a153024d9965aafbe24f5723c1d5c02f4964c045a16d19dc54" > Dockerfile;
+          echo "RUN apk add --no-cache curl" >> Dockerfile;
           echo "COPY timestamp /timestamp" >> Dockerfile;
           echo 'ENTRYPOINT ["cat","/timestamp"]' >> Dockerfile
           buildctl build \
@@ -48,6 +37,38 @@ spec:
             --local context="." \
             --local dockerfile="." \
             --opt filename=Dockerfile \
+            --import-cache type=registry,ref=$BUILDKIT_CACHE \
+            --export-cache type=registry,ref=$BUILDKIT_CACHE \
             --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
+      - name: build-with-cache
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
+        workingDir: /tmp
+        env:
+        - name: BUILDKIT_HOST
+          value: tcp://buildkitd.buildkit:8080
+        - name: BUILDKIT_CACHE
+          value: type=registry,ref=localhost:80/y-stack:buildcache
+        - name: IMAGE
+          value: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached2
+        command:
+        - sh
+        - -ce
+        - |
+          echo "Built at $(date)" > ./timestamp;
+          echo "FROM alpine:3.10@sha256:ca1c944a4f8486a153024d9965aafbe24f5723c1d5c02f4964c045a16d19dc54" > Dockerfile;
+          echo "RUN apk add --no-cache curl" >> Dockerfile;
+          echo "COPY timestamp /timestamp" >> Dockerfile;
+          echo 'ENTRYPOINT ["cat","/timestamp"]' >> Dockerfile
+          buildctl build \
+            --frontend dockerfile.v0 \
+            --local context="." \
+            --local dockerfile="." \
+            --opt filename=Dockerfile \
+            --import-cache type=registry,ref=$BUILDKIT_CACHE \
+            --export-cache type=registry,ref=$BUILDKIT_CACHE \
+            --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
+      containers:
+      - name: run-that-build
+        image: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached2
       restartPolicy: Never
   backoffLimit: 0

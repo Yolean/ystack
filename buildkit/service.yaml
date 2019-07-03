@@ -6,7 +6,7 @@ metadata:
   name: buildkitd
 spec:
   ports:
-  - port: 1234
+  - port: 8080
     protocol: TCP
   selector:
     app: buildkitd

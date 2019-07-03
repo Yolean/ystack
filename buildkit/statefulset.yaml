@@ -7,6 +7,7 @@ metadata:
   name: buildkitd
 spec:
   serviceName: buildkitd
+  # More replicas requires type=registry build cache or ReadWriteMany volume below
   replicas: 1
   selector:
     matchLabels:
@@ -22,13 +23,92 @@ spec:
     spec:
       containers:
       - name: buildkitd
-        image: moby/buildkit:master-rootless@sha256:179ddb26c75fb9eb3c57c21e976104b258572431565fe0e52f638d607f8c357b
+        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
         args:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock
         - --addr
-        - tcp://0.0.0.0:1234
+        - tcp://0.0.0.0:8080
         - --oci-worker-no-process-sandbox
         ports:
-        - containerPort: 1234
-          hostPort: 1234
+        - containerPort: 8080
+      - name: cache
+        # This could be a real registry if backed by a blob store
+        image: envoyproxy/envoy:v1.10.0@sha256:bf7970f469c3d2cd54a472536342bd50df0ddf099ebd51024b7f13016c4ee3c4
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 8081
+          name: admin
+        command:
+        - /usr/local/bin/envoy
+        - -l info
+        args:
+        - --config-yaml
+        - |
+          static_resources:
+            clusters:
+            - name: builds-registry
+              connect_timeout: 2s
+              type: STRICT_DNS
+              dns_lookup_family: V4_ONLY
+              lb_policy: ROUND_ROBIN
+              hosts:
+              - socket_address:
+                  address: builds.registry.svc.cluster.local
+                  port_value: 80
+            listeners:
+            - address:
+                socket_address:
+                  address: 127.0.0.1
+                  port_value: 80
+              filter_chains:
+              - filters:
+                - name: envoy.http_connection_manager
+                  config:
+                    codec_type: auto
+                    stat_prefix: cache
+                    access_log:
+                    - name: envoy.file_access_log
+                      filter:
+                        not_health_check_filter: {}
+                      config:
+                        path: "/dev/stdout"
+                        json_format:
+                          start_time: "%START_TIME%"
+                          req_method: "%REQ(:METHOD)%"
+                          req_path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+                          resp_code: "%RESPONSE_CODE%"
+                          resp_flags: "%RESPONSE_FLAGS%"
+                          bytes_recv: "%BYTES_RECEIVED%"
+                          bytes_sent: "%BYTES_SENT%"
+                          duration: "%DURATION%"
+                          agent: "%REQ(USER-AGENT)%"
+                          content_type: "%REQ(CONTENT-TYPE)%"
+                          content_length: "%REQ(CONTENT-LENGTH)%"
+                    route_config:
+                      name: registry
+                      virtual_hosts:
+                      - name: registry
+                        domains:
+                        - "*"
+                        routes:
+                        - match:
+                            prefix: /
+                          route:
+                            cluster: builds-registry
+                    http_filters:
+                    - name: envoy.health_check
+                      config:
+                        pass_through_mode: false
+                        headers:
+                          name: :path
+                          exact_match: /healthz
+                    - name: envoy.router
+                      config: {}
+          admin:
+            access_log_path: "/dev/null"
+            address:
+              socket_address:
+                address: 0.0.0.0
+                port_value: 8081

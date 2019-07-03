@@ -2,12 +2,15 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
+BUILDCTL_OPTS="$@"
+
 # Needed until Skaffold supports buildctl, or the buildkit that comes with Docker supports BUILDKIT_HOST
 # We could also build usinig Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
 
 # Settings
 BUILDKIT_NAMESPACE=buildkit
 REGISTRY=builds.registry.svc.cluster.local
+BUILDKIT_CACHE="type=registry,ref=localhost:80/y-stack:buildcache"
 BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.5.1 646fc0af6d283397b9e47cd0a18779e9d0376e0e"
 [ "$(buildctl -v)" != "$BUILDCTL_VERSION"  ] && echo "Requires buildctl '$BUILDCTL_VERSION'; see https://github.com/moby/buildkit/releases" && exit 1
 
@@ -44,5 +47,7 @@ KUBECONFIG=$KUBECONFIG buildctl build \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT" \
-    --opt filename=$FILENAME \
+    --import-cache $BUILDKIT_CACHE \
+    --export-cache $BUILDKIT_CACHE \
+    $BUILDCTL_OPTS \
     --output "$OUTPUT"
