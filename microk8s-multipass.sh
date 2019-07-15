@@ -39,7 +39,10 @@ fi
 
 if [ "$CONTAINERD_RESTART" = "true" ]
 then
-  systemctl reload-or-restart snap.microk8s.daemon-containerd
+  #systemctl reload-or-restart snap.microk8s.daemon-containerd
+  # Need to restart microk8s instead because -template.html only propagates in microk8s-resources/wrappers/run-containerd-with-args
+  microk8s.stop || true
+  microk8s.start
 fi
 
 while ! microk8s.kubectl wait --for=condition=ready --all nodes
