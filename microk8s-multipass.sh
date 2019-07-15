@@ -37,12 +37,10 @@ then
   CONTANIERD_RESTART=true
 fi
 
-if [ "$CONTAINERD_RESTART" = "true" ]
+if [ "$CONTANIERD_RESTART" = "true" ]
 then
-  #systemctl reload-or-restart snap.microk8s.daemon-containerd
-  # Need to restart microk8s instead because -template.html only propagates in microk8s-resources/wrappers/run-containerd-with-args
-  microk8s.stop || true
-  microk8s.start
+  echo "Restarting Containerd due to config changes"
+  systemctl reload-or-restart snap.microk8s.daemon-containerd
 fi
 
 while ! microk8s.kubectl wait --for=condition=ready --all nodes
@@ -50,7 +48,7 @@ do
   echo "Waiting for k8s to be available again after restart"
   sleep 1
 done
-! grep registry.svc.cluster.local -A 1 /var/snap/microk8s/current/args/containerd.toml && echo "Containerd config template failed to propagate to effective" && false
+! grep registry.svc.cluster.local -A 1 /var/snap/microk8s/current/args/containerd.toml && ls -l /var/snap/microk8s/current/args/containerd* && echo "Containerd config template failed to propagate to effective" && false
 
 if ! microk8s.kubectl -n kube-system wait --timeout=1s --for=condition=ready pods -l k8s-app=kube-dns
 then
