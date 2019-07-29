@@ -2,6 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
+# For example: --opt filename=test.Dockerfile
 BUILDCTL_OPTS="$@"
 
 # Needed until Skaffold supports buildctl, or the buildkit that comes with Docker supports BUILDKIT_HOST
@@ -17,6 +18,7 @@ BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.5.1 646fc0af6d283397b9e47
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
 [ -z "$BUILD_CONTEXT" ] && echo "Expected a BUILD_CONTEXT env from Skaffold" && exit 1
+[ -z "$BUILD_CONTEXT_DOCKERFILE" ] && BUILD_CONTEXT_DOCKERFILE="$BUILD_CONTEXT" # Do these ever differ?
 [ -z "$IMAGES" ] && echo "Expected an IMAGES env from Skaffold" && exit 1
 [ "$(echo $IMAGES | wc -w)" != "       1" ]  && echo "Currently we only support one entry in \$IMAGES" && exit 1
 
@@ -25,6 +27,7 @@ BUILDERS=$(kubectl --kubeconfig=$KUBECONFIG -n $BUILDKIT_NAMESPACE get pods --fi
 [ -z "$BUILDERS" ] && echo "Failed to find ready builders in $BUILDKIT_NAMESPACE" && exit 1
 [ "$(echo $BUILDERS | wc -w)" != "       1" ]  && echo "Found >1 builders and we have no logic for that yet: $BUILDERS" && exit 1
 export BUILDKIT_HOST="kube-pod://buildkitd-0?context=$KUBE_CONTEXT&namespace=$BUILDKIT_NAMESPACE&container=buildkitd"
+echo "#export BUILDKIT_HOST='$BUILDKIT_HOST'"
 
 IMAGE=$IMAGES
 case "$IMAGE" in
@@ -46,7 +49,7 @@ set -x
 KUBECONFIG=$KUBECONFIG buildctl build \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
-    --local dockerfile="$BUILD_CONTEXT" \
+    --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
     --import-cache $BUILDKIT_CACHE \
     --export-cache $BUILDKIT_CACHE \
     $BUILDCTL_OPTS \
