@@ -84,3 +84,6 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
    - A default namespace selected (not used yet)
    - Creates namespace `ystack`
 2. Converge `kubectl apply -k converge/generic/`
+3. Forward
+   - port-forward the dev stack for local development
+   - `sudo -E kubefwd svc -n ystack`

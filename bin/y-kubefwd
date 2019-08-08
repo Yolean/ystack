@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=v1.8.4
+
+bin_name=kubefwd \
+  bin_version=${version} \
+  Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_macOS_amd64.tar.gz \
+  Darwin_sha256=cd2444f32029c77998bfafc9a148f6d07ad13a249be71c86795c462ae777854e \
+  bin_tgz_path=kubefwd \
+  y-bin-dependency-download || exit $?
+
+y-kubefwd-${version}-bin "$@" || exit $?

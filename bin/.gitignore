@@ -7,3 +7,4 @@ minikube
 mkcert
 rio
 skaffold
+kubefwd
