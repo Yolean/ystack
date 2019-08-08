@@ -21,7 +21,7 @@ spec:
         env:
         - name: REGISTRY_SERVICE_HOSTS
           value: >-
-            builds.registry.svc.cluster.local
+            builds-registry.ystack.svc.cluster.local
         command:
         - bash
         - -ce

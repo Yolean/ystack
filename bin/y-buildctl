@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=v0.6.0
+
+bin_name=buildctl \
+  bin_version=${version} \
+  Darwin_url=https://github.com/moby/buildkit/releases/download/${version}/buildkit-${version}.darwin-amd64.tar.gz \
+  Darwin_sha256=98bef5916b47dfb523b8d6c58d7a318732c87b6afb802c9828af69fced5d30d0 \
+  bin_tgz_path=bin/buildctl \
+  y-bin-dependency-download || exit $?
+
+y-buildctl-${version}-bin "$@" || exit $?

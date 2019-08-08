@@ -3,3 +3,4 @@ bases:
 - ../buildkit
 - ../minio
 - ../registry/generic
+- ../registry/hosts-update
