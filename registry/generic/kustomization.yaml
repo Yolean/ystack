@@ -1,5 +1,6 @@
 resources:
 - service-builds.yaml
+- service-prod-placeholder.yaml
 - deployment.yaml
 configMapGenerator:
 - name: registry-config
