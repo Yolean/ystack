@@ -55,7 +55,7 @@ spec:
               lb_policy: ROUND_ROBIN
               hosts:
               - socket_address:
-                  address: builds.registry.svc.cluster.local
+                  address: builds-registry
                   port_value: 80
             listeners:
             - address:
