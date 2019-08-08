@@ -1,6 +1,8 @@
 apiVersion: skaffold/v1beta13
 kind: Config
 build:
+  tagPolicy:
+    sha256: {}
   artifacts:
   - image: builds-registry.ystack.svc.cluster.local/ystack-examples/node-backend
     context: backend
