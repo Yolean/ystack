@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bucket-create-ystack-builds
+spec:
+  template:
+    spec:
+      containers:
+      - name: mc
+        image: minio/mc:RELEASE.2019-08-07T23-14-43Z@sha256:e106f3759dbbff2e18f71c5d9c98625f5fc3e2a4dc2010fbd6b2de49090b5f86
+        env:
+        - name: MINIO_HOST
+          value: http://blobs-minio:9000
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: accesskey
+              name: blobs-minio
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secretkey
+              name: blobs-minio
+        - name: MINIO_REGION
+          value: us-east-1
+        - name: BUCKET_NAME
+          # TODO all from secret, except host maybe
+          value: ystack-builds-registry
+        command:
+        - sh
+        - -ce
+        - |
+          mc config host add ystack $MINIO_HOST $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+          mc stat ystack/$BUCKET_NAME || {
+            mc mb --region="$MINIO_REGION" ystack/$BUCKET_NAME
+          }
+      restartPolicy: Never
+  backoffLimit: 4
