@@ -32,6 +32,26 @@ spec:
           value: TODO_GET_FROM_SECRET
         - name: REGISTRY_HTTP_ADDR
           value: 0.0.0.0:80
+        - name: REGISTRY_LOG_LEVEL
+          value: debug
+        - name: REGISTRY_STORAGE
+          value: s3
+        - name: REGISTRY_STORAGE_S3_ACCESSKEY
+          valueFrom:
+            secretKeyRef:
+              key: accesskey
+              name: blobs-minio
+        - name: REGISTRY_STORAGE_S3_SECRETKEY
+          valueFrom:
+            secretKeyRef:
+              key: secretkey
+              name: blobs-minio
+        - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
+          value: http://blobs-minio:9000
+        - name: REGISTRY_STORAGE_S3_REGION
+          value: us-east-1
+        - name: REGISTRY_STORAGE_S3_BUCKET
+          value: ystack-builds-registry
         readinessProbe:
           httpGet:
             path: /

@@ -5,12 +5,6 @@ log:
 storage:
   cache:
     blobdescriptor: inmemory
-  s3:
-    accesskey: AKIAIOSFODNN7EXAMPLE
-    secretkey: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-    region: us-east-1
-    regionendpoint: http://blobs-minio:9000
-    bucket: ystack-builds-registry
 http:
   headers:
     X-Content-Type-Options: [nosniff]
