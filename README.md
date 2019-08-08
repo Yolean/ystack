@@ -83,6 +83,7 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
    - Current user can configure rbac
    - A default namespace selected (not used yet)
    - Creates namespace `ystack`
+   - Set up container runtime to support insecure pull from `builds-registry.ystack.svc.cluster.local`
 2. Converge `kubectl apply -k converge/generic/`
 3. Forward
    - port-forward the dev stack for local development
