@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+[ "$1" = "help" ] && echo '
+
+Provision a cluster with minikube, currently hyperkit for OSX by default
+
+' && exit 0
+
+[ -z "$devcluster_driver" ] && devcluster_driver=hyperkit
+[ -z "$devcluster_memory" ] && devcluster_memory=8192
+[ -z "$devcluster_cpus" ] && devcluster_cpus=4
+
+# enable-admission-plugins is from https://knative.dev/docs/install/knative-with-minikube/
+y-minikube start \
+  --memory=$devcluster_memory \
+  --cpus=$devcluster_cpus \
+  --disk-size=40g \
+  --vm-driver=$devcluster_driver \
+  --kubernetes-version=v1.14.4 \
+  --bootstrapper=kubeadm \
+  --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook" \
+  --extra-config=apiserver.service-node-port-range=444-32767
+
+# Skaffold detects context name "minikube" and triggers local build behavior, but we want all clusters to be treated as remote
+kubectl config rename-context minikube ystack-minikube
+
+kubectl create namespace ystack

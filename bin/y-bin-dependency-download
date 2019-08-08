@@ -1,0 +1,39 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+platform="$(uname -s)"
+case "$platform" in
+  Darwin )
+    url=$Darwin_url
+    sha256=$Darwin_sha256
+    ;;
+  Linux )
+    url=$Linux_url
+    sha256=$Linux_sha256
+    [ -z "$bin_tgz_path" ] || bin_tgz_path="--wildcards */$(basename $bin_tgz_path)"
+    ;;
+  * )
+    echo "Unsupported platform $platform" && exit 1
+    ;;
+esac
+
+[ ! -z "$bin_version" ] || bin_version=$sha256
+
+bin_file=$YBIN/y-$bin_name-$bin_version-bin
+bin_link=$YBIN/$bin_name
+
+[ -f $bin_file ] || {
+  echo "Missing $bin_name binary. Downloading a known version from $url ..."
+  curl -o $bin_file -L -f $url
+  if ! echo "$sha256  $bin_file" | shasum -a 256 -c -; then rm $bin_file && exit 1; fi
+  if [ ! -z "$bin_tgz_path" ]; then
+    tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
+    mv $(basename " $bin_tgz_path") $bin_file
+  fi
+  chmod u+x $bin_file
+}
+
+[ -L $bin_link ] && rm $bin_link
+ln -s $bin_file $bin_link

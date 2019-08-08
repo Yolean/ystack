@@ -54,3 +54,33 @@ Our policy also implies that we need some bot warning against kubectl without `-
 and likewise some CI tool that enforces kubectl hygiene in markdown.
 
 One more thing: We need to agree on kubectl context names. How do we share those?
+
+## Dependencies
+
+Y-stack doesn't have a CLI, but depends on assorted tooling from the Kubernetes community.
+To ease the burden of maintaining a dev stack, there's tooling to keep these binaries updated.
+If a requred binary exists in path, a version check is performed.
+If not it is downloaded and placed in `$YSTACK_HOME/bin`.
+
+
+## Hooks
+
+The y-build command is a general purpose util to build a service from its source folder.
+Builds are rarely generic though, so it first invokes an executable file `build-pre` in `$YSTACK_HOOKS` if existent.
+`$YSTACK_HOOKS` defaults to `$YSTACK_HOME/hooks`.
+
+`y-build-buldkit-host` selects a buildkitd endpoint.
+
+## Namespace
+
+Why do we name the stack namespace with a stage, for example `ystack-dev`?
+Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
+
+## Cluster setup
+
+1. Provision
+   - Kubectl access with current (or default) `KUBECONFIG`
+   - Current user can configure rbac
+   - A default namespace selected (not used yet)
+   - Creates namespace `ystack`
+2. Converge `kubectl apply -k converge/generic/`
