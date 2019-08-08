@@ -14,8 +14,10 @@ Provision a cluster with minikube, currently hyperkit for OSX by default
 [ -z "$devcluster_cpus" ] && devcluster_cpus=4
 
 # enable-admission-plugins is from https://knative.dev/docs/install/knative-with-minikube/
+# --insecure-registry is untested, should possibly be CIDR as in https://github.com/kubernetes/minikube/blob/master/docs/insecure_registry.md
 y-minikube start \
   --container-runtime=containerd \
+  --insecure-registry=builds-registry.ystack.svc.cluster.local \
   --memory=$devcluster_memory \
   --cpus=$devcluster_cpus \
   --disk-size=40g \
@@ -25,6 +27,7 @@ y-minikube start \
   --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook" \
   --extra-config=apiserver.service-node-port-range=444-32767
 
+# https://github.com/kubernetes/minikube/issues/3444
 echo "TODO automate:"
 echo "sed \\"
 echo "s|      \[plugins.cri.registry.mirrors\]|      [plugins.cri.registry.mirrors]\\
