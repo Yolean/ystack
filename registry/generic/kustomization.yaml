@@ -5,3 +5,7 @@ configMapGenerator:
 - name: registry-config
   files:
   - config.yml
+secretGenerator:
+- name: registry
+  literals:
+  - http_secret=TODO_GENERATE_RANDOM_SECRET

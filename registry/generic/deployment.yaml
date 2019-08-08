@@ -29,7 +29,10 @@ spec:
           protocol: TCP
         env:
         - name: REGISTRY_HTTP_SECRET
-          value: TODO_GET_FROM_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: registry
+              key: http_secret
         - name: REGISTRY_HTTP_ADDR
           value: 0.0.0.0:80
         - name: REGISTRY_LOG_LEVEL
@@ -39,13 +42,13 @@ spec:
         - name: REGISTRY_STORAGE_S3_ACCESSKEY
           valueFrom:
             secretKeyRef:
-              key: accesskey
               name: blobs-minio
+              key: accesskey
         - name: REGISTRY_STORAGE_S3_SECRETKEY
           valueFrom:
             secretKeyRef:
-              key: secretkey
               name: blobs-minio
+              key: secretkey
         - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
           value: http://blobs-minio:9000
         - name: REGISTRY_STORAGE_S3_REGION

@@ -14,13 +14,13 @@ spec:
         - name: MINIO_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              key: accesskey
               name: blobs-minio
+              key: accesskey
         - name: MINIO_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              key: secretkey
               name: blobs-minio
+              key: secretkey
         - name: MINIO_REGION
           value: us-east-1
         - name: BUCKET_NAME
