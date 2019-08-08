@@ -3,7 +3,8 @@ kind: Deployment
 metadata:
   name: registry
   labels: &labels
-    app: registry
+    registry-type: docker-v2
+    ystack-builds-registry: http
 spec:
   replicas: 1
   selector:
