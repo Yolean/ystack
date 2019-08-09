@@ -1,0 +1,9 @@
+bases:
+- ../generic
+resources:
+- topic-create.yaml
+configMapGenerator:
+- name: registry-config
+  behavior: replace
+  files:
+  - config.yml

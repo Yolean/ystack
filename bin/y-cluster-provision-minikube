@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+[ "$1" = "help" ] && echo '
+
+Provision a cluster with minikube, currently hyperkit for OSX by default
+
+' && exit 0
+
+[ -z "$devcluster_driver" ] && devcluster_driver=hyperkit
+[ -z "$devcluster_memory" ] && devcluster_memory=8192
+[ -z "$devcluster_cpus" ] && devcluster_cpus=4
+
+# enable-admission-plugins is from https://knative.dev/docs/install/knative-with-minikube/
+y-minikube start \
+  --container-runtime=containerd \
+  --insecure-registry=builds-registry.ystack.svc.cluster.local \
+  --memory=$devcluster_memory \
+  --cpus=$devcluster_cpus \
+  --disk-size=40g \
+  --vm-driver=$devcluster_driver \
+  --kubernetes-version=v1.14.4 \
+  --bootstrapper=kubeadm \
+  --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook" \
+  --extra-config=apiserver.service-node-port-range=444-32767
+
+# https://github.com/kubernetes/minikube/issues/3444
+# --insecure-registry above has no effect, should possibly be CIDR as in https://github.com/kubernetes/minikube/blob/master/docs/insecure_registry.md
+minikube ssh -- bash -cex 'echo ""
+
+sudo sed -i "s|      \[plugins.cri.registry.mirrors\]|      [plugins.cri.registry.mirrors]\\
+        [plugins.cri.registry.mirrors.\"builds-registry.ystack.svc.cluster.local\"]\\
+          endpoint = [\"http://builds-registry.ystack.svc.cluster.local\"]\\
+        [plugins.cri.registry.mirrors.\"prod-registry.ystack.svc.cluster.local\"]\\
+          endpoint = [\"http://prod-registry.ystack.svc.cluster.local\"]|" /etc/containerd/config.toml
+
+sudo systemctl restart containerd
+
+'
+
+# Skaffold detects context name "minikube" and triggers local build behavior, but we want all clusters to be treated as remote
+kubectl config delete-context ystack-minikube || true
+kubectl config rename-context minikube ystack-minikube
+
+kubectl create namespace ystack

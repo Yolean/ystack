@@ -1,0 +1,26 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+[ "$1" = "dev" ] && echo "y-skaffold dev requires -n [namespace] as initial args" && exit 1
+
+version=0.35.0
+
+bin_name=skaffold \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-darwin-amd64 \
+  Darwin_sha256=9a141037aee3d6101aca6154ba1d122af67a48cf3afa042df868bf77c3face43 \
+  y-bin-dependency-download || exit $?
+
+# https://skaffold.dev/docs/concepts/#local-development
+[ -z "$KUBECONFIG" ] && KUBECONFIG=$HOME/.kube/config
+grep 'current-context: minikube' $KUBECONFIG && {
+  echo "Dev context is local (according to skaffold conventions); sourcing $YBIN/y-devcluster-docker.env"
+  source $YBIN/y-devcluster-docker.env
+}
+
+# Y-stack opinions, where do we put them?
+SKAFFOLD_NO_PRUNE=true \
+  \
+  $YBIN/y-skaffold-v${version}-bin "$@" || echo $?

@@ -3,9 +3,10 @@ kind: Deployment
 metadata:
   name: registry
   labels: &labels
-    app: registry
+    registry-type: docker-v2
+    ystack-builds-registry: http
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels: *labels
   template:
@@ -29,9 +30,32 @@ spec:
           protocol: TCP
         env:
         - name: REGISTRY_HTTP_SECRET
-          value: TODO_GET_FROM_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: registry
+              key: http_secret
         - name: REGISTRY_HTTP_ADDR
           value: 0.0.0.0:80
+        - name: REGISTRY_LOG_LEVEL
+          value: debug
+        - name: REGISTRY_STORAGE
+          value: s3
+        - name: REGISTRY_STORAGE_S3_ACCESSKEY
+          valueFrom:
+            secretKeyRef:
+              name: blobs-minio
+              key: accesskey
+        - name: REGISTRY_STORAGE_S3_SECRETKEY
+          valueFrom:
+            secretKeyRef:
+              name: blobs-minio
+              key: secretkey
+        - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
+          value: http://blobs-minio.ystack.svc.cluster.local:9000
+        - name: REGISTRY_STORAGE_S3_REGION
+          value: us-east-1
+        - name: REGISTRY_STORAGE_S3_BUCKET
+          value: ystack-builds-registry
         readinessProbe:
           httpGet:
             path: /

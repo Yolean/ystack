@@ -21,7 +21,9 @@ spec:
         env:
         - name: REGISTRY_SERVICE_HOSTS
           value: >-
-            builds.registry.svc.cluster.local
+            builds-registry.ystack.svc.cluster.local
+            prod-registry.ystack.svc.cluster.local
+            blobs-minio.ystack.svc.cluster.local
         command:
         - bash
         - -ce
@@ -29,6 +31,7 @@ spec:
           NL=$'\n'
           HOSTS="$(cat /host-etc/hosts)"
           for H in $REGISTRY_SERVICE_HOSTS; do
+            ent=""
             [ ! -z "$FIXED_IP" ] && ent="$FIXED_IP   $H";
             [ -z "$ent" ] && ent=$(getent hosts $H);
             [ -z "$ent" ] && echo "Failed to get hosts entry for $H" && exit 1;

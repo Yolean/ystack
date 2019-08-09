@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: buildkitd
-        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
+        image: moby/buildkit:v0.6.0-rootless@sha256:d70dd5f1fbaa1e729e380b3a31c394a5f79ec0c19c55e6636cf63e97c390a9f0
         args:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock
@@ -55,7 +55,7 @@ spec:
               lb_policy: ROUND_ROBIN
               hosts:
               - socket_address:
-                  address: builds.registry.svc.cluster.local
+                  address: builds-registry
                   port_value: 80
             listeners:
             - address:
@@ -112,3 +112,7 @@ spec:
               socket_address:
                 address: 0.0.0.0
                 port_value: 8081
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80

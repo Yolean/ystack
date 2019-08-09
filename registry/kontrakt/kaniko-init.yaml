@@ -15,7 +15,7 @@ spec:
         workingDir: /workspace
         env:
         - name: IMAGE
-          value: &image builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-kaniko-init:latest
+          value: &image builds-registry.ystack.svc.cluster.local/y-stack/test/registry-kontrakt-kaniko-init:latest
         command:
         - /busybox/sh
         - -ce

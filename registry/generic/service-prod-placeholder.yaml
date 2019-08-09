@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: builds-registry
+  name: prod-registry
 spec:
   selector:
-    ystack-builds-registry: http
+    ystack-prod-registry: http
   ports:
   - name: http
     port: 80

@@ -1,0 +1,11 @@
+*-bin
+
+# our executables are symlinked to real names
+buildctl
+helm
+minikube
+mkcert
+rio
+skaffold
+kubefwd
+kail

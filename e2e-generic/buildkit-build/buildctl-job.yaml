@@ -4,7 +4,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-buildkit
+  name: test-buildctl
   labels: &labels
     kontrakt: readiness
 spec:
@@ -14,15 +14,15 @@ spec:
     spec:
       initContainers:
       - name: build
-        image: moby/buildkit:master-rootless@sha256:3c02ab0cd4f54f1ae1f1748514db65090234e1923d9218e28b28412f06d7c65e
+        image: moby/buildkit:v0.6.0-rootless@sha256:d70dd5f1fbaa1e729e380b3a31c394a5f79ec0c19c55e6636cf63e97c390a9f0
         workingDir: /tmp
         env:
         - name: BUILDKIT_HOST
-          value: tcp://buildkitd.buildkit:8080
+          value: tcp://buildkitd.ystack:8080
         - name: BUILDKIT_CACHE
-          value: type=registry,ref=localhost:80/y-stack:buildcache
+          value: type=registry,ref=localhost:80/ystack:buildcache
         - name: IMAGE
-          value: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached1
+          value: builds-registry.ystack.svc.cluster.local/ystack/test/registry-kontrakt-buildkit-build:cached1
         command:
         - sh
         - -ce
@@ -45,11 +45,11 @@ spec:
         workingDir: /tmp
         env:
         - name: BUILDKIT_HOST
-          value: tcp://buildkitd.buildkit:8080
+          value: tcp://buildkitd.ystack:8080
         - name: BUILDKIT_CACHE
-          value: type=registry,ref=localhost:80/y-stack:buildcache
+          value: type=registry,ref=localhost:80/ystack:buildcache
         - name: IMAGE
-          value: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached2
+          value: builds-registry.ystack.svc.cluster.local/ystack/test/registry-kontrakt-buildkit-build:cached2
         command:
         - sh
         - -ce
@@ -69,6 +69,6 @@ spec:
             --output "type=image,name=$IMAGE,push=true,registry.insecure=true"
       containers:
       - name: run-that-build
-        image: builds.registry.svc.cluster.local/y-stack/test/registry-kontrakt-buildkit-build:cached2
+        image: builds-registry.ystack.svc.cluster.local/ystack/test/registry-kontrakt-buildkit-build:cached2
       restartPolicy: Never
   backoffLimit: 0

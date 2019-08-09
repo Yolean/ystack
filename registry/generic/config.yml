@@ -5,8 +5,6 @@ log:
 storage:
   cache:
     blobdescriptor: inmemory
-  filesystem:
-    rootdirectory: /var/lib/registry
 http:
   headers:
     X-Content-Type-Options: [nosniff]

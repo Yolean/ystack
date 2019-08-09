@@ -1,3 +1,2 @@
 resources:
 - ./kaniko-init.yaml
-- ./buildkit-build.yaml

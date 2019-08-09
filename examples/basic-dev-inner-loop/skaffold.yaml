@@ -1,0 +1,19 @@
+apiVersion: skaffold/v1beta13
+kind: Config
+build:
+  tagPolicy:
+    sha256: {}
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/node-backend
+    context: backend
+    custom:
+      buildCommand: y-build
+      dependencies:
+        dockerfile:
+          path: ./Dockerfile
+    sync:
+      manual:
+      # Sync all the javascript files that are in the src folder
+      # with the container src folder
+      - src: 'src/**/*.js'
+        dest: .
