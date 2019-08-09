@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ystack-builds-registry-topic-create
+  namespace: kafka
+spec:
+  template:
+    spec:
+      containers:
+      - name: topic-create
+        image: solsson/kafka-cli@sha256:9fa3306e9f5d18283d10e01f7c115d8321eedc682f262aff784bd0126e1f2221
+        env:
+        - name: TOPIC_NAME
+          value: ystack.builds-registry.stream.json
+        - name: PARTITIONS
+          value: "1"
+        - name: REPLICATION_FACTOR
+          value: "1"
+        command:
+        - ./bin/kafka-topics.sh
+        - --zookeeper
+        -   zookeeper.kafka.svc.cluster.local:2181
+        - --create
+        - --if-not-exists
+        - --topic
+        -   $(TOPIC_NAME)
+        - --partitions
+        -   $(PARTITIONS)
+        - --replication-factor
+        -   $(REPLICATION_FACTOR)
+        resources:
+          limits:
+            cpu: 100m
+            memory: 20Mi
+      restartPolicy: Never
+  backoffLimit: 1

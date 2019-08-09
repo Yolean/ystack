@@ -93,7 +93,9 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
    - A default namespace selected (not used yet)
    - Creates namespace `ystack`
    - Set up container runtime to support insecure pull from `builds-registry.ystack.svc.cluster.local`
-2. Converge `kubectl apply -k converge/generic/`
+2. Converge `kubectl apply -k converge-generic/`
+   - The `converge-generic` kustomization sets `namespace: ystack`,
+     but individual features only set namespace if thery have configuration that depend on a fixed namespace
 3. Forward
    - port-forward the dev stack for local development
    - `sudo -E kubefwd svc -n ystack`
