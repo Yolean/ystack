@@ -3,13 +3,13 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=v1.8.4
+version=1.9.0
 
 bin_name=kubefwd \
-  bin_version=${version} \
-  Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_macOS_amd64.tar.gz \
-  Darwin_sha256=cd2444f32029c77998bfafc9a148f6d07ad13a249be71c86795c462ae777854e \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/txn2/kubefwd/releases/download/v${version}/kubefwd_macOS_amd64.tar.gz \
+  Darwin_sha256=a38831d1f0695b1ea62464c2b465e6e73c38ab132e424215cb57d2d731506ff3 \
   bin_tgz_path=kubefwd \
   y-bin-dependency-download || exit $?
 
-y-kubefwd-${version}-bin "$@" || exit $?
+y-kubefwd-v${version}-bin "$@" || exit $?

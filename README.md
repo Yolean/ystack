@@ -88,3 +88,8 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
 3. Forward
    - port-forward the dev stack for local development
    - `sudo -E kubefwd svc -n ystack`
+
+## Tooling
+
+Y-stack is opinionated on Kubernetes devops tooling as well.
+We therefore download some CLIs to the aforementioned `PATH` entry.
