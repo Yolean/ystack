@@ -25,7 +25,6 @@ spec:
         - -l info
         args:
         - --config-yaml
-        # https://www.envoyproxy.io/docs/envoy/latest/start/start#simple-configuration
         - |
           admin:
             access_log_path: /dev/null
@@ -43,6 +42,24 @@ spec:
                     "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
                     stat_prefix: http
                     codec_type: AUTO
+                    access_log:
+                    - name: envoy.file_access_log
+                      filter:
+                        not_health_check_filter: {}
+                      config:
+                        path: "/dev/stdout"
+                        json_format:
+                          start_time: "%START_TIME%"
+                          req_method: "%REQ(:METHOD)%"
+                          req_path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+                          resp_code: "%RESPONSE_CODE%"
+                          resp_flags: "%RESPONSE_FLAGS%"
+                          bytes_recv: "%BYTES_RECEIVED%"
+                          bytes_sent: "%BYTES_SENT%"
+                          duration: "%DURATION%"
+                          agent: "%REQ(USER-AGENT)%"
+                          content_type: "%REQ(CONTENT-TYPE)%"
+                          content_length: "%REQ(CONTENT-LENGTH)%"
                     route_config:
                       name: local_route
                       virtual_hosts:
@@ -52,6 +69,12 @@ spec:
                         - match: { prefix: "/" }
                           route: { cluster: pixy_in_namespace_kafka }
                     http_filters:
+                    - name: envoy.health_check
+                      config:
+                        pass_through_mode: false
+                        headers:
+                          name: :path
+                          exact_match: /healthz
                     - name: envoy.router
             clusters:
             - name: pixy_in_namespace_kafka
@@ -68,6 +91,7 @@ spec:
                         socket_address:
                           address: pixy.kafka
                           port_value: 80
-      - name: curl
-        image: solsson/curl@sha256:92ebf15ac57bea360484480336ed5d9fa16d38d773fd00f7e9fb2cae94baf25a
-        command: ["tail","-f","/dev/null"]
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80

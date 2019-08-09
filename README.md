@@ -1,11 +1,20 @@
 
 
+## The name
+
+This project is called Y-stack or y-stack in writing, but `ystack` in code.
+That's just the way it is.
+
+## Why
+
 Y-stack is higly opinionated:
 It says "registry" to refer to a Docker registry with a particular setup,
 while "knative" refers to an installer that combines Knative modules.
 The point with being opinionated is that registry and knative work well together.
 
-The stack supports local developmment using Skaffold with local and remote clusters alike.
+The stack supports local developmment ("inner development loop") using
+[Skaffold](https://skaffold.dev/)
+with local and remote clusters alike.
 Image builds during development are in-cluster:
 Many dev setups transfer container images but we transfer the build context.
 We see builds as temporary and per-cluster,
