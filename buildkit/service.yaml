@@ -3,6 +3,7 @@ kind: Service
 metadata:
   labels:
     app: buildkitd
+    status: accepts-new-builds
   name: buildkitd
 spec:
   ports:

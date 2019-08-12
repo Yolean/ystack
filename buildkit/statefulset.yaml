@@ -4,6 +4,7 @@ kind: StatefulSet
 metadata:
   labels:
     app: buildkitd
+    status: accepts-new-builds
   name: buildkitd
 spec:
   serviceName: buildkitd
