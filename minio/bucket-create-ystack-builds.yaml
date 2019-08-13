@@ -35,4 +35,4 @@ spec:
             mc mb --region="$MINIO_REGION" ystack/$BUCKET_NAME
           }
       restartPolicy: Never
-  backoffLimit: 4
+  backoffLimit: 10
