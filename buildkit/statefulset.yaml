@@ -35,7 +35,7 @@ spec:
         - containerPort: 8080
       - name: cache
         # This could be a real registry if backed by a blob store
-        image: envoyproxy/envoy:v1.10.0@sha256:bf7970f469c3d2cd54a472536342bd50df0ddf099ebd51024b7f13016c4ee3c4
+        image: envoyproxy/envoy:v1.11.0@sha256:3b3eb76bc74c8e36e0ed3507844b6c12f69e9efa7588a7e35a29f90ee3e90067
         ports:
         - containerPort: 80
           name: http
@@ -47,6 +47,10 @@ spec:
         args:
         - --config-yaml
         - |
+          admin:
+            access_log_path: /dev/null
+            address:
+              socket_address: { address: 127.0.0.1, port_value: 8081 }
           static_resources:
             clusters:
             - name: builds-registry
@@ -54,21 +58,25 @@ spec:
               type: STRICT_DNS
               dns_lookup_family: V4_ONLY
               lb_policy: ROUND_ROBIN
-              hosts:
-              - socket_address:
-                  address: builds-registry
-                  port_value: 80
+              load_assignment:
+                cluster_name: builds-registry
+                endpoints:
+                - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: builds-registry
+                          port_value: 80
             listeners:
             - address:
-                socket_address:
-                  address: 127.0.0.1
-                  port_value: 80
+                socket_address: { address: 0.0.0.0, port_value: 80 }
               filter_chains:
               - filters:
                 - name: envoy.http_connection_manager
-                  config:
-                    codec_type: auto
-                    stat_prefix: cache
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
+                    stat_prefix: http
+                    codec_type: AUTO
                     access_log:
                     - name: envoy.file_access_log
                       filter:
@@ -88,14 +96,12 @@ spec:
                           content_type: "%REQ(CONTENT-TYPE)%"
                           content_length: "%REQ(CONTENT-LENGTH)%"
                     route_config:
-                      name: registry
+                      name: local_route
                       virtual_hosts:
-                      - name: registry
-                        domains:
-                        - "*"
+                      - name: local_service
+                        domains: ["*"]
                         routes:
-                        - match:
-                            prefix: /
+                        - match: { prefix: "/" }
                           route:
                             cluster: builds-registry
                     http_filters:
@@ -106,13 +112,6 @@ spec:
                           name: :path
                           exact_match: /healthz
                     - name: envoy.router
-                      config: {}
-          admin:
-            access_log_path: "/dev/null"
-            address:
-              socket_address:
-                address: 0.0.0.0
-                port_value: 8081
         readinessProbe:
           httpGet:
             path: /healthz
