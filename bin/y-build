@@ -31,6 +31,9 @@ fi
 [ -z "$IMAGES" ] && echo "Expected an IMAGES env from Skaffold" && exit 1
 [ "$(echo $IMAGES | wc -w)" != "       1" ]  && echo "Currently we only support one entry in \$IMAGES" && exit 1
 
+# Hooks, evaluating reliance on PATH for that
+command -v y-stack-hook-build-pre && cd $BUILD_CONTEXT && y-stack-hook-build-pre
+
 # Find an available BUILDKIT_HOST, as pod names (for pod IPs we could use the endpoints object)
 BUILDKIT_SELECTOR=$(kubectl --kubeconfig=$KUBECONFIG -n $BUILDKIT_NAMESPACE get service $BUILDKIT_SERVICE \
   -o jsonpath='{.spec.selector}' | sed 's/^map\[//' | sed 's/\]$//' | sed 's/ /,/g' | sed 's/:/=/g')
