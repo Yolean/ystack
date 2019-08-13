@@ -1,0 +1,25 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+  cache:
+    blobdescriptor: inmemory
+http:
+  headers:
+    X-Content-Type-Options: [nosniff]
+notifications:
+  endpoints:
+  - name: pixy
+    disabled: false
+    url: http://pixy/topics/ystack.builds-registry.stream.json/messages
+    timeout: 10s
+    threshold: 1
+    backoff: 1s
+    ignoredmediatypes:
+    - application/octet-stream
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
