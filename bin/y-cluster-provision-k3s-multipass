@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ -z "$KUBECONFIG" ] && KUBECONFIG="${HOME}/.kube/ystack"
+
+[ -z "$VM_NAME" ] && VM_NAME="ystack-master"
+[ -z "$VM_RESOURCES" ] && VM_RESOURCES="-m 8G -d 40G -c 4"
+[ -z "$K8S_CHANNEL" ] && K8S_CHANNEL="1.14/stable"
+
+if ! multipass info "$VM_NAME" 2>/dev/null
+then
+  multipass launch -n "$VM_NAME" $VM_RESOURCES
+fi
+
+# https://medium.com/@mattiaperi/kubernetes-cluster-with-k3s-and-multipass-7532361affa3
+K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $2}')"
+
+echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
+
+multipass exec "$VM_NAME" -- sudo bash -cex '
+
+export INSTALL_K3S_SKIP_START=true
+
+INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
+curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
+
+K3S_DATA_DIR=/var/lib/rancher/k3s
+
+# https://github.com/rancher/k3s/issues/145
+# https://github.com/rancher/k3s/blob/master/pkg/agent/templates/templates.go
+mkdir -p     $K3S_DATA_DIR/agent/etc/containerd
+cat <<EOF >> $K3S_DATA_DIR/agent/etc/containerd/config.toml.tmpl
+[plugins.opt]
+path = "{{ .NodeConfig.Containerd.Opt }}"
+
+[plugins.cri]
+  stream_server_address = "{{ .NodeConfig.AgentConfig.NodeName }}"
+  stream_server_port = "10010"
+
+  [plugins.cri.cni]
+    bin_dir = "{{ .NodeConfig.AgentConfig.CNIBinDir }}"
+    conf_dir = "{{ .NodeConfig.AgentConfig.CNIConfDir }}"
+
+  [plugins.cri.registry]
+    [plugins.cri.registry.mirrors]
+      [plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]
+        endpoint = ["http://builds-registry.ystack.svc.cluster.local"]
+      [plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]
+        endpoint = ["http://prod-registry.ystack.svc.cluster.local"]
+EOF
+
+service k3s start
+k3s crictl info
+
+chmod a+r /etc/rancher/k3s/*
+
+k3s kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.9/deploy/local-path-storage.yaml
+cat << EOF | k3s kubectl create -f -
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: standard
+provisioner: rancher.io/local-path
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+EOF
+k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
+k3s kubectl get node
+';
+
+multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
+  | sed "s|localhost|$K3S_NODEIP_MASTER|" \
+  > "$KUBECONFIG"
+
+kubectl create namespace ystack
+
+echo "# Done. Master IP: $K3S_NODEIP_MASTER. The cluster should be ready for y-stack converge now."
