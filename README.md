@@ -99,7 +99,9 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
    - Actually we sort of depend on Kafka already: `kubectl create namespace kafka && kubectl apply -k kafka`
 3. Forward
    - port-forward the dev stack for local development
-   - `sudo -E kubefwd svc -n ystack`
+   - `sudo -E y-kubefwd svc -n ystack`
+4. Test "inner development loop"
+   - In `./examples/basic-dev-inner-loop/` run `y-skaffold dev`
 
 ## Tooling
 
