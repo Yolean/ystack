@@ -29,10 +29,10 @@ spec:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock
         - --addr
-        - tcp://0.0.0.0:8080
+        - tcp://0.0.0.0:8547
         - --oci-worker-no-process-sandbox
         ports:
-        - containerPort: 8080
+        - containerPort: 8547
       - name: cache
         # This could be a real registry if backed by a blob store
         image: envoyproxy/envoy:v1.11.0@sha256:3b3eb76bc74c8e36e0ed3507844b6c12f69e9efa7588a7e35a29f90ee3e90067

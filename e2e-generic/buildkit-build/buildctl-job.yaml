@@ -45,7 +45,7 @@ spec:
         workingDir: /tmp
         env:
         - name: BUILDKIT_HOST
-          value: tcp://buildkitd.ystack:8080
+          value: tcp://buildkitd.ystack:8547
         - name: BUILDKIT_CACHE
           value: type=registry,ref=localhost:80/ystack:buildcache
         - name: IMAGE
