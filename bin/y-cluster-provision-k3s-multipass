@@ -20,6 +20,8 @@ echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
 
 multipass exec "$VM_NAME" -- sudo bash -cex '
 
+swapoff -a
+
 export INSTALL_K3S_SKIP_START=true
 
 INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
