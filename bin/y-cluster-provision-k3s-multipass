@@ -22,6 +22,10 @@ multipass exec "$VM_NAME" -- sudo bash -cex '
 
 export INSTALL_K3S_SKIP_START=true
 
+# NOTE: Inspired by https://github.com/rancher/k3s/issues/252#issuecomment-482662774
+# this was how we finally got kubectl top working with metrics-server
+export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
+
 INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
@@ -54,6 +58,9 @@ service k3s start
 k3s crictl info
 
 chmod a+r /etc/rancher/k3s/*
+
+# Install metrics-server, allowing us to do `kubectl top ...`
+k3s kubectl apply -k "https://github.com/y-stack/metrics-server/deploy/1.8+?ref=bac18cea8f78089323091ae20e81799939673893"
 
 k3s kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.9/deploy/local-path-storage.yaml
 cat << EOF | k3s kubectl create -f -
