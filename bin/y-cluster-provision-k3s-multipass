@@ -24,6 +24,9 @@ swapoff -a
 # requires reboot, according to https://askubuntu.com/questions/259739/kswapd0-is-taking-a-lot-of-cpu
 echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
 
+kswapd_pid=$(ps aux | grep kswapd | grep -v grep | awk "{ print \$2 }")
+top -b -p $kswapd_pid -n 1
+
 export INSTALL_K3S_SKIP_START=true
 
 INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
