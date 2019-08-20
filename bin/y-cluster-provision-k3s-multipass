@@ -60,7 +60,9 @@ k3s crictl info
 chmod a+r /etc/rancher/k3s/*
 
 # Install metrics-server, allowing us to do `kubectl top ...`
-k3s kubectl apply -k "https://github.com/y-stack/metrics-server/deploy/1.8+?ref=bac18cea8f78089323091ae20e81799939673893"
+# GAH, Stupid k3s kubectl doesnt seem to have kustomize installed
+# REVIEW, can we get around that? Or do we need another apply later on?
+# k3s kubectl apply -k "https://github.com/y-stack/metrics-server/deploy/1.8+?ref=bac18cea8f78089323091ae20e81799939673893"
 
 k3s kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.9/deploy/local-path-storage.yaml
 cat << EOF | k3s kubectl create -f -
