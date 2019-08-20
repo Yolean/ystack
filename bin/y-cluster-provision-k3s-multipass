@@ -21,6 +21,8 @@ echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
 multipass exec "$VM_NAME" -- sudo bash -cex '
 
 swapoff -a
+# requires reboot, according to https://askubuntu.com/questions/259739/kswapd0-is-taking-a-lot-of-cpu
+echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
 
 export INSTALL_K3S_SKIP_START=true
 
