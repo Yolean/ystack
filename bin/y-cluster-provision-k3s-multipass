@@ -22,6 +22,9 @@ multipass exec "$VM_NAME" -- sudo bash -cex '
 
 export INSTALL_K3S_SKIP_START=true
 
+# For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
+export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
+
 INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
@@ -79,5 +82,7 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
 KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
+
+KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k ./metrics-server
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER. The cluster should be ready for y-stack converge now."
