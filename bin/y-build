@@ -27,10 +27,19 @@ fi
 
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
-[ -z "$BUILD_CONTEXT" ] && echo "Expected a BUILD_CONTEXT env from Skaffold" && exit 1
+[ -z "$BUILD_CONTEXT" ] && {
+  echo "No BUILD_CONTEXT env (from for example Skaffold). Using first arg like traditional Docker build do."
+  BUILD_CONTEXT="$1"
+  [ -z "$BUILD_CONTEXT" ] && echo "... and no first arg either. Exiting." && exit 1
+}
 [ -z "$BUILD_CONTEXT_DOCKERFILE" ] && BUILD_CONTEXT_DOCKERFILE="$BUILD_CONTEXT" # Do these ever differ?
-[ -z "$IMAGES" ] && echo "Expected an IMAGES env from Skaffold" && exit 1
-[ "$(echo $IMAGES | wc -w)" != "       1" ]  && echo "Currently we only support one entry in \$IMAGES" && exit 1
+
+[ -z "$IMAGES" ] && {
+  name=${PWD##*/}
+  IMAGES="$REGISTRY/y-stack-temp-builds/$name"
+  echo "No IMAGES env (from for example Skaffold). Guessing: $IMAGES"
+}
+[ "$(echo $IMAGES | wc -w)" != "       1" ] && echo "Currently we only support one entry in \$IMAGES" && exit 1
 
 # Hooks, evaluating reliance on PATH for that
 command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
