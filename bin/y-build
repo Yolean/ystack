@@ -11,8 +11,6 @@ BUILDCTL_OPTS="$@"
 # Settings
 export SKAFFOLD_NO_PRUNE=true
 REGISTRY=builds-registry.ystack.svc.cluster.local
-BUILDKIT_NAMESPACE=$(echo $REGISTRY | awk -F '.' '{ print $2 }')
-BUILDKIT_SERVICE=buildkitd
 BUILDKIT_CACHE="type=registry,ref=localhost:80/ystack:buildcache"
 BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.6.1 be0d75f074e7a4b0f5b5877c719213a3f5057e60"
 [ "$(buildctl -v)" != "$BUILDCTL_VERSION"  ] && echo "Requires buildctl '$BUILDCTL_VERSION'; see https://github.com/moby/buildkit/releases" && exit 1
@@ -25,6 +23,8 @@ then
   exit 1
 fi
 
+[ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
+
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
 [ -z "$BUILD_CONTEXT" ] && echo "Expected a BUILD_CONTEXT env from Skaffold" && exit 1
@@ -34,15 +34,6 @@ fi
 
 # Hooks, evaluating reliance on PATH for that
 command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
-
-# Find an available BUILDKIT_HOST, as pod names (for pod IPs we could use the endpoints object)
-BUILDKIT_SELECTOR=$(kubectl --kubeconfig=$KUBECONFIG -n $BUILDKIT_NAMESPACE get service $BUILDKIT_SERVICE \
-  -o jsonpath='{.spec.selector}' | sed 's/^map\[//' | sed 's/\]$//' | sed 's/ /,/g' | sed 's/:/=/g')
-BUILDERS=$(kubectl --kubeconfig=$KUBECONFIG -n $BUILDKIT_NAMESPACE get pods -l $BUILDKIT_SELECTOR -o=jsonpath='{.items[*].metadata.name}')
-[ -z "$BUILDERS" ] && echo "Failed to find ready builders in $BUILDKIT_NAMESPACE" && exit 1
-[ "$(echo $BUILDERS | wc -w)" != "       1" ]  && echo "Found >1 builders and we have no logic for that yet: $BUILDERS" && exit 1
-export BUILDKIT_HOST="kube-pod://buildkitd-0?context=$KUBE_CONTEXT&namespace=$BUILDKIT_NAMESPACE&container=buildkitd"
-echo "#export BUILDKIT_HOST='$BUILDKIT_HOST'"
 
 IMAGE=$IMAGES
 case "$IMAGE" in
