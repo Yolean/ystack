@@ -88,8 +88,8 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
-y-kubeconfig-import "$KUBECONFIG.tmp"
-
 KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k ./metrics-server
+
+y-kubeconfig-import "$KUBECONFIG.tmp"
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER. The cluster should be ready for y-stack converge now."
