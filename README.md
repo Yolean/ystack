@@ -1,4 +1,12 @@
 
+# Y-stack
+
+Y-stack is a micro-PaaS(?) with the following goals:
+
+ - Allow every developer to experiment with architecture on a _cluster level_
+ - Make moitoring and alerts a first class tool in coding
+ - Make Kubernetes patterns like sidecars and operators an intergral part of design
+ - Support event-driven microservices patterns
 
 ## The name
 
