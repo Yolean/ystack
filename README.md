@@ -101,7 +101,8 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
    - port-forward the dev stack for local development
    - `sudo -E y-kubefwd svc -n ystack`
 4. Test "inner development loop"
-   - In `./examples/basic-dev-inner-loop/` run `y-skaffold dev`
+   - Check that CLIs are ok using `y-buildctl` and `y-skaffold`
+   - In `./examples/basic-dev-inner-loop/` run `skaffold dev`
 
 ## Tooling
 
