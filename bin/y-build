@@ -9,6 +9,7 @@ BUILDCTL_OPTS="$@"
 # We could also build usinig Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
 
 # Settings
+export SKAFFOLD_NO_PRUNE=true
 REGISTRY=builds-registry.ystack.svc.cluster.local
 BUILDKIT_NAMESPACE=$(echo $REGISTRY | awk -F '.' '{ print $2 }')
 BUILDKIT_SERVICE=buildkitd
