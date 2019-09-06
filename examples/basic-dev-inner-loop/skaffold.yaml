@@ -4,14 +4,11 @@ build:
   tagPolicy:
     gitCommit:
       variant: CommitSha
+  local:
+    useBuildkit: true
   artifacts:
   - image: builds-registry.ystack.svc.cluster.local/ystack-examples/node-backend
     context: backend
-    custom:
-      buildCommand: y-build
-      dependencies:
-        dockerfile:
-          path: ./Dockerfile
     sync:
       manual:
       # Sync all the javascript files that are in the src folder
