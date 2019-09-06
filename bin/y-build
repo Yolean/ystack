@@ -54,7 +54,9 @@ OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
 
 echo "Build command:"
 set -x
-KUBECONFIG=$KUBECONFIG y-buildctl build \
+KUBECONFIG=$KUBECONFIG \
+BUILDKIT_HOST=$BUILDKIT_HOST \
+  y-buildctl build \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
