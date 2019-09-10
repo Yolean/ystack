@@ -8,8 +8,7 @@ metadata:
   name: buildkitd
 spec:
   serviceName: buildkitd
-  # More replicas requires type=registry build cache or ReadWriteMany volume below
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: buildkitd
