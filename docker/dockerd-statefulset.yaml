@@ -14,19 +14,6 @@ spec:
         app: dockerd
     spec:
       terminationGracePeriodSeconds: 10
-      initContainers:
-      - name: config
-        image: busybox@sha256:fe301db49df08c384001ed752dff6d52b4305a73a7f608f21528048e8a08b51e
-        command:
-        - cp
-        - -rv
-        - /etc/docker-configmap
-        - /etc/docker
-        volumeMounts:
-        - name: etc-docker
-          mountPath: /etc/docker-configmap
-        - name: etc-docker-readwrite
-          mountPath: /etc/docker
       containers:
       - name: dockerd
         image: docker:19.03.2-dind@sha256:615eb3922630a30a52f7c46760f3d08a9eb4a1b0474d038281af8eade8c43f40
@@ -38,11 +25,10 @@ spec:
         - containerPort: 2376
           name: docker-tcp
         volumeMounts:
-        - name: etc-docker-readwrite
-          mountPath: /etc/docker
+        - name: etc-docker
+          mountPath: /etc/docker/daemon.json
+          subPath: daemon.json
       volumes:
       - name: etc-docker
         configMap:
           name: etc-docker
-      - name: etc-docker-readwrite
-        emptyDir: {}

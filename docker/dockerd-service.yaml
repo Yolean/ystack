@@ -5,6 +5,7 @@ metadata:
   labels:
     app: dockerd
 spec:
+  #clusterIP: None
   ports:
   - port: 2376
     name: docker-tcp
