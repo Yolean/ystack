@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: docker-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: docker
+        image: solsson/build-contract:dind@sha256:4c912256f6c873d7b73324f28551e1c9ff9049efe51280f30162968a4cb6471a
+        env:
+        - name: DOCKER_HOST
+          value: tcp://dockerd.ystack.svc.cluster.local:2376
+        command:
+        - /bin/sh
+        - -cex
+        - |
+          tail -f /dev/null
+      restartPolicy: Never
+  backoffLimit: 0
