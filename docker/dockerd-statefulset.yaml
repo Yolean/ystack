@@ -7,7 +7,7 @@ spec:
     matchLabels:
       app: dockerd
   serviceName: "dockerd"
-  replicas: 1
+  replicas: 1 # Can't be scaled up because legacy build caching requires a volume. Use buildkitd instead.
   template:
     metadata:
       labels:
@@ -28,7 +28,17 @@ spec:
         - name: etc-docker
           mountPath: /etc/docker/daemon.json
           subPath: daemon.json
+        - name: cache-overlay2
+          mountPath: /var/lib/docker/overlay2
       volumes:
       - name: etc-docker
         configMap:
           name: etc-docker
+  volumeClaimTemplates:
+  - metadata:
+      name: cache-overlay2
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
