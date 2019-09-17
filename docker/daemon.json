@@ -1,6 +1,7 @@
 {
   "insecure-registries": [
-    "builds-registry.ystack.svc.cluster.local"
+    "builds-registry.ystack.svc.cluster.local",
+    "prod-registry.ystack.svc.cluster.local"
   ],
   "tls": false,
   "hosts": [
