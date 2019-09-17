@@ -14,6 +14,22 @@ spec:
         app: dockerd
     spec:
       terminationGracePeriodSeconds: 10
+      initContainers:
+      - name: setup
+        image: busybox@sha256:fe301db49df08c384001ed752dff6d52b4305a73a7f608f21528048e8a08b51e
+        volumeMounts:
+        - name: build-cache
+          mountPath: /var/lib/docker-build-cache
+        - name: var-lib-docker
+          mountPath: /var/lib/docker
+        command:
+        - /bin/sh
+        - -cex
+        - |
+          [ -d /var/lib/docker-build-cache/images ] || mkdir /var/lib/docker-build-cache/images
+          [ -d /var/lib/docker-build-cache/overlay2 ] || mkdir /var/lib/docker-build-cache/overlay2
+          [ -e /var/lib/docker/images ]     || ln -s /var/lib/docker-build-cache/images   /var/lib/docker/images
+          [ -e /var/lib/docker/overlay2 ]   || ln -s /var/lib/docker-build-cache/overlay2 /var/lib/docker/overlay2
       containers:
       - name: dockerd
         image: docker:19.03.2-dind@sha256:615eb3922630a30a52f7c46760f3d08a9eb4a1b0474d038281af8eade8c43f40
@@ -28,15 +44,19 @@ spec:
         - name: etc-docker
           mountPath: /etc/docker/daemon.json
           subPath: daemon.json
-        - name: cache-overlay2
-          mountPath: /var/lib/docker/overlay2
+        - name: build-cache
+          mountPath: /var/lib/docker-build-cache
+        - name: var-lib-docker
+          mountPath: /var/lib/docker
       volumes:
       - name: etc-docker
         configMap:
           name: etc-docker
+      - name: var-lib-docker
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
-      name: cache-overlay2
+      name: build-cache
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
