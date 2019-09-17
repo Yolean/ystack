@@ -1,4 +1,10 @@
 
+
+_2019-09-17 The Y-stack readme is just a quick-start. For context see my lecture preparations to engineering masters' students at [Chalmers]()._
+
+ - Draft [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) that predated the:
+ - Draft [Lecture script](https://docs.google.com/document/d/1DqMpAbCqOrCLb1AQsr5ThjL53Fz0Mt9e4WXKPP05MzI/edit?usp=sharing)
+
 # Y-stack
 
 Y-stack is a micro-PaaS(?) with the following goals:
