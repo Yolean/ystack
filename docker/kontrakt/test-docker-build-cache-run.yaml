@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-docker-build-cache-run
+spec:
+  template:
+    spec:
+      containers:
+      - name: docker
+        image: solsson/build-contract:dind@sha256:4c912256f6c873d7b73324f28551e1c9ff9049efe51280f30162968a4cb6471a
+        env:
+        - name: DOCKER_HOST
+          value: tcp://dockerd.ystack.svc.cluster.local:2376
+        command:
+        - /bin/sh
+        - -cex
+        - |
+          mkdir dockertest && cd dockertest
+          cat << EOF > docker-compose.yaml
+          version: '2'
+          services:
+            server:
+              build:
+                context: .
+                dockerfile: server.Dockerfile
+              expose:
+              - "80"
+            client:
+              build:
+                context: .
+                dockerfile: client.Dockerfile
+              command:
+              - curl
+              - --retry-connrefused
+              - --retry
+              -   "5"
+              - -s
+              - http://server/
+          EOF
+          cat << EOF > server.Dockerfile
+          FROM nginx:1.17.3-alpine
+          RUN echo "My server built at $(date)" > /usr/share/nginx/html/index.html
+          EOF
+          cat << EOF > client.Dockerfile
+          FROM alpine
+          RUN apk add --no-cache curl
+          EOF
+          docker-compose up
+          # Oh, but the server will run forever, unless we use the build-contract principle
+          # Actually to really test caching we must restart the dockerd pod here and then
+          docker-compose up --build
+      restartPolicy: Never
+  backoffLimit: 0
