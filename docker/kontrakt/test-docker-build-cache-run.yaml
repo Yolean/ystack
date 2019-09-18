@@ -15,17 +15,22 @@ spec:
         - /bin/sh
         - -cex
         - |
-          mkdir dockertest && cd dockertest
-          cat << EOF > docker-compose.yaml
+          mkdir build-contracts && cd build-contracts
+          cat << EOF > docker-compose.yml
           version: '2'
           services:
             server:
+              labels:
+              - com.yolean.build-target
+              image: localhost:5000/test/docker-in-docker-in-ystack-build-test
               build:
                 context: .
                 dockerfile: server.Dockerfile
               expose:
               - "80"
             client:
+              labels:
+              - com.yolean.build-contract
               build:
                 context: .
                 dockerfile: client.Dockerfile
@@ -45,9 +50,8 @@ spec:
           FROM alpine
           RUN apk add --no-cache curl
           EOF
-          docker-compose up
-          # Oh, but the server will run forever, unless we use the build-contract principle
-          # Actually to really test caching we must restart the dockerd pod here and then
-          docker-compose up --build
+          docker-compose build
+          # Actually to really test caching we must restart the dockerd pod here, and inspect build output
+          (cd .. && build-contract)
       restartPolicy: Never
   backoffLimit: 0
