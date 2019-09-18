@@ -1,0 +1,7 @@
+resources:
+- dockerd-service.yaml
+- dockerd-statefulset.yaml
+configMapGenerator:
+- name: etc-docker
+  files:
+  - daemon.json
