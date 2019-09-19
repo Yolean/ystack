@@ -1,0 +1,66 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+NAME="$1"
+[ -z "$NAME" ] && echo "First argument must be a cluster name" && exit 1
+
+FLAGS=""
+
+# gcloud config set compute/region
+PROJECT="$(gcloud config get-value project)"
+REGION="$(gcloud config get-value compute/region)"
+[ -z "$REGION" ] && echo "Please chose a region for the cluster using: gcloud config set compute/region" && exit 1
+gcloud container get-server-config --region=$REGION | grep CONTAINERD
+gcloud container get-server-config --region=$REGION | grep "1.14"
+
+FLAGS="$FLAGS --cluster-version=1.14.6-gke.1"
+FLAGS="$FLAGS --image-type=COS_CONTAINERD"
+FLAGS="$FLAGS --machine-type=g1-small"
+FLAGS="$FLAGS --num-nodes=1"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster#create_regional
+FLAGS="$FLAGS --region=$REGION"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/small-cluster-tuning
+FLAGS="$FLAGS --logging-service none --monitoring-service none"
+FLAGS="$FLAGS --update-addons=KubernetesDashboard=DISABLED"
+
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-upgrades
+#FLAGS="$FLAGS --enable-autoupgrade"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
+FLAGS="$FLAGS \
+    --enable-ip-alias \
+    --create-subnetwork=\"\" \
+    --network=default"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
+FLAGS="$FLAGS --enable-private-nodes"
+FLAGS="$FLAGS --no-enable-master-authorized-networks"
+
+# ? https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
+
+# For Docker registry persistence etc with default service accounts
+# https://cloud.google.com/sdk/gcloud/reference/container/clusters/create#--scopes
+SCOPES="https://www.googleapis.com/auth/devstorage.read_write"
+
+FLAGS="$FLAGS --scopes=$SCOPES"
+
+# TODO storage class
+
+echo "### What this script will try to do is ..."
+echo "Use the currently configured project: $PROJECT"
+echo "Use the currently configured region: $REGION"
+echo "Add authentication to KUBECONFIG=$KUBECONFIG"
+echo "Create a GKE cluster using the following flags: $FLAGS"
+echo ""
+
+read -p 'Please confirm [y/n]? ' yn
+case $yn in
+  [Yy]* ) ;;
+  * ) exit;;
+esac
+
+gcloud container clusters create $FLAGS
