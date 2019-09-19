@@ -36,12 +36,15 @@ FLAGS="$FLAGS --no-enable-stackdriver-kubernetes"
 #FLAGS="$FLAGS --enable-autoupgrade"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
+NETWORK=default
 FLAGS="$FLAGS --enable-ip-alias"
-FLAGS="$FLAGS --network=default"
-#FLAGS="$FLAGS --create-subnetwork \"\""
+FLAGS="$FLAGS --network=$NETWORK"
+FLAGS="$FLAGS --create-subnetwork \"\""
 # https://tudip.com/blog-post/google-cloud-networking/
 gcloud compute networks list
 gcloud compute networks subnets list
+gcloud compute routers list
+gcloud compute routers nats list --router=nat-router
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
 FLAGS="$FLAGS --enable-private-nodes"
@@ -53,13 +56,17 @@ FLAGS="$FLAGS --no-enable-basic-auth"
 
 # ? https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
 
-# For Docker registry persistence etc with default service accounts
-# https://cloud.google.com/sdk/gcloud/reference/container/clusters/create#--scopes
-SCOPES="https://www.googleapis.com/auth/devstorage.read_write"
-
 # Misc disabling, that might be default these days
 FLAGS="$FLAGS --metadata disable-legacy-endpoints=true"
 FLAGS="$FLAGS --no-enable-legacy-authorization"
+
+ADDONS="HorizontalPodAutoscaling"
+
+FLAGS="$FLAGS --addons $ADDONS"
+
+# For Docker registry persistence etc with default service accounts
+# https://cloud.google.com/sdk/gcloud/reference/container/clusters/create#--scopes
+SCOPES="https://www.googleapis.com/auth/devstorage.read_write"
 
 FLAGS="$FLAGS --scopes=$SCOPES"
 
@@ -79,4 +86,15 @@ case $yn in
 esac
 
 #gcloud container clusters create "$NAME" $FLAGS
-gcloud container clusters create "$NAME" --create-subnetwork="" $FLAGS
+gcloud container clusters create "$NAME" $FLAGS
+
+echo "For outbound Internet access:"
+# https://cloud.google.com/nat/docs/gke-example#step_6_create_a_nat_configuration_using
+echo gcloud compute routers create nat-router \
+    --network $NETWORK \
+    --region $REGION
+echo gcloud compute routers nats create nat-config \
+    --router-region $REGION \
+    --router nat-router \
+    --nat-all-subnet-ip-ranges \
+    --auto-allocate-nat-external-ips
