@@ -7,6 +7,8 @@ NAME="$1"
 
 FLAGS=""
 
+gcloud components list | grep version || true
+
 # gcloud config set compute/region
 PROJECT="$(gcloud config get-value project)"
 REGION="$(gcloud config get-value compute/region)"
@@ -20,21 +22,24 @@ FLAGS="$FLAGS --machine-type=g1-small"
 FLAGS="$FLAGS --num-nodes=1"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster#create_regional
-FLAGS="$FLAGS --region=$REGION"
+#FLAGS="$FLAGS --region=$REGION"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/small-cluster-tuning
 FLAGS="$FLAGS --logging-service none --monitoring-service none"
 FLAGS="$FLAGS --update-addons=KubernetesDashboard=DISABLED"
-
+# Do we also need this?
+FLAGS="$FLAGS --enable-stackdriver-kubernetes"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-upgrades
 #FLAGS="$FLAGS --enable-autoupgrade"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
-FLAGS="$FLAGS \
-    --enable-ip-alias \
-    --create-subnetwork=\"\" \
-    --network=default"
+FLAGS="$FLAGS --enable-ip-alias"
+FLAGS="$FLAGS --network=default"
+#FLAGS="$FLAGS --create-subnetwork \"\""
+# https://tudip.com/blog-post/google-cloud-networking/
+gcloud compute networks list
+gcloud compute networks subnets list
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
 FLAGS="$FLAGS --enable-private-nodes"
