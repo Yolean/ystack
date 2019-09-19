@@ -23,12 +23,14 @@ FLAGS="$FLAGS --num-nodes=1"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster#create_regional
 #FLAGS="$FLAGS --region=$REGION"
+# Temporary, non-regional
+FLAGS="$FLAGS --zone=$REGION-a"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/small-cluster-tuning
-FLAGS="$FLAGS --logging-service none --monitoring-service none"
-FLAGS="$FLAGS --update-addons=KubernetesDashboard=DISABLED"
-# Do we also need this?
-FLAGS="$FLAGS --enable-stackdriver-kubernetes"
+#FLAGS="$FLAGS --logging-service none --monitoring-service none"
+#FLAGS="$FLAGS --update-addons=KubernetesDashboard=DISABLED"
+#FLAGS="$FLAGS --no-enable-cloud-logging --no-enable-cloud-monitoring"
+FLAGS="$FLAGS --no-enable-stackdriver-kubernetes"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-upgrades
 #FLAGS="$FLAGS --enable-autoupgrade"
@@ -44,12 +46,20 @@ gcloud compute networks subnets list
 # https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
 FLAGS="$FLAGS --enable-private-nodes"
 FLAGS="$FLAGS --no-enable-master-authorized-networks"
+FLAGS="$FLAGS --master-ipv4-cidr 172.16.0.0/28"
+# https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#auto_subnet
+FLAGS="$FLAGS --no-issue-client-certificate"
+FLAGS="$FLAGS --no-enable-basic-auth"
 
 # ? https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
 
 # For Docker registry persistence etc with default service accounts
 # https://cloud.google.com/sdk/gcloud/reference/container/clusters/create#--scopes
 SCOPES="https://www.googleapis.com/auth/devstorage.read_write"
+
+# Misc disabling, that might be default these days
+FLAGS="$FLAGS --metadata disable-legacy-endpoints=true"
+FLAGS="$FLAGS --no-enable-legacy-authorization"
 
 FLAGS="$FLAGS --scopes=$SCOPES"
 
@@ -68,4 +78,5 @@ case $yn in
   * ) exit;;
 esac
 
-gcloud container clusters create $FLAGS
+#gcloud container clusters create "$NAME" $FLAGS
+gcloud container clusters create "$NAME" --create-subnetwork="" $FLAGS
