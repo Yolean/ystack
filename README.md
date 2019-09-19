@@ -5,6 +5,16 @@ _2019-09-17 The Y-stack readme is just a quick-start. For context see my lecture
  - Draft [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) that predated the:
  - Draft [Lecture script](https://docs.google.com/document/d/1DqMpAbCqOrCLb1AQsr5ThjL53Fz0Mt9e4WXKPP05MzI/edit?usp=sharing)
 
+Purely technical:
+https://github.com/cncf/presentations/tree/master/kubernetes
+https://github.com/jbeda/slides-kubernetes-101
+
+A light introduction of Kubernete followed by deep dive: https://drive.google.com/file/d/1Lfi8r0GZdFIMgprUrwaf-Lru5RsctML7/view
+Quite related to the scope of Y-stack: https://speakerdeck.com/luxas/what-does-production-ready-really-mean-for-a-kubernetes-cluster-umea-may-2019?slide=5
+Good development perspective: https://speakerdeck.com/mhausenblas/developing-on-kubernetes?slide=16
+
+The model we've chosen, only we transfer _build contexts_ not images: https://speakerdeck.com/mhausenblas/developing-on-kubernetes?slide=25
+
 # Y-stack
 
 Y-stack is a micro-PaaS(?) with the following goals:
