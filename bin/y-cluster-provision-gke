@@ -88,6 +88,8 @@ esac
 #gcloud container clusters create "$NAME" $FLAGS
 gcloud container clusters create "$NAME" --create-subnetwork "" $FLAGS
 
+GKE_CONTEXT_NAME=$(kubectl config current-context)
+
 echo "For outbound Internet access:"
 # https://cloud.google.com/nat/docs/gke-example#step_6_create_a_nat_configuration_using
 echo gcloud compute routers create nat-router \
@@ -104,3 +106,21 @@ echo "To clean up:"
 echo gcloud container clusters delete --zone $REGION-a $NAME
 echo gcloud compute routers nats delete --router-region $REGION --router nat-router
 echo gcloud compute routers create nat-router --region $REGION
+
+### To be moved to registry provision script, but we do want the initial context name
+
+gcloud compute backend-buckets list
+gsutil ls
+# https://cloud.google.com/config-connector/docs/overview
+mkdir -p gke/registry
+cat << EOF > gke/registry/builds-gcs-storagebucket.yaml
+# https://github.com/GoogleCloudPlatform/k8s-config-connector/blob/master/resources/storagebucket/storage_v1alpha2_storagebucket.yaml
+apiVersion: storage.cnrm.cloud.google.com/v1alpha2
+kind: StorageBucket
+metadata:
+  name: ${GKE_CONTEXT_NAME}_builds
+spec: {}
+EOF
+
+kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
+  gsutil mb -c regional -l $REGION gs://${GKE_CONTEXT_NAME}_builds
