@@ -3,5 +3,5 @@ bases:
 - ../buildkit
 - ../minio/standalone
 #- ../registry/generic,kafka  # Note that kafka isn't a base (as it has its own namespace) and must be applied separately
-- ../registry/generic
-- ../registry/hosts-update   # Required unless nodes' container runtime can look up cluster DNS for registry services
+- ../registry/generic,minio
+- ../registry/node-update-hosts   # Required unless nodes' container runtime can look up cluster DNS for registry services

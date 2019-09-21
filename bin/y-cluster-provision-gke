@@ -1,0 +1,131 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+NAME="$1"
+[ -z "$NAME" ] && echo "First argument must be a cluster name" && exit 1
+
+FLAGS=""
+
+gcloud components list | grep version || true
+
+# gcloud config set compute/region
+PROJECT="$(gcloud config get-value project)"
+REGION="$(gcloud config get-value compute/region)"
+[ -z "$REGION" ] && echo "Please chose a region for the cluster using: gcloud config set compute/region" && exit 1
+gcloud container get-server-config --region=$REGION | grep CONTAINERD
+gcloud container get-server-config --region=$REGION | grep "1.14"
+
+FLAGS="$FLAGS --cluster-version=1.14.6-gke.1"
+FLAGS="$FLAGS --image-type=UBUNTU_CONTAINERD"
+FLAGS="$FLAGS --machine-type=g1-small"
+FLAGS="$FLAGS --num-nodes=1"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster#create_regional
+#FLAGS="$FLAGS --region=$REGION"
+# Temporary, non-regional
+FLAGS="$FLAGS --zone=$REGION-a"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/small-cluster-tuning
+#FLAGS="$FLAGS --logging-service none --monitoring-service none"
+#FLAGS="$FLAGS --update-addons=KubernetesDashboard=DISABLED"
+#FLAGS="$FLAGS --no-enable-cloud-logging --no-enable-cloud-monitoring"
+FLAGS="$FLAGS --no-enable-stackdriver-kubernetes"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-upgrades
+#FLAGS="$FLAGS --enable-autoupgrade"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
+NETWORK=default
+FLAGS="$FLAGS --enable-ip-alias"
+FLAGS="$FLAGS --network=$NETWORK"
+#FLAGS="$FLAGS --create-subnetwork \"\""
+# https://tudip.com/blog-post/google-cloud-networking/
+gcloud compute networks list
+gcloud compute networks subnets list | grep $REGION
+gcloud compute routers list
+gcloud compute routers nats list --router=nat-router 2>/dev/null || true
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
+FLAGS="$FLAGS --enable-private-nodes"
+FLAGS="$FLAGS --no-enable-master-authorized-networks"
+FLAGS="$FLAGS --master-ipv4-cidr 172.16.0.0/28"
+# https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#auto_subnet
+FLAGS="$FLAGS --no-issue-client-certificate"
+FLAGS="$FLAGS --no-enable-basic-auth"
+
+# ? https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
+
+# Misc disabling, that might be default these days
+FLAGS="$FLAGS --metadata disable-legacy-endpoints=true"
+FLAGS="$FLAGS --no-enable-legacy-authorization"
+
+ADDONS="HorizontalPodAutoscaling"
+
+# https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
+ADDONS="$ADDONS,HttpLoadBalancing"
+
+FLAGS="$FLAGS --addons $ADDONS"
+
+# For Docker registry persistence etc with default service accounts
+# https://cloud.google.com/sdk/gcloud/reference/container/clusters/create#--scopes
+SCOPES="https://www.googleapis.com/auth/devstorage.read_write"
+
+FLAGS="$FLAGS --scopes=$SCOPES"
+
+# TODO storage class
+
+echo "### What this script will try to do is ..."
+echo "Use the currently configured project: $PROJECT"
+echo "Use the currently configured region: $REGION"
+echo "Add authentication to KUBECONFIG=$KUBECONFIG"
+echo "Create a GKE cluster using the following flags: $FLAGS"
+echo ""
+
+read -p 'Please confirm [y/n]? ' yn
+case $yn in
+  [Yy]* ) ;;
+  * ) exit;;
+esac
+
+#gcloud container clusters create "$NAME" $FLAGS
+gcloud container clusters create "$NAME" --create-subnetwork "" $FLAGS
+
+GKE_CONTEXT_NAME=$(kubectl config current-context)
+
+echo "For outbound Internet access:"
+# https://cloud.google.com/nat/docs/gke-example#step_6_create_a_nat_configuration_using
+echo gcloud compute routers create nat-router \
+    --network $NETWORK \
+    --region $REGION
+echo gcloud compute routers nats create nat-config \
+    --router-region $REGION \
+    --router nat-router \
+    --nat-all-subnet-ip-ranges \
+    --auto-allocate-nat-external-ips
+
+echo "To clean up:"
+#echo gcloud container clusters delete --region $REGION $NAME
+echo gcloud container clusters delete --zone $REGION-a $NAME
+echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
+echo gcloud compute routers delete nat-router --region $REGION
+
+### To be moved to registry provision script, but we do want the initial context name
+
+gcloud compute backend-buckets list
+gsutil ls
+# https://cloud.google.com/config-connector/docs/overview
+mkdir -p gke/registry
+cat << EOF > gke/registry/builds-gcs-storagebucket.yaml
+# https://github.com/GoogleCloudPlatform/k8s-config-connector/blob/master/resources/storagebucket/storage_v1alpha2_storagebucket.yaml
+apiVersion: storage.cnrm.cloud.google.com/v1alpha2
+kind: StorageBucket
+metadata:
+  name: ${GKE_CONTEXT_NAME}_builds
+spec: {}
+EOF
+
+# TODO we also need to generate a bucket name, or a secret with a bucket name, for gke/registry/builds-gcs-bucket-storage.yaml
+
+kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
+  gsutil mb -c regional -l $REGION gs://${GKE_CONTEXT_NAME}_builds
