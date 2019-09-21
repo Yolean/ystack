@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  template:
+    spec:
+      containers:
+      - name: docker-v2
+        image: registry:2.7.1@sha256:a54bc9be148764891c44676ce8c44f1e53514c43b1bfbab87b896f4b9f0b5d99
+        env:
+        - name: REGISTRY_STORAGE
+          value: gcs
+        #- name: REGISTRY_STORAGE_S3_ACCESSKEY
+        #  valueFrom:
+        #- name: REGISTRY_STORAGE_S3_SECRETKEY
+        #  valueFrom:
+        # - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
+        #   value: ""
+        # - name: REGISTRY_STORAGE_S3_REGION
+        #   value: ""
+        # - name: REGISTRY_STORAGE_S3_BUCKET
+        #   value: ""
+        - name: REGISTRY_STORAGE_GCS_BUCKET
+          value: gke_yo-test-212111_europe-west3-a_build1_builds
