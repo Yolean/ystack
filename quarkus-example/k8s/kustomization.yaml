@@ -2,4 +2,5 @@ namespace: demo
 resources:
 - db-service.yaml
 - db-deployment.yaml
+- app-service.yaml
 - app-deployment.yaml
