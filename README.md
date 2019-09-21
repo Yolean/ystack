@@ -94,7 +94,7 @@ Both _provision_ and the subsequent _converge_ adds truckloads of complexity com
 
 It’s 2019 now and there’s no longer a need to defend trust on Open Source for business-critical software. You should however pay attention to the different kinds of open source. The Kubernetes community is unhealthily self-aware as an Awesome Community, but that’s ok when any impartial review would also call it great, as in valuable to us who depend on the tool.
 
-Most notably the Kubernetes community can be relied on because there’s no single controlling actor that has a business model built on it, while still being commercially important enough to receive robust maintenance. For example it spends [upward of $X million](https://www.cncf.io/announcement/2018/08/29/cncf-receives-9-million-cloud-credit-grant-from-google/) on running the test suite alone.
+Most notably the Kubernetes community can be relied on because there’s no single controlling actor that has a business model built on it, while still being commercially important enough to receive robust maintenance. For example it spends [upward of $3 million per year](https://www.cncf.io/announcement/2018/08/29/cncf-receives-9-million-cloud-credit-grant-from-google/) on "running the continuous integration and continuous delivery (CI/CD) pipelines and providing the container image download repository.".
 
 ## Security
 
