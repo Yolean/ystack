@@ -1,5 +1,5 @@
 
-_2019-09-20 The Y-stack readme is just a quick-start. For break-down of paragraphs and terms see my lecture [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) to engineering masters' students at [Chalmers](http://www.cse.chalmers.se/edu/course/DAT300/)._
+_2019-09-20 The Y-stack readme is just a quick-start. For break-down of paragraphs and terms see my WIP lecture [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) to engineering masters' students at [Chalmers](http://www.cse.chalmers.se/edu/course/DAT300/)._
 
 # To deliver software using Kubernetes
 
