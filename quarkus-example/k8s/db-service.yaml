@@ -6,7 +6,7 @@ spec:
   selector:
     app: demo-ystack-db
   ports:
-    - port: 7474
-      name: http
-    - port: 7687
-      name: bolt
+  - port: 7474
+    name: http
+  - port: 7687
+    name: bolt
