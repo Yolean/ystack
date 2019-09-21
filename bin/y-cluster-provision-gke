@@ -62,6 +62,9 @@ FLAGS="$FLAGS --no-enable-legacy-authorization"
 
 ADDONS="HorizontalPodAutoscaling"
 
+# https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
+ADDONS="$ADDONS,HttpLoadBalancing"
+
 FLAGS="$FLAGS --addons $ADDONS"
 
 # For Docker registry persistence etc with default service accounts
