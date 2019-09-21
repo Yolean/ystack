@@ -16,7 +16,6 @@ spec:
     spec:
       containers:
       - name: jre
-        image: solsson/demo-ystack-app:quarkus-dev
-        imagePullPolicy: Always
+        image: builds-registry.ystack.svc.cluster.local/ystack-examples/demo-quarkus-dev
         ports:
         - containerPort: 8080

@@ -1,0 +1,22 @@
+apiVersion: skaffold/v1beta13
+kind: Config
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/demo-quarkus-dev
+    context: .
+    custom:
+      buildCommand: y-build --opt filename=app.Dockerfile
+      dependencies:
+        dockerfile:
+          path: ./app.Dockerfile
+    sync:
+      manual:
+      - src: 'app/src/**/*.java'
+        dest: .
+        strip: 'app/'
+deploy:
+  kustomize:
+    path: k8s/
