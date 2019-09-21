@@ -1,7 +1,7 @@
 namespace: ystack
 bases:
 - ../buildkit
-- ../minio
+- ../minio/distributed
 #- ../registry/generic,kafka  # Note that kafka isn't a base (as it has its own namespace) and must be applied separately
 - ../registry/generic
 - ../registry/hosts-update   # Required unless nodes' container runtime can look up cluster DNS for registry services
