@@ -6,12 +6,3 @@ bases:
 - ../../registry/node-update-containerd/ # also requires restart but needs no TLS support in registry so might be a simpler option until we have containerd#3071
 patchesStrategicMerge:
 - builds-gcs-bucket-storage.yaml
-
-# Hack, failed to patch away these valueFrom envs
-secretGenerator:
-- name: blobs-minio
-  literals:
-  - secretkey=dummy
-  - accesskey=dummy
-generatorOptions:
-  disableNameSuffixHash: true

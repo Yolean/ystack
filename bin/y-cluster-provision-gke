@@ -125,5 +125,7 @@ metadata:
 spec: {}
 EOF
 
+# TODO we also need to generate a bucket name, or a secret with a bucket name, for gke/registry/builds-gcs-bucket-storage.yaml
+
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
   gsutil mb -c regional -l $REGION gs://${GKE_CONTEXT_NAME}_builds
