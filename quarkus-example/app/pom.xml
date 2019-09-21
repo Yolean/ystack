@@ -55,7 +55,6 @@
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.version}</version>
         <configuration>
-          <uberJar>true</uberJar>
           <finalName>ystack-demo-app</finalName>
         </configuration>
         <executions>
@@ -118,6 +117,26 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>jar</id>
+      <activation>
+        <property>
+          <name>jar</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-maven-plugin</artifactId>
+            <version>${quarkus.version}</version>
+            <configuration>
+              <uberJar>true</uberJar>
+            </configuration>
           </plugin>
         </plugins>
       </build>
