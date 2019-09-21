@@ -1,3 +1,4 @@
 namespace: demo
 resources:
+- db-deployment.yaml
 - app-deployment.yaml

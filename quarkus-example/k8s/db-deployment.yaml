@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-ystack-db
+  labels:
+    app: demo-ystack-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-ystack-db
+  template:
+    metadata:
+      labels:
+        app: demo-ystack-db
+    spec:
+      containers:
+      - name: neo4j
+        image: neo4j:3.5.6@sha256:f0c936c15801620fac4e151dbbbd1739f32a1c27f1c0ac6e421c4387b01364a4
+        ports:
+        - containerPort: 7474
+        - containerPort: 7687
+        env:
+        - name: NEO4J_AUTH
+          value: neo4j/secret
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/neo4j/data
+      volumes:
+      - name: data
+        emptyDir: {}
