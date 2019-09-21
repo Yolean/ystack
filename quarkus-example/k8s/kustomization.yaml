@@ -3,5 +3,6 @@ resources:
 - db-service.yaml
 - db-deployment.yaml
 - app-service.yaml
+- app-service-nodeport.yaml
 - app-deployment.yaml
 #- test-client-job.yaml
