@@ -5,7 +5,7 @@ set -e
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
 [ -z "$VM_NAME" ] && VM_NAME="ystack-master"
-[ -z "$VM_RESOURCES" ] && VM_RESOURCES="-m 8G -d 40G -c 4"
+[ -z "$VM_RESOURCES" ] && VM_RESOURCES="-m 6G -d 40G -c 4"
 [ -z "$K8S_CHANNEL" ] && K8S_CHANNEL="1.14/stable"
 
 if ! multipass info "$VM_NAME" 2>/dev/null
