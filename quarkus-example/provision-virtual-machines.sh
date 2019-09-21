@@ -39,6 +39,10 @@ sudo apt-get update
 echo "neo4j-enterprise neo4j/question select I ACCEPT" | sudo debconf-set-selections
 echo "neo4j-enterprise neo4j/license note" | sudo debconf-set-selections
 sudo apt-get install -y neo4j=1:3.5.9
+
+sudo sed -i 's|#dbms.connectors.default_listen_address=0.0.0.0|dbms.connectors.default_listen_address=0.0.0.0^C /etc/neo4j/neo4j.conf
+sudo sed -i 's|#dbms.security.auth_enabled=false|dbms.security.auth_enabled=false|' /etc/neo4j/neo4j.conf
+sudo systemctl restart neo4j
 EOF
 
 echo "You'll also need: VM_RESOURCES='-m 4G -d 20G -c 4' y-cluster-provision-k3s-multipass"
