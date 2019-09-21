@@ -1,0 +1,4 @@
+bases:
+- ../distributed
+patchesStrategicMerge:
+- minio-statefulset.yaml
