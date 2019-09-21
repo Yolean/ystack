@@ -5,4 +5,5 @@ resources:
 - app-service.yaml
 - app-service-nodeport.yaml
 - app-deployment.yaml
+- app-ingress.yaml
 #- test-client-job.yaml

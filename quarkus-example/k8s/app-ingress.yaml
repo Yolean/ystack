@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: demo-ystack-app
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /fruits
+        backend:
+          serviceName: demo-ystack-app
+          servicePort: 80
