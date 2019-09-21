@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: blobs-minio
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:RELEASE.2019-09-18T21-55-05Z@sha256:789d263e2b524af219cdc9951a234eab6c3275ccf8e73ff013bd6488afc1dfa4
+        command:
+        - /usr/bin/docker-entrypoint.sh
+        - minio
+        - -C
+        -   /root/.minio/
+        - server
+        - /export

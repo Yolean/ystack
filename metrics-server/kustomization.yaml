@@ -1,6 +1,6 @@
 namespace: kube-system
 bases:
-- github.com/y-stack/metrics-server/deploy/1.8+?ref=bac18cea8f78089323091ae20e81799939673893
+- github.com/y-stack/metrics-server/deploy/1.8+?ref=54b14b78112367c01576f34fc34b3aa33c3098c6
 patchesStrategicMerge:
 - resource-limits.yaml
 - metric-resolution.yaml
