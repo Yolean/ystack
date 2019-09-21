@@ -4,3 +4,4 @@ resources:
 - db-deployment.yaml
 - app-service.yaml
 - app-deployment.yaml
+- test-client-job.yaml

@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-test-client
+spec:
+  template:
+    spec:
+      containers:
+      - name: curl
+        image: solsson/curl@sha256:7812c7af01cb956cc2d86f299d4b4970db54b7069804da7d8a509d6746480004
+        command:
+        - /bin/sh
+        - -ce
+        - |
+          curl -Is --retry-connrefused --retry 10 http://demo-ystack-app/
+
+          tail -f /dev/null
+      restartPolicy: Never
+  backoffLimit: 1
