@@ -1,26 +1,10 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  labels:
-    app: minio
-    release: blobs
   name: blobs-minio
 spec:
   replicas: 1
-  serviceName: blobs-minio-svc
-  selector:
-    matchLabels:
-      app: minio
-      release: blobs
-  podManagementPolicy: Parallel
-  updateStrategy:
-    type: RollingUpdate
   template:
-    metadata:
-      labels:
-        app: minio
-        release: blobs
-      name: blobs-minio
     spec:
       containers:
       - name: minio
@@ -32,49 +16,3 @@ spec:
         -   /root/.minio/
         - server
         - /export
-        env:
-        - name: MINIO_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              key: accesskey
-              name: blobs-minio
-        - name: MINIO_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              key: secretkey
-              name: blobs-minio
-        - name: MINIO_BROWSER
-          value: "on"
-        ports:
-        - containerPort: 9000
-          name: service
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
-        livenessProbe:
-          httpGet:
-            path: /minio/health/live
-            port: service
-            scheme: HTTP
-        volumeMounts:
-        - mountPath: /export
-          name: export
-        - mountPath: /root/.minio/
-          name: minio-config-dir
-      serviceAccountName: blobs-minio
-      volumes:
-      - name: minio-user
-        secret:
-          secretName: blobs-minio
-      - emptyDir: {}
-        name: minio-config-dir
-  volumeClaimTemplates:
-  - metadata:
-      name: export
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
