@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-ystack-app
+  labels:
+    app: demo-ystack-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-ystack-app
+  template:
+    metadata:
+      labels:
+        app: demo-ystack-app
+    spec:
+      containers:
+      - name: jre
+        image: adoptopenjdk:11.0.4_11-jre-hotspot-bionic@sha256:bda96b856e49e9e95381304be9591b0abdebfa0a842c7f06255c60f3a81473af
+        ports:
+        - containerPort: 8080
+        command:
+        - bash
+        - -cex
+        - |
+          while [ ! -f /ystack-demo-app-runner.jar ]; do
+            echo "Waiting for kubectl cp app/target/ystack-demo-app-runner.jar $HOSTNAME:/ystack-demo-app-runner.jar"
+            sleep 10
+          done
+          java -jar /ystack-demo-app-runner.jar
