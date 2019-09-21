@@ -87,4 +87,29 @@ public class FruitResource {
       );
   }
 
+  @GET
+  @Path("unlucky")
+  public Response unlucky() {
+    throw new RuntimeException("Something really unexpected happened here");
+  }
+
+  @GET
+  @Path("fatal")
+  public void fatal() {
+    System.exit(1);
+  }
+
+  @GET
+  @Path("memory")
+  public void memory() throws InterruptedException {
+    java.util.Vector<byte[]> v = new java.util.Vector<byte[]>();
+    while (true) {
+      byte b[] = new byte[1048576];
+      v.add(b);
+      Runtime rt = Runtime.getRuntime();
+      System.out.println( "free memory: " + rt.freeMemory() );
+      Thread.sleep(10);
+    }
+  }
+
 }
