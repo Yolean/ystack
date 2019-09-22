@@ -6,4 +6,5 @@ resources:
 - app-service-nodeport.yaml
 - app-deployment.yaml
 - app-ingress.yaml
+- db-ui-ingress.yaml
 #- test-client-job.yaml

@@ -1,0 +1,13 @@
+# To connect, use a localhost bolt URL with kubectl port-forward 7687:7687
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: demo-ystack-db
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /browser
+        backend:
+          serviceName: demo-ystack-db
+          servicePort: 7474
