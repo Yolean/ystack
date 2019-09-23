@@ -2,6 +2,8 @@
 
 Y-stack isn't a Kubernetes quick-start. It's meant for spending hundreds of hours learning Kubernetes _while developing code_, ideally in a team, and see your CI/CD and software architecture evolve entangled with Kubernetes _primitives_.
 
+To get involved please join the [Y-slack](https://y-stack.slack.com/) :) or dive right into the repo and report issues.
+
 # Complexity and the Catch 22
 
 _2019-09-20 by Staffan: For break-down of paragraphs and terms see my WIP lecture [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) to engineering masters' students at [Chalmers](http://www.cse.chalmers.se/edu/course/DAT300/)._
