@@ -1,7 +1,12 @@
+# Resolves the Catch 22
 
-_2019-09-20 The Y-stack readme is just a quick-start. For break-down of paragraphs and terms see my WIP lecture [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) to engineering masters' students at [Chalmers](http://www.cse.chalmers.se/edu/course/DAT300/)._
+Y-stack isn't a Kubernetes quick-start. It's meant for spending hundreds of hours learning Kubernetes _while developing code_, ideally in a team, and see your CI/CD and software architecture evolve entangled with Kubernetes _primitives_.
 
-# To deliver software using Kubernetes
+# Complexity and the Catch 22
+
+_2019-09-20 by Staffan: For break-down of paragraphs and terms see my WIP lecture [Slides](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit?usp=sharing) to engineering masters' students at [Chalmers](http://www.cse.chalmers.se/edu/course/DAT300/)._
+
+## To deliver software using Kubernetes
 
 Ignoring everything that’s cool and fun, Kubernetes just means a bunch of machines - physical or virtual - running a bunch of processes. Machines are called _nodes_ and if they’re Linux you can open a remote shell on them an run `ps -aux` to list these processes.
 
@@ -22,7 +27,7 @@ A deep dive into these aspects will take us to the design decisions behind Y-sta
 
 ## 1. Your code’s dependencies
 
-You typically have _build time_ and _run time_ dependencies. With Java you might pull libraries from a public Maven repository and depend on a particular major version of the JVM. With Python you have PyPA but mmay also depend at runtime on pre-installed libraries. With Node.js you expect every runtime environment to run `npm install` for you.
+You typically have _build time_ and _run time_ dependencies. With Java you might pull libraries from a public Maven repository and depend on a particular major version of the JVM. With Python you have PyPA but may also depend at runtime on pre-installed libraries. With Node.js you expect every runtime environment to run `npm install` for you.
 
 Dealing with dependencies used to suck. Nevermind the _toil_ - boring repetitive labor - which also sucked, any upgrade of one service risked the stability of other services, and you probably wouldn’t notice until that other service had a restart months later.
 
@@ -30,13 +35,13 @@ Long story short, the technology company Docker made _containers_ available to u
 
 Actually we need to chose one container runtime from a handful of viable options, but that’s no big deal because these days they agree on the _image_ format. We’ll get to the concept of _primitives_ further down, but let’s warm up with a closer look at two of the fundamental ones:
 
-### Container _image_s
+### Container _images_
 
-https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit#slide=id.g60279120f7_0_68
+[TODO](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit#slide=id.g60279120f7_0_68)
 
 ### Image _registry_
 
-https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit#slide=id.g60279120f7_0_73
+[TODO](https://docs.google.com/presentation/d/1tnMORT5a3ucAxf9I_ZClLYvbCJsRmfK_HT1Q6HPETow/edit#slide=id.g60279120f7_0_73)
 
 ## 2. Client access 
 
@@ -102,7 +107,7 @@ Containerization and trust
 
 Isolation
 
-Multi-tenancy
+Multitenancy
 
 ## Cost
 
@@ -138,7 +143,7 @@ It says "registry" to refer to a Docker registry with a particular setup,
 while "knative" refers to an installer that combines Knative modules.
 The point with being opinionated is that registry and knative work well together.
 
-The stack supports local developmment ("inner development loop") using
+The stack supports local development ("inner development loop") using
 [Skaffold](https://skaffold.dev/)
 with local and remote clusters alike.
 Image builds during development are in-cluster:
