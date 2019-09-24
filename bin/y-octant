@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=0.7.0
+
+bin_name=octant \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/vmware/octant/releases/download/v${version}/octant_${version}_macOS-64bit.tar.gz \
+  Darwin_sha256=756924d8c0a593c75ced6a4ce4d7c5e7c3f04bc542b9bf355822811a9b27b6e4 \
+  bin_tgz_path=octant_0.7.0_macOS-64bit/octant \
+  y-bin-dependency-download 1>&2 || exit $?
+
+y-octant-v${version}-bin "$@" || exit $?
