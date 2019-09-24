@@ -19,6 +19,9 @@ gcloud container get-server-config --region=$REGION | grep "1.14"
 FLAGS="$FLAGS --cluster-version=1.14.6-gke.1"
 FLAGS="$FLAGS --image-type=UBUNTU_CONTAINERD"
 FLAGS="$FLAGS --machine-type=g1-small"
+gcloud beta compute zones describe $REGION-a --format="value(availableCpuPlatforms)"
+#FLAGS="$FLAGS --min-cpu-platform 'Intel Skylake'"
+
 FLAGS="$FLAGS --num-nodes=1"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster#create_regional
@@ -89,7 +92,10 @@ case $yn in
 esac
 
 #gcloud container clusters create "$NAME" $FLAGS
-gcloud container clusters create "$NAME" --create-subnetwork "" $FLAGS
+gcloud container clusters create "$NAME" \
+  --min-cpu-platform 'Intel Skylake' \
+  --create-subnetwork "" \
+  $FLAGS
 
 GKE_CONTEXT_NAME=$(kubectl config current-context)
 
