@@ -1,0 +1,2 @@
+bases:
+- https://codeberg.org/solsson/kube-web-view/deploy?ref=kustomize-support
