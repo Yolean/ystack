@@ -91,8 +91,7 @@ case $yn in
   * ) exit;;
 esac
 
-#gcloud container clusters create "$NAME" $FLAGS
-gcloud container clusters create "$NAME" $FLAGS $@
+gcloud container clusters create "$NAME" $FLAGS "$@"
 
 GKE_CONTEXT_NAME=$(kubectl config current-context)
 
