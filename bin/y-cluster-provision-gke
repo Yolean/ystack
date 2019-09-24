@@ -4,6 +4,7 @@ set -e
 
 NAME="$1"
 [ -z "$NAME" ] && echo "First argument must be a cluster name" && exit 1
+shift 1
 
 FLAGS=""
 
@@ -18,9 +19,6 @@ gcloud container get-server-config --region=$REGION | grep "1.14"
 
 FLAGS="$FLAGS --cluster-version=1.14.6-gke.1"
 FLAGS="$FLAGS --image-type=UBUNTU_CONTAINERD"
-FLAGS="$FLAGS --machine-type=g1-small"
-gcloud beta compute zones describe $REGION-a --format="value(availableCpuPlatforms)"
-#FLAGS="$FLAGS --min-cpu-platform 'Intel Skylake'"
 
 FLAGS="$FLAGS --num-nodes=1"
 FLAGS="$FLAGS --enable-autoscaling"
@@ -84,7 +82,7 @@ echo "### What this script will try to do is ..."
 echo "Use the currently configured project: $PROJECT"
 echo "Use the currently configured region: $REGION"
 echo "Add authentication to KUBECONFIG=$KUBECONFIG"
-echo "Create a GKE cluster using the following flags: $FLAGS"
+echo "Create a GKE cluster using the following flags: $FLAGS $@"
 echo ""
 
 read -p 'Please confirm [y/n]? ' yn
@@ -94,10 +92,7 @@ case $yn in
 esac
 
 #gcloud container clusters create "$NAME" $FLAGS
-gcloud container clusters create "$NAME" \
-  --min-cpu-platform 'Intel Skylake' \
-  --create-subnetwork "" \
-  $FLAGS
+gcloud container clusters create "$NAME" $FLAGS $@
 
 GKE_CONTEXT_NAME=$(kubectl config current-context)
 
