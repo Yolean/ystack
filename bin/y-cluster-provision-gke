@@ -112,6 +112,10 @@ echo gcloud container clusters delete --zone $REGION-a $NAME
 echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
 echo gcloud compute routers delete nat-router --region $REGION
 
+kubectl create namespace ystack
+
+kubectl -n ystack apply -k $YSTACK_HOME/registry/node-update-containerd/
+
 ### To be moved to registry provision script, but we do want the initial context name
 
 [ -z "${BUILDS_BUCKET_NAME}" ] && BUILDS_BUCKET_NAME=${GKE_CONTEXT_NAME}_builds

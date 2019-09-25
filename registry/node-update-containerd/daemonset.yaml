@@ -22,13 +22,15 @@ spec:
         - name: etc-containerd
           mountPath: /etc/containerd
           readOnly: false
+        - name: results
+          mountPath: /results
         env:
         - name: CONFIG_PATH
           value: /etc/containerd/config.toml
         command:
         - bash
         #to troubleshoot use: - -cex
-        - -ce
+        - -cex
         - |
           if ! grep builds-registry.ystack.svc.cluster.local $CONFIG_PATH; then
             echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]' >> $CONFIG_PATH
@@ -57,3 +59,5 @@ spec:
       - name: etc-containerd
         hostPath:
           path: /etc/containerd
+      - name: results
+        emptyDir: {}
