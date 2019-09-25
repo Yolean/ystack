@@ -11,6 +11,8 @@ spec:
       labels:
         app: containerd-registry-http
     spec:
+      hostPID: true
+      hostNetwork: true
       initContainers:
       - name: update
         image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
@@ -23,14 +25,24 @@ spec:
         #to troubleshoot use: - -cex
         - -ce
         - |
+          tail -f /dev/null
           cat << EOF >> /etc/containerd/config.toml
           [plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]
              endpoint = ["http://builds-registry.ystack.svc.cluster.local"]
           [plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]
              endpoint = ["http://prod-registry.ystack.svc.cluster.local"]
           EOF
-          echo "TODO currently you must manually ssh to the node and run: systemctl restart containerd"
-          # maybe https://alexei-led.github.io/post/k8s_node_shell/ ?
+      - name: containerd-restart
+        image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
+        securityContext:
+          privileged: true
+        command:
+        - nsenter
+        - --mount=/proc/1/ns/mnt
+        - --
+        - systemctl
+        - restart
+        - containerd
       containers:
       - name: init-container-did-the-work
         image: gcr.io/google_containers/pause-amd64:3.1@sha256:59eec8837a4d942cc19a52b8c09ea75121acc38114a2c68b98983ce9356b8610
