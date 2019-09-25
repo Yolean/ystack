@@ -131,19 +131,4 @@ EOF
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
   gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME}
 
-cat << EOF > $YSTACK_HOME/gke/registry/builds-gcs-bucket-storage.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: registry
-spec:
-  template:
-    spec:
-      containers:
-      - name: docker-v2
-        env:
-        - name: REGISTRY_STORAGE
-          value: gcs
-        - name: REGISTRY_STORAGE_GCS_BUCKET
-          value: ${BUILDS_BUCKET_NAME}
-EOF
+kubectl create secret generic -n ystack registry-persistence --from-literal=gcsBucketName=${BUILDS_BUCKET_NAME}
