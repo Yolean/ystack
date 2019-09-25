@@ -23,7 +23,6 @@ spec:
           value: >-
             builds-registry.ystack.svc.cluster.local
             prod-registry.ystack.svc.cluster.local
-            blobs-minio.ystack.svc.cluster.local
         command:
         - bash
         - -ce
