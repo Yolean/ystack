@@ -119,7 +119,7 @@ echo gcloud compute routers delete nat-router --region $REGION
 gcloud compute backend-buckets list
 gsutil ls
 # https://cloud.google.com/config-connector/docs/overview
-cat << EOF > gke/registry/builds-gcs-storagebucket.yaml
+cat << EOF > $YSTACK_HOME/gke/registry/builds-gcs-storagebucket.yaml
 # https://github.com/GoogleCloudPlatform/k8s-config-connector/blob/master/resources/storagebucket/storage_v1alpha2_storagebucket.yaml
 apiVersion: storage.cnrm.cloud.google.com/v1alpha2
 kind: StorageBucket
@@ -131,7 +131,7 @@ EOF
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
   gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME}
 
-cat << EOF > gke/registry/builds-gcs-bucket-storage.yaml
+cat << EOF > $YSTACK_HOME/gke/registry/builds-gcs-bucket-storage.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
