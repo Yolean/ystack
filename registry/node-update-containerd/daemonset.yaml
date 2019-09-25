@@ -20,18 +20,23 @@ spec:
         - name: etc-containerd
           mountPath: /etc/containerd
           readOnly: false
+        env:
+        - name: CONFIG_PATH
+          value: /etc/containerd/config.toml
         command:
         - bash
         #to troubleshoot use: - -cex
         - -ce
         - |
-          tail -f /dev/null
-          cat << EOF >> /etc/containerd/config.toml
-          [plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]
-             endpoint = ["http://builds-registry.ystack.svc.cluster.local"]
-          [plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]
-             endpoint = ["http://prod-registry.ystack.svc.cluster.local"]
-          EOF
+          if ! grep builds-registry.ystack.svc.cluster.local $CONFIG_PATH; then
+            echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]' >> $CONFIG_PATH
+            echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"'           >> $CONFIG_PATH
+          fi
+          if ! grep prod-registry.ystack.svc.cluster.local $CONFIG_PATH; then
+            echo '[plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]'   >> $CONFIG_PATH
+            echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"'             >> $CONFIG_PATH
+          fi
+          cat $CONFIG_PATH
       - name: containerd-restart
         image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
         securityContext:
