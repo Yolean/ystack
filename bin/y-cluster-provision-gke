@@ -114,6 +114,8 @@ echo gcloud compute routers delete nat-router --region $REGION
 
 ### To be moved to registry provision script, but we do want the initial context name
 
+[ -z "${BUILDS_BUCKET_NAME}" ] && BUILDS_BUCKET_NAME=${GKE_CONTEXT_NAME}_builds
+
 gcloud compute backend-buckets list
 gsutil ls
 # https://cloud.google.com/config-connector/docs/overview
@@ -123,11 +125,26 @@ cat << EOF > gke/registry/builds-gcs-storagebucket.yaml
 apiVersion: storage.cnrm.cloud.google.com/v1alpha2
 kind: StorageBucket
 metadata:
-  name: ${GKE_CONTEXT_NAME}_builds
+  name: ${BUILDS_BUCKET_NAME}
 spec: {}
 EOF
 
-# TODO we also need to generate a bucket name, or a secret with a bucket name, for gke/registry/builds-gcs-bucket-storage.yaml
-
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
-  gsutil mb -c regional -l $REGION gs://${GKE_CONTEXT_NAME}_builds
+  gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME}
+
+cat << EOF > gke/registry/builds-gcs-storagebucket.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  template:
+    spec:
+      containers:
+      - name: docker-v2
+        env:
+        - name: REGISTRY_STORAGE
+          value: gcs
+        - name: REGISTRY_STORAGE_GCS_BUCKET
+          value: ${BUILDS_BUCKET_NAME}
+EOF
