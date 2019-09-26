@@ -1,8 +1,4 @@
 bases:
 - ../../registry/generic/
-# Two ways to get nodes' containerd to allow pull from in-cluster .local service
-# (assuming we already have DNS name lookup fixed through for example ../registry/hosts-update):
-#- ../../registry/generic,tls/       # requires manual containerd restart until https://github.com/containerd/containerd/issues/3071 is resolved
-- ../../registry/node-update-containerd/ # also requires restart but needs no TLS support in registry so might be a simpler option until we have containerd#3071
 patchesStrategicMerge:
 - builds-gcs-bucket-storage.yaml

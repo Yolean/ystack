@@ -11,6 +11,8 @@ spec:
       labels:
         app: containerd-registry-http
     spec:
+      hostPID: true
+      hostNetwork: true
       initContainers:
       - name: update
         image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
@@ -18,19 +20,37 @@ spec:
         - name: etc-containerd
           mountPath: /etc/containerd
           readOnly: false
+        - name: results
+          mountPath: /results
+        env:
+        - name: CONFIG_PATH
+          value: /etc/containerd/config.toml
+        securityContext:
+          privileged: true
         command:
         - bash
         #to troubleshoot use: - -cex
         - -ce
         - |
-          cat << EOF >> /etc/containerd/config.toml
-          [plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]
-             endpoint = ["http://builds-registry.ystack.svc.cluster.local"]
-          [plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]
-             endpoint = ["http://prod-registry.ystack.svc.cluster.local"]
-          EOF
-          echo "TODO currently you must manually ssh to the node and run: systemctl restart containerd"
-          # maybe https://alexei-led.github.io/post/k8s_node_shell/ ?
+          if ! grep builds-registry.ystack.svc.cluster.local $CONFIG_PATH; then
+            echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]' >> $CONFIG_PATH
+            echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"]'          >> $CONFIG_PATH
+            touch /results/config-updated
+          fi
+          if ! grep prod-registry.ystack.svc.cluster.local $CONFIG_PATH; then
+            echo '[plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]'   >> $CONFIG_PATH
+            echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"]'            >> $CONFIG_PATH
+            touch /results/config-updated
+          fi
+          cat $CONFIG_PATH
+           if [ -f /results/config-updated ]; then
+            echo "Configuration has been updated; restarting containerd (not expecting any output) ..."
+            nsenter --mount=/proc/1/ns/mnt -- systemctl restart containerd
+            echo "Restart triggered"
+           else
+            echo "No configration change"
+           fi
+          echo "Done"
       containers:
       - name: init-container-did-the-work
         image: gcr.io/google_containers/pause-amd64:3.1@sha256:59eec8837a4d942cc19a52b8c09ea75121acc38114a2c68b98983ce9356b8610
@@ -39,3 +59,5 @@ spec:
       - name: etc-containerd
         hostPath:
           path: /etc/containerd
+      - name: results
+        emptyDir: {}

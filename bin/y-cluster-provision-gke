@@ -4,6 +4,7 @@ set -e
 
 NAME="$1"
 [ -z "$NAME" ] && echo "First argument must be a cluster name" && exit 1
+shift 1
 
 FLAGS=""
 
@@ -18,13 +19,14 @@ gcloud container get-server-config --region=$REGION | grep "1.14"
 
 FLAGS="$FLAGS --cluster-version=1.14.6-gke.1"
 FLAGS="$FLAGS --image-type=UBUNTU_CONTAINERD"
-FLAGS="$FLAGS --machine-type=g1-small"
+
 FLAGS="$FLAGS --num-nodes=1"
+FLAGS="$FLAGS --enable-autoscaling"
+FLAGS="$FLAGS --max-nodes=10"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster#create_regional
-#FLAGS="$FLAGS --region=$REGION"
-# Temporary, non-regional
-FLAGS="$FLAGS --zone=$REGION-a"
+FLAGS="$FLAGS --region=$REGION"
+# Use https://cloud.google.com/sdk/gcloud/reference/container/clusters/update#--node-locations to add zones, and notee that num-nodes is multiplied
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/small-cluster-tuning
 #FLAGS="$FLAGS --logging-service none --monitoring-service none"
@@ -34,6 +36,7 @@ FLAGS="$FLAGS --no-enable-stackdriver-kubernetes"
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-upgrades
 #FLAGS="$FLAGS --enable-autoupgrade"
+# TODO maintenance window
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
 NETWORK=default
@@ -79,7 +82,7 @@ echo "### What this script will try to do is ..."
 echo "Use the currently configured project: $PROJECT"
 echo "Use the currently configured region: $REGION"
 echo "Add authentication to KUBECONFIG=$KUBECONFIG"
-echo "Create a GKE cluster using the following flags: $FLAGS"
+echo "Create a GKE cluster using the following flags: $FLAGS $@"
 echo ""
 
 read -p 'Please confirm [y/n]? ' yn
@@ -88,8 +91,7 @@ case $yn in
   * ) exit;;
 esac
 
-#gcloud container clusters create "$NAME" $FLAGS
-gcloud container clusters create "$NAME" --create-subnetwork "" $FLAGS
+gcloud container clusters create "$NAME" $FLAGS "$@"
 
 GKE_CONTEXT_NAME=$(kubectl config current-context)
 
@@ -105,27 +107,31 @@ echo gcloud compute routers nats create nat-config \
     --auto-allocate-nat-external-ips
 
 echo "To clean up:"
-#echo gcloud container clusters delete --region $REGION $NAME
-echo gcloud container clusters delete --zone $REGION-a $NAME
+echo gcloud container clusters delete --zone $REGION $NAME
 echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
 echo gcloud compute routers delete nat-router --region $REGION
 
+kubectl create namespace ystack
+
+kubectl -n ystack apply -k $YSTACK_HOME/registry/node-update-containerd/
+
 ### To be moved to registry provision script, but we do want the initial context name
+
+[ -z "${BUILDS_BUCKET_NAME}" ] && BUILDS_BUCKET_NAME=${GKE_CONTEXT_NAME}_builds
+
+kubectl create secret generic -n ystack registry-persistence --from-literal=gcsBucketName=${BUILDS_BUCKET_NAME}
 
 gcloud compute backend-buckets list
 gsutil ls
 # https://cloud.google.com/config-connector/docs/overview
-mkdir -p gke/registry
-cat << EOF > gke/registry/builds-gcs-storagebucket.yaml
+cat << EOF > $YSTACK_HOME/gke/registry/builds-gcs-storagebucket.yaml
 # https://github.com/GoogleCloudPlatform/k8s-config-connector/blob/master/resources/storagebucket/storage_v1alpha2_storagebucket.yaml
 apiVersion: storage.cnrm.cloud.google.com/v1alpha2
 kind: StorageBucket
 metadata:
-  name: ${GKE_CONTEXT_NAME}_builds
+  name: ${BUILDS_BUCKET_NAME}
 spec: {}
 EOF
 
-# TODO we also need to generate a bucket name, or a secret with a bucket name, for gke/registry/builds-gcs-bucket-storage.yaml
-
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
-  gsutil mb -c regional -l $REGION gs://${GKE_CONTEXT_NAME}_builds
+  gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME}
