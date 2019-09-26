@@ -16,8 +16,6 @@ spec:
       initContainers:
       - name: update
         image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
-        securityContext:
-          privileged: true
         volumeMounts:
         - name: etc-containerd
           mountPath: /etc/containerd
@@ -43,14 +41,40 @@ spec:
             touch /results/config-updated
           fi
           cat $CONFIG_PATH
+      - name: pause-if-no-config-changes
+        image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
+        volumeMounts:
+        - name: results
+          mountPath: /results
+        command:
+        - bash
+        - -ce
+        - |
           if [ -f /results/config-updated ]; then
-            echo "Configuration has been updated. Restarting containerd (not expecting any output) ..."
-            nsenter --mount=/proc/1/ns/mnt -- systemctl restart containerd
-            echo "Restart triggered."
+            echo "Configuration seems to have changed. Let's proceed with restart."
           else
-            echo "No configration change"
+            echo "No configration change. Let's not restart as it could affect stability. Sleeping forever ..."
+            sleep infinity
           fi
-          echo "Done"
+      - name: containerd-restart
+        image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
+        securityContext:
+          privileged: true
+        command:
+        - nsenter
+        - --mount=/proc/1/ns/mnt
+        - --
+        - systemctl
+        - restart
+        - containerd
+      - name: pause-always
+        image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
+        volumeMounts:
+        - name: results
+          mountPath: /results
+        command:
+        - sleep
+        - infinity
       containers:
       - name: init-container-did-the-work
         image: gcr.io/google_containers/pause-amd64:3.1@sha256:59eec8837a4d942cc19a52b8c09ea75121acc38114a2c68b98983ce9356b8610
