@@ -120,6 +120,8 @@ kubectl -n ystack apply -k $YSTACK_HOME/registry/node-update-containerd/
 
 [ -z "${BUILDS_BUCKET_NAME}" ] && BUILDS_BUCKET_NAME=${GKE_CONTEXT_NAME}_builds
 
+kubectl create secret generic -n ystack registry-persistence --from-literal=gcsBucketName=${BUILDS_BUCKET_NAME}
+
 gcloud compute backend-buckets list
 gsutil ls
 # https://cloud.google.com/config-connector/docs/overview
@@ -134,5 +136,3 @@ EOF
 
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
   gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME}
-
-kubectl create secret generic -n ystack registry-persistence --from-literal=gcsBucketName=${BUILDS_BUCKET_NAME}
