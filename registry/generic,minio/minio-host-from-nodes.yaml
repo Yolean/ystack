@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: registry-etc-hosts-update
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: update
+        env:
+        - name: REGISTRY_SERVICE_HOSTS
+          value: >-
+            builds-registry.ystack.svc.cluster.local
+            prod-registry.ystack.svc.cluster.local
+            blobs-minio.ystack.svc.cluster.local

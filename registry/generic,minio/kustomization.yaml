@@ -1,4 +1,6 @@
 bases:
 - ../generic
+- ../node-update-hosts
 patchesStrategicMerge:
 - deployment.yaml
+- minio-host-from-nodes.yaml
