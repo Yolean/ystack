@@ -107,8 +107,7 @@ echo gcloud compute routers nats create nat-config \
     --auto-allocate-nat-external-ips
 
 echo "To clean up:"
-#echo gcloud container clusters delete --region $REGION $NAME
-echo gcloud container clusters delete --zone $REGION-a $NAME
+echo gcloud container clusters delete --zone $REGION $NAME
 echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
 echo gcloud compute routers delete nat-router --region $REGION
 

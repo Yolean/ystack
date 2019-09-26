@@ -1,5 +1,6 @@
 namespace: ystack
 bases:
+- ../gke/storageclasses
 - ../buildkit
 - ../gke/registry
 - ../registry/node-update-hosts
