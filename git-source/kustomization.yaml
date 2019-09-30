@@ -1,4 +1,5 @@
 resources:
 - git-service.yaml
+- gitea-statefulset-service.yaml
 - gitea-statefulset.yaml
 - gitea-install.yaml

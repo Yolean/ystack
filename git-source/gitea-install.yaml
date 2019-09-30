@@ -11,7 +11,7 @@ spec:
         image: solsson/curl@sha256:7812c7af01cb956cc2d86f299d4b4970db54b7069804da7d8a509d6746480004
         env:
         - name: GITEA_INSTALL_HOST
-          value: http://gitea-0.git:3000
+          value: http://gitea-0.gitea:3000
         - name: GITEA_INSTALL
           # From Chrome devtools, network request view urlencoded (replace ": " with "="), when submitting the setup form
           value: |-
