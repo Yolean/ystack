@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitea
+  labels: &labels
+    app: git-source
+    type: gitea
+spec:
+  replicas: 1
+  serviceName: "gitea"
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels: *labels
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      initContainers:
+      - name: gotemplate
+        image: solsson/gotemplate@sha256:1ce00bc4a4aea821974a6a13eda0250f6fae86d95899151fee7eadc86307b14a
+        command:
+        - sh
+        - -cex
+        - |
+          gotemplate --source=/config --target=/data/gitea/conf/
+          exit 0
+          if [ -f /data/gitea/conf/app.ini ]; then
+            diff -u /data/gitea/conf/app.ini /data/gitea/conf/app.generated.ini
+          else
+            echo "Creating new config"s
+            mv /data/gitea/conf/app.generated.ini /data/gitea/conf/app.ini
+            cp /config/.gitconfig /data/git/
+            gunzip --to-stdout /config/gitea.db.gz > /data/gitea/gitea.db
+            mkdir /data/git/repositories
+            mkdir /data/git/lfs
+          fi
+        volumeMounts:
+        - name: git-data
+          mountPath: /data
+        - name: git-config
+          mountPath: /config     
+      containers:
+      - name: gitea
+        image: gitea/gitea:1.9.3@sha256:77766db2ac8fc6ad1abde6b934e9c89a6ac8dec86e9e0c59a29c15c355bceea3
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 3000
+          name: defaulthttp
+        volumeMounts:
+        - name: git-data
+          mountPath: /data
+        - name: logs
+          mountPath: /var/log/gitea
+      volumes:
+      - name: git-config
+        configMap:
+          name: git-config
+      - name: logs
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: git-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
