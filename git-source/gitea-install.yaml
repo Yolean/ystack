@@ -29,7 +29,7 @@ spec:
             run_user=git
             domain=localhost
             ssh_port=
-            http_port=80
+            http_port=3000
             app_url=http%3A%2F%2Fgit.ystack.svc.cluster.local%2F
             log_root_path=%2Fvar%2Flog%2Fgitea
             smtp_host=
@@ -79,10 +79,14 @@ spec:
           [ $installer_status -eq 200 ] && echo "The install failed to complete. Please see logs above, or port-forward gitea-0 3000 and investigate." && exit 1
           [ $installer_status -ne 404 ] && echo "WARNING Installer reports status $installer_status instead of the expected 404."
 
+          echo "Setup completed."
+          echo "Please verify manually that the git setup survives gitea-0 pod restart."
+
           [ "$ENABLE_EXAMPLE_ADMIN" != "true" ] && echo "Will exit here because example admin setup is disabled" && exit 0
+          echo ""
 
           # see https://github.com/solsson/knative-training/blob/f205b0540839801e3e93f580ae4458cd826e0bad/git/gogs-install.yaml
-          echo "TODO example setup isn't implemented yet. Exiting."
+          echo "TODO example setup is enabled but not implemented yet. Nothing more to do then."
 
       restartPolicy: Never
   backoffLimit: 0
