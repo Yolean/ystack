@@ -48,6 +48,8 @@ spec:
             admin_passwd=
             admin_confirm_passwd=
             admin_email=
+        - name: ENABLE_EXAMPLE_ADMIN
+          value: "true"
         command:
         - bash
         - -ce
@@ -77,6 +79,10 @@ spec:
           [ $installer_status -eq 200 ] && echo "The install failed to complete. Please see logs above, or port-forward gitea-0 3000 and investigate." && exit 1
           [ $installer_status -ne 404 ] && echo "WARNING Installer reports status $installer_status instead of the expected 404."
 
-          # TODO we might want to set up an example admin user and some dev org + repo, like https://github.com/solsson/knative-training/blob/f205b0540839801e3e93f580ae4458cd826e0bad/git/gogs-install.yaml
+          [ "$ENABLE_EXAMPLE_ADMIN" != "true" ] && echo "Will exit here because example admin setup is disabled" && exit 0
+
+          # see https://github.com/solsson/knative-training/blob/f205b0540839801e3e93f580ae4458cd826e0bad/git/gogs-install.yaml
+          echo "TODO example setup isn't implemented yet. Exiting."
+
       restartPolicy: Never
   backoffLimit: 0
