@@ -11,7 +11,7 @@ spec:
         image: solsson/curl@sha256:7812c7af01cb956cc2d86f299d4b4970db54b7069804da7d8a509d6746480004
         env:
         - name: GITEA_INSTALL_HOST
-          value: http://gitea-0.gitea:3000
+          value: http://gitea-0.git:3000
         - name: GITEA_INSTALL
           # From Chrome devtools, network request view urlencoded (replace ": " with "="), when submitting the setup form
           value: |-
@@ -75,7 +75,7 @@ spec:
           sleep 10
           installer_status=$(curl -s $GITEA_INSTALL_HOST/install --retry 5 -s -o /dev/null -w "%{http_code}")
           [ $installer_status -eq 200 ] && echo "The install failed to complete. Please see logs above, or port-forward gitea-0 3000 and investigate." && exit 1
-          [ $installer_status -neq 404 ] && echo "WARNING Installer reports status $installer_status instead of the expected 404."
+          [ $installer_status -ne 404 ] && echo "WARNING Installer reports status $installer_status instead of the expected 404."
 
           # TODO we might want to set up an example admin user and some dev org + repo, like https://github.com/solsson/knative-training/blob/f205b0540839801e3e93f580ae4458cd826e0bad/git/gogs-install.yaml
       restartPolicy: Never
