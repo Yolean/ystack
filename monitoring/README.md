@@ -35,4 +35,5 @@ Web UIs, as a complement:
  * Can we have basic top + node health cheaply and independent of the stack?
 
 Prometheus instances:
-
+ * `now` denotes the instance(s) you'll turn to for observing current state of the cluster, for example when troubleshooting.
+   Metrics are of the operational type, volumes are high and retention very low. This is also the instance to use for non-business alerts.

@@ -1,17 +1,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
-  name: prometheus
+  name: now
   labels:
-    prometheus: prometheus
+    ystack-view: now
 spec:
-  replicas: 2
+  version: 2.13.0-rc.0
+  baseImage: prom/prometheus
+  sha: cf639ff2b67634c03c33fc9b7923a9702da1bb031b899688125ca8718b0ce949
+  replicas: 1
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
-      team: frontend
-  alerting:
-    alertmanagers:
-    - namespace: default
-      name: alertmanager
-      port: web
+      ystack-view: now
