@@ -41,6 +41,9 @@ K3S_DATA_DIR=/var/lib/rancher/k3s
 # https://github.com/rancher/k3s/blob/master/pkg/agent/templates/templates.go
 mkdir -p     $K3S_DATA_DIR/agent/etc/containerd
 cat <<EOF >> $K3S_DATA_DIR/agent/etc/containerd/config.toml.tmpl
+[metrics]
+address = "0.0.0.0:1338"
+
 [plugins.opt]
 path = "{{ .NodeConfig.Containerd.Opt }}"
 
