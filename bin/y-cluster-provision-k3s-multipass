@@ -46,6 +46,59 @@ INSTALLER_REVISION=18bd921cddee1e95cc03467a1b9636ddacd9d670
 export INSTALL_K3S_VERSION=v1.0.0
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
+K3S_DATA_DIR=/var/lib/rancher/k3s
+
+mkdir -p     $K3S_DATA_DIR/agent/etc/containerd
+cat <<EOF >> $K3S_DATA_DIR/agent/etc/containerd/config.toml.tmpl
+[metrics]
+address = "0.0.0.0:1338"
+
+# https://github.com/rancher/k3s/blob/v0.10.2/pkg/agent/templates/templates.go
+[plugins.opt]
+  path = "{{ .NodeConfig.Containerd.Opt }}"
+[plugins.cri]
+  stream_server_address = "127.0.0.1"
+  stream_server_port = "10010"
+{{- if .IsRunningInUserNS }}
+  disable_cgroup = true
+  disable_apparmor = true
+  restrict_oom_score_adj = true
+{{end}}
+{{- if .NodeConfig.AgentConfig.PauseImage }}
+  sandbox_image = "{{ .NodeConfig.AgentConfig.PauseImage }}"
+{{end}}
+{{- if not .NodeConfig.NoFlannel }}
+[plugins.cri.cni]
+  bin_dir = "{{ .NodeConfig.AgentConfig.CNIBinDir }}"
+  conf_dir = "{{ .NodeConfig.AgentConfig.CNIConfDir }}"
+{{end}}
+[plugins.cri.containerd.runtimes.runc]
+  runtime_type = "io.containerd.runc.v2"
+{{ if .PrivateRegistryConfig }}
+{{ if .PrivateRegistryConfig.Mirrors }}
+[plugins.cri.registry.mirrors]{{end}}
+{{range $k, $v := .PrivateRegistryConfig.Mirrors }}
+[plugins.cri.registry.mirrors."{{$k}}"]
+  endpoint = [{{range $i, $j := $v.Endpoints}}{{if $i}}, {{end}}{{printf "%q" .}}{{end}}]
+{{end}}
+{{range $k, $v := .PrivateRegistryConfig.Configs }}
+{{ if $v.Auth }}
+[plugins.cri.registry.configs."{{$k}}".auth]
+  {{ if $v.Auth.Username }}username = "{{ $v.Auth.Username }}"{{end}}
+  {{ if $v.Auth.Password }}password = "{{ $v.Auth.Password }}"{{end}}
+  {{ if $v.Auth.Auth }}auth = "{{ $v.Auth.Auth }}"{{end}}
+  {{ if $v.Auth.IdentityToken }}identity_token = "{{ $v.Auth.IdentityToken }}"{{end}}
+{{end}}
+{{ if $v.TLS }}
+[plugins.cri.registry.configs."{{$k}}".tls]
+  {{ if $v.TLS.CAFile }}ca_file = "{{ $v.TLS.CAFile }}"{{end}}
+  {{ if $v.TLS.CertFile }}cert_file = "{{ $v.TLS.CertFile }}"{{end}}
+  {{ if $v.TLS.KeyFile }}key_file = "{{ $v.TLS.KeyFile }}"{{end}}
+{{end}}
+{{end}}
+{{end}}
+EOF
+
 service k3s start
 k3s crictl info
 
