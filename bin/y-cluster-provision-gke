@@ -57,7 +57,8 @@ FLAGS="$FLAGS --master-ipv4-cidr 172.16.0.0/28"
 FLAGS="$FLAGS --no-issue-client-certificate"
 FLAGS="$FLAGS --no-enable-basic-auth"
 
-# ? https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
+# https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
+FLAGS="$FLAGS --no-enable-intra-node-visibility"
 
 # Misc disabling, that might be default these days
 FLAGS="$FLAGS --metadata disable-legacy-endpoints=true"
