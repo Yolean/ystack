@@ -9,8 +9,8 @@ spec:
       - name: metrics-server
         resources:
           limits:
-            memory: 100Mi
+            memory: 50Mi
             cpu: 100m
           requests:
-            memory: 100Mi
+            memory: 50Mi
             cpu: 100m
