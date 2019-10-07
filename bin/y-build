@@ -11,7 +11,7 @@ BUILDCTL_OPTS="$@"
 # Settings
 export SKAFFOLD_NO_PRUNE=true
 REGISTRY=builds-registry.ystack.svc.cluster.local
-BUILDKIT_CACHE="type=registry,ref=localhost:80/ystack:buildcache"
+BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
 BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.6.1 be0d75f074e7a4b0f5b5877c719213a3f5057e60"
 [ "$(buildctl -v)" != "$BUILDCTL_VERSION"  ] && echo "Requires buildctl '$BUILDCTL_VERSION'; see https://github.com/moby/buildkit/releases" && exit 1
 
