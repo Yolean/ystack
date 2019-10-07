@@ -1,0 +1,6 @@
+{
+  "insecure-registries": [
+    "builds-registry.ystack.svc.cluster.local",
+    "prod-registry.ystack.svc.cluster.local"
+  ]
+}
