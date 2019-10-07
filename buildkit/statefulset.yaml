@@ -33,9 +33,9 @@ spec:
         ports:
         - containerPort: 8547
         volumeMounts:
-        - name: etc-docker
-          mountPath: /etc/docker/daemon.json
-          subPath: daemon.json
+        - name: etc-buildkit
+          mountPath: /etc/buildkit/buildkitd.toml
+          subPath: buildkitd.toml
       - name: cache
         # This could be a real registry if backed by a blob store
         image: envoyproxy/envoy:v1.11.0@sha256:3b3eb76bc74c8e36e0ed3507844b6c12f69e9efa7588a7e35a29f90ee3e90067
@@ -120,6 +120,6 @@ spec:
             path: /healthz
             port: 80
       volumes:
-      - name: etc-docker
+      - name: etc-buildkit
         configMap:
-          name: etc-docker
+          name: etc-buildkit

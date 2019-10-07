@@ -2,6 +2,6 @@ resources:
 - service.yaml
 - statefulset.yaml
 configMapGenerator:
-- name: etc-docker
+- name: etc-buildkit
   files:
-  - daemon.json
+  - buildkitd.toml
