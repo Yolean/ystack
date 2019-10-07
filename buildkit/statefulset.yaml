@@ -34,8 +34,7 @@ spec:
         - containerPort: 8547
         volumeMounts:
         - name: etc-buildkit
-          mountPath: /etc/buildkit/buildkitd.toml
-          subPath: buildkitd.toml
+          mountPath: /home/user/.config/buildkit
       - name: cache
         # This could be a real registry if backed by a blob store
         image: envoyproxy/envoy:v1.11.0@sha256:3b3eb76bc74c8e36e0ed3507844b6c12f69e9efa7588a7e35a29f90ee3e90067
