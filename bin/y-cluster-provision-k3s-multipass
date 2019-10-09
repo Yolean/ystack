@@ -88,7 +88,7 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k ./metrics-server
+KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k $YSTACK_HOME/metrics-server
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
