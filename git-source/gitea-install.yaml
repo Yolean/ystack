@@ -44,12 +44,18 @@ spec:
             require_sign_in_view=on
             default_keep_email_private=on
             no_reply_address=noreply.example.org
-            admin_name=
-            admin_passwd=
-            admin_confirm_passwd=
-            admin_email=
         - name: ENABLE_EXAMPLE_ADMIN
           value: "true"
+        - name: ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: git-automation
+              key: username
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: git-automation
+              key: password
         command:
         - bash
         - -ce
@@ -69,6 +75,15 @@ spec:
           done
           echo "Installing with options: $FORM"
 
+          if [ "$ENABLE_EXAMPLE_ADMIN" = "true" ]; then
+            FORM="$FORM&admin_name=$ADMIN_USERNAME"
+            FORM="$FORM&admin_passwd=$ADMIN_PASSWORD"
+            FORM="$FORM&admin_confirm_passwd=$ADMIN_PASSWORD"
+            FORM="$FORM&admin_email=$ADMIN_USERNAME@example.com"
+            echo "Enabled admin user, username: $ADMIN_USERNAME"
+            [ "$ADMIN_PASSWORD" = "ystack-admin-temp" ] && echo "WARNING: admin password is insecure. Change it and optionally update the secret."
+          fi
+
           curl -s $GITEA_INSTALL_HOST/install \
             -H 'Content-Type: application/x-www-form-urlencoded' \
             --data "$FORM" \
@@ -82,11 +97,8 @@ spec:
           echo "Setup completed."
           echo "Please verify manually that the git setup survives gitea-0 pod restart."
 
-          [ "$ENABLE_EXAMPLE_ADMIN" != "true" ] && echo "Will exit here because example admin setup is disabled" && exit 0
-          echo ""
-
-          # see https://github.com/solsson/knative-training/blob/f205b0540839801e3e93f580ae4458cd826e0bad/git/gogs-install.yaml
-          echo "TODO example setup is enabled but not implemented yet. Nothing more to do then."
+          [ "$ENABLE_EXAMPLE_ADMIN" != "true" ] && echo "Note that the first registered user will be come admin"
+          # For automation examples see https://github.com/y-stack/gitea-webhook-tekton/pull/1
 
       restartPolicy: Never
   backoffLimit: 0
