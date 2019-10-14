@@ -2,7 +2,7 @@ FROM ubuntu:19.10@sha256:a21f154506cc00974f647e13dbba6b7035da35c7669a4bb919515d8
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl'; \
+  runDeps='ca-certificates curl git'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
