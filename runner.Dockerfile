@@ -25,3 +25,4 @@ ENV YSTACK_HOME=/usr/local/src/ystack
 ENV PATH="${PATH}:${YSTACK_HOME}/bin"
 
 RUN y-skaffold
+RUN y-buildctl
