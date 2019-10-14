@@ -1,0 +1,5 @@
+namespace: default
+resources:
+- rbac-serviceaccount-ystack-installer-knative.yaml
+- rbac-cluster-admin-ystack-installer-knative.yaml
+- job.yaml
