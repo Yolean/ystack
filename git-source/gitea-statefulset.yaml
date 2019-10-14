@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitea
+  labels: &labels
+    app: git-source
+    type: gitea
+spec:
+  replicas: 1
+  serviceName: "gitea"
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels: *labels
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      containers:
+      - name: gitea
+        image: gitea/gitea:1.9.3@sha256:77766db2ac8fc6ad1abde6b934e9c89a6ac8dec86e9e0c59a29c15c355bceea3
+        ports:
+        - containerPort: 3000
+          name: http
+        volumeMounts:
+        - name: git-data
+          mountPath: /data
+        - name: logs
+          mountPath: /var/log/gitea
+      volumes:
+      - name: logs
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: git-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
