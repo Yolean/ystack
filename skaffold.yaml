@@ -1,0 +1,14 @@
+apiVersion: skaffold/v1beta16
+kind: Config
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack/runner
+    context: .
+    custom:
+      buildCommand: y-build --opt filename=runner.Dockerfile
+      dependencies:
+        dockerfile:
+          path: ./runner.Dockerfile
