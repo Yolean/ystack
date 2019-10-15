@@ -1,0 +1,39 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+# https://github.com/jenkins-x/jx/issues/3928#issuecomment-542183302
+# Seems quite common, for example https://github.com/coreos/prometheus-operator/issues/2711
+
+CLUSTER_NAME=$1
+[ -z "$CLUSTER_NAME" ] && echo "First argument must be a cluster name" && exit 1
+
+gcloud container clusters describe $CLUSTER_NAME --region=europe-west4 | grep masterIpv4CidrBlock
+
+gcloud compute firewall-rules list \
+    --filter "name~^gke-$CLUSTER_NAME" \
+    --format 'table(
+        name,
+        network,
+        direction,
+        sourceRanges.list():label=SRC_RANGES,
+        allowed[].map().firewall_rule().list():label=ALLOW,
+        targetTags.list():label=TARGET_TAGS
+    )'
+
+read -p "What's the targets' hex code above? " TARGET_HEX
+
+TARGET=gke-$CLUSTER_NAME-$TARGET_HEX-node
+FIREWALL_RULE_NAME=gke-$CLUSTER_NAME-$TARGET_HEX-master-webhooks
+MASTER_CIDR_BLOCK=172.16.0.0/28
+PROTOCOL=tcp
+PORT=8443
+
+echo "Suggested command:"
+echo \
+gcloud compute firewall-rules create $FIREWALL_RULE_NAME \
+    --action ALLOW \
+    --direction INGRESS \
+    --source-ranges $MASTER_CIDR_BLOCK \
+    --rules $PROTOCOL:$PORT \
+    --target-tags $TARGET
