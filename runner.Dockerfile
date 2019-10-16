@@ -24,6 +24,12 @@ ENV PATH="${PATH}:${YSTACK_HOME}/bin"
 
 COPY bin/y-bin-dependency-download /usr/local/src/ystack/bin/
 
+COPY bin/y-kustomize /usr/local/src/ystack/bin/
+RUN y-kustomize
+
+COPY bin/y-helm /usr/local/src/ystack/bin/
+RUN y-helm
+
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl
 
