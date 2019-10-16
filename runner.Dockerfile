@@ -19,10 +19,15 @@ RUN set -ex; \
     | sha512sum -c -; \
   rm $F
 
-COPY . /usr/local/src/ystack
-
 ENV YSTACK_HOME=/usr/local/src/ystack
 ENV PATH="${PATH}:${YSTACK_HOME}/bin"
 
-RUN y-skaffold
+COPY bin/y-bin-dependency-download /usr/local/src/ystack/bin/
+
+COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl
+
+COPY bin/y-skaffold /usr/local/src/ystack/bin/
+RUN y-skaffold
+
+COPY . /usr/local/src/ystack
