@@ -22,7 +22,7 @@ spec:
         - name: KO_SOURCE
           value: github.com/tektoncd/pipeline
         - name: KO_REVISION
-          value: 6f4c38dbb93644c7753b1efaee1c907b5f0452d0
+          value: 9ff6aca4b7aa1f573fb9ff2e0d7f868fa9467417
       containers:
       - name: done
         image: busybox
