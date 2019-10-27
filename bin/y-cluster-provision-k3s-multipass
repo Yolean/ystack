@@ -31,8 +31,8 @@ export INSTALL_K3S_SKIP_START=true
 # For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
 export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
 
-INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
-export INSTALL_K3S_VERSION=v0.8.1
+INSTALLER_REVISION=e810ee1678dc59ed35970734e69a5b31b5773550
+export INSTALL_K3S_VERSION=v0.10.1-rc1
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 K3S_DATA_DIR=/var/lib/rancher/k3s
@@ -65,23 +65,14 @@ k3s crictl info
 
 chmod a+r /etc/rancher/k3s/*
 
-k3s kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.9/deploy/local-path-storage.yaml
-cat << EOF | k3s kubectl create -f -
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: standard
-provisioner: rancher.io/local-path
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Delete
-EOF
-k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
+# The default storage class with k3s >= 0.10 is "local-path"
+#k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
 k3s kubectl get node
 k3s kubectl wait --for=condition=Ready node/ystack-master
 ';
 
 multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
-  | sed "s|localhost|$K3S_NODEIP_MASTER|" \
+  | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \
   > "$KUBECONFIG.tmp"
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
