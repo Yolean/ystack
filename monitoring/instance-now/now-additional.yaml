@@ -1,0 +1,37 @@
+
+# https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod
+# https://github.com/prometheus/prometheus/blob/85a3c974b760642bbce00d795db231326a09edb9/documentation/examples/prometheus-kubernetes.yml
+# (before https://github.com/prometheus/prometheus/commit/03a9e7f72e072c6d29f422425d8acd91a957836b#diff-416ffe38e4360ad5f27d8a034963c260)
+# * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+# * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+# * `prometheus.io/port`: Scrape the pod on the indicated port instead of the pod's declared ports (default is a port-free target if none are declared).
+- job_name: kubernetes-pods
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    regex: true
+    source_labels:
+    - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+  - action: replace
+    regex: (.+)
+    source_labels:
+    - __meta_kubernetes_pod_annotation_prometheus_io_path
+    target_label: __metrics_path__
+  - action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    source_labels:
+    - __address__
+    - __meta_kubernetes_pod_annotation_prometheus_io_port
+    target_label: __address__
+  - action: labelmap
+    regex: __meta_kubernetes_pod_label_(.+)
+  - action: replace
+    source_labels:
+    - __meta_kubernetes_namespace
+    target_label: kubernetes_namespace
+  - action: replace
+    source_labels:
+    - __meta_kubernetes_pod_name
+    target_label: kubernetes_pod_name
