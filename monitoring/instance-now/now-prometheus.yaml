@@ -3,13 +3,14 @@ kind: Prometheus
 metadata:
   name: now
   labels:
-    ystack-view: now
+    ystack: now
 spec:
-  version: 2.13.0-rc.0
+  version: 2.13.1
   baseImage: prom/prometheus
-  sha: cf639ff2b67634c03c33fc9b7923a9702da1bb031b899688125ca8718b0ce949
+  sha: 0a8caa2e9f19907608915db6e62a67383fe44b9876a467b297ee6f64e51dd58a
   replicas: 1
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
-      ystack-view: now
+      ystack: now
+  retention: 8h
