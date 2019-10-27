@@ -3,11 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
+SHA256SUM="sha256sum"
+
 platform="$(uname -s)"
 case "$platform" in
   Darwin )
     url=$Darwin_url
     sha256=$Darwin_sha256
+    SHA256SUM="shasum -a 256"
     ;;
   Linux )
     url=$Linux_url
@@ -27,7 +30,7 @@ bin_link=$YBIN/$bin_name
 [ -f $bin_file ] || {
   echo "Missing $bin_name binary. Downloading a known version from $url ..."
   curl -o $bin_file -L -f $url
-  if ! echo "$sha256  $bin_file" | shasum -a 256 -c -; then rm $bin_file && exit 1; fi
+  if ! echo "$sha256  $bin_file" | $SHA256SUM -c -; then rm $bin_file && exit 1; fi
   if [ ! -z "$bin_tgz_path" ]; then
     tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
     mv $(basename " $bin_tgz_path") $bin_file

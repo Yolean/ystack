@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ystack-installer-tekton
+  labels: &labels
+    kontrakt: completion
+  annotations:
+    image-registry: &registry builds-registry.ystack.svc.cluster.local/tekton-pipeline
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: ystack-installer-knative
+      initContainers:
+      - name: controller
+        image: solsson/go-ko-runner@sha256:08002a6e81e4ec6dee0e0a0f3a4ce0277912bc86f196b5c64234a99e69de4e88
+        env:
+        - name: KO_DOCKER_REPO
+          value: *registry
+        - name: KO_SOURCE
+          value: github.com/tektoncd/pipeline
+        - name: KO_REVISION
+          value: 00116034e0e4093a51a395dc715c1679565fa77a
+      containers:
+      - name: done
+        image: busybox
+        command: ["echo", "Installation done. See init container logs for details."]
+      restartPolicy: Never

@@ -6,13 +6,12 @@ set -e
 BUILDCTL_OPTS="$@"
 
 # Needed until Skaffold supports buildctl, or the buildkit that comes with Docker supports BUILDKIT_HOST
-# We could also build usinig Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
+# We could also build using Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
 
 # Settings
-export SKAFFOLD_NO_PRUNE=true
 REGISTRY=builds-registry.ystack.svc.cluster.local
-BUILDKIT_CACHE="type=registry,ref=localhost:80/ystack:buildcache"
-BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.6.1 be0d75f074e7a4b0f5b5877c719213a3f5057e60"
+BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
+BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.6.2 ae10b292fefb00e0fbf9fecd1419c5f252e58895"
 [ "$(buildctl -v)" != "$BUILDCTL_VERSION"  ] && echo "Requires buildctl '$BUILDCTL_VERSION'; see https://github.com/moby/buildkit/releases" && exit 1
 
 if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
@@ -39,7 +38,7 @@ fi
   IMAGES="$REGISTRY/y-stack-temp-builds/$name"
   echo "No IMAGES env (from for example Skaffold). Guessing: $IMAGES"
 }
-[ "$(echo $IMAGES | wc -w)" != "       1" ] && echo "Currently we only support one entry in \$IMAGES" && exit 1
+[ "$(echo $IMAGES | wc -w)" -ne 1 ] && echo "Currently we only support one entry in \$IMAGES" && exit 1
 
 # Hooks, evaluating reliance on PATH for that
 command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre

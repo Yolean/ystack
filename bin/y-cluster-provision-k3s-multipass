@@ -31,36 +31,70 @@ export INSTALL_K3S_SKIP_START=true
 # For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
 export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
 
-INSTALLER_REVISION=d8c4f3811e96d75f82bebc82f4ef8f82fbe70637
-export INSTALL_K3S_VERSION=v0.8.1
+mkdir -p /etc/rancher/k3s
+cat <<EOF >> /etc/rancher/k3s/registries.yaml
+mirrors:
+  "builds-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://builds-registry.ystack.svc.cluster.local
+  "prod-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://prod-registry.ystack.svc.cluster.local
+EOF
+
+INSTALLER_REVISION=e810ee1678dc59ed35970734e69a5b31b5773550
+export INSTALL_K3S_VERSION=v0.10.1-rc1
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
-K3S_DATA_DIR=/var/lib/rancher/k3s
-
-# https://github.com/rancher/k3s/issues/145
-# https://github.com/rancher/k3s/blob/master/pkg/agent/templates/templates.go
 mkdir -p     $K3S_DATA_DIR/agent/etc/containerd
 cat <<EOF >> $K3S_DATA_DIR/agent/etc/containerd/config.toml.tmpl
 [metrics]
 address = "0.0.0.0:1338"
 
+# https://github.com/rancher/k3s/blob/master/pkg/agent/templates/templates.go
 [plugins.opt]
-path = "{{ .NodeConfig.Containerd.Opt }}"
-
+  path = "{{ .NodeConfig.Containerd.Opt }}"
 [plugins.cri]
-  stream_server_address = "{{ .NodeConfig.AgentConfig.NodeName }}"
+  stream_server_address = "127.0.0.1"
   stream_server_port = "10010"
-
-  [plugins.cri.cni]
-    bin_dir = "{{ .NodeConfig.AgentConfig.CNIBinDir }}"
-    conf_dir = "{{ .NodeConfig.AgentConfig.CNIConfDir }}"
-
-  [plugins.cri.registry]
-    [plugins.cri.registry.mirrors]
-      [plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]
-        endpoint = ["http://builds-registry.ystack.svc.cluster.local"]
-      [plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]
-        endpoint = ["http://prod-registry.ystack.svc.cluster.local"]
+{{- if .IsRunningInUserNS }}
+  disable_cgroup = true
+  disable_apparmor = true
+  restrict_oom_score_adj = true
+{{end}}
+{{- if .NodeConfig.AgentConfig.PauseImage }}
+  sandbox_image = "{{ .NodeConfig.AgentConfig.PauseImage }}"
+{{end}}
+{{- if not .NodeConfig.NoFlannel }}
+[plugins.cri.cni]
+  bin_dir = "{{ .NodeConfig.AgentConfig.CNIBinDir }}"
+  conf_dir = "{{ .NodeConfig.AgentConfig.CNIConfDir }}"
+{{end}}
+[plugins.cri.containerd.runtimes.runc]
+  runtime_type = "io.containerd.runc.v2"
+{{ if .PrivateRegistryConfig }}
+{{ if .PrivateRegistryConfig.Mirrors }}
+[plugins.cri.registry.mirrors]{{end}}
+{{range $k, $v := .PrivateRegistryConfig.Mirrors }}
+[plugins.cri.registry.mirrors."{{$k}}"]
+  endpoint = [{{range $i, $j := $v.Endpoints}}{{if $i}}, {{end}}{{printf "%q" .}}{{end}}]
+{{end}}
+{{range $k, $v := .PrivateRegistryConfig.Configs }}
+{{ if $v.Auth }}
+[plugins.cri.registry.configs."{{$k}}".auth]
+  {{ if $v.Auth.Username }}username = "{{ $v.Auth.Username }}"{{end}}
+  {{ if $v.Auth.Password }}password = "{{ $v.Auth.Password }}"{{end}}
+  {{ if $v.Auth.Auth }}auth = "{{ $v.Auth.Auth }}"{{end}}
+  {{ if $v.Auth.IdentityToken }}identity_token = "{{ $v.Auth.IdentityToken }}"{{end}}
+{{end}}
+{{ if $v.TLS }}
+[plugins.cri.registry.configs."{{$k}}".tls]
+  {{ if $v.TLS.CAFile }}ca_file = "{{ $v.TLS.CAFile }}"{{end}}
+  {{ if $v.TLS.CertFile }}cert_file = "{{ $v.TLS.CertFile }}"{{end}}
+  {{ if $v.TLS.KeyFile }}key_file = "{{ $v.TLS.KeyFile }}"{{end}}
+{{end}}
+{{end}}
+{{end}}
 EOF
 
 service k3s start
@@ -68,30 +102,21 @@ k3s crictl info
 
 chmod a+r /etc/rancher/k3s/*
 
-k3s kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.9/deploy/local-path-storage.yaml
-cat << EOF | k3s kubectl create -f -
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: standard
-provisioner: rancher.io/local-path
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Delete
-EOF
-k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
+# The default storage class with k3s >= 0.10 is "local-path"
+#k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
 k3s kubectl get node
 k3s kubectl wait --for=condition=Ready node/ystack-master
 ';
 
 multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
-  | sed "s|localhost|$K3S_NODEIP_MASTER|" \
+  | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \
   > "$KUBECONFIG.tmp"
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k ./metrics-server
+KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k $YSTACK_HOME/metrics-server
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 

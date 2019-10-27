@@ -1,0 +1,13 @@
+resources:
+- git-service.yaml
+- gitea-statefulset-service.yaml
+- gitea-statefulset.yaml
+- gitea-install.yaml
+generatorOptions:
+ disableNameSuffixHash: true # The git-automation secret is meant to be used by other services, and besides: kustomize wouldn't update the secretKeyRef
+secretGenerator:
+- name: git-automation
+  literals:
+  - endpoint=http://git.ystack.svc.cluster.local/api
+  - username=ystack-admin
+  - password=ystack-admin-temp

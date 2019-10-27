@@ -26,3 +26,5 @@ spec:
           value: us-east-1
         - name: REGISTRY_STORAGE_S3_BUCKET
           value: ystack-builds-registry
+        - name: REGISTRY_STORAGE_REDIRECT_DISABLE
+          value: "true"

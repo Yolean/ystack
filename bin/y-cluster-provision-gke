@@ -17,7 +17,7 @@ REGION="$(gcloud config get-value compute/region)"
 gcloud container get-server-config --region=$REGION | grep CONTAINERD
 gcloud container get-server-config --region=$REGION | grep "1.14"
 
-FLAGS="$FLAGS --cluster-version=1.14.6-gke.1"
+FLAGS="$FLAGS --cluster-version=1.14.6-gke.13"
 FLAGS="$FLAGS --image-type=UBUNTU_CONTAINERD"
 
 FLAGS="$FLAGS --num-nodes=1"
@@ -135,4 +135,5 @@ spec: {}
 EOF
 
 kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
-  gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME}
+  gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME} || \
+  echo "Warning: failed to create builds registry storage bucket"

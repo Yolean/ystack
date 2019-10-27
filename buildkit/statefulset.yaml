@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: buildkitd
-        image: moby/buildkit:v0.6.1-rootless@sha256:df8a830823bcc30395575950f427db3f5fa1887414fcbf13b6fe14359dcd83ad
+        image: moby/buildkit:v0.6.2-rootless@sha256:aac5b5f0341999e7ebeb041e4709554822d60b99674cd6cb491e6f1a2cfd08ab
         args:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock
@@ -32,86 +32,10 @@ spec:
         - --oci-worker-no-process-sandbox
         ports:
         - containerPort: 8547
-      - name: cache
-        # This could be a real registry if backed by a blob store
-        image: envoyproxy/envoy:v1.11.0@sha256:3b3eb76bc74c8e36e0ed3507844b6c12f69e9efa7588a7e35a29f90ee3e90067
-        ports:
-        - containerPort: 80
-          name: http
-        - containerPort: 8081
-          name: admin
-        command:
-        - /usr/local/bin/envoy
-        - -l info
-        args:
-        - --config-yaml
-        - |
-          admin:
-            access_log_path: /dev/null
-            address:
-              socket_address: { address: 127.0.0.1, port_value: 8081 }
-          static_resources:
-            clusters:
-            - name: builds-registry
-              connect_timeout: 2s
-              type: STRICT_DNS
-              dns_lookup_family: V4_ONLY
-              lb_policy: ROUND_ROBIN
-              load_assignment:
-                cluster_name: builds-registry
-                endpoints:
-                - lb_endpoints:
-                  - endpoint:
-                      address:
-                        socket_address:
-                          address: builds-registry
-                          port_value: 80
-            listeners:
-            - address:
-                socket_address: { address: 0.0.0.0, port_value: 80 }
-              filter_chains:
-              - filters:
-                - name: envoy.http_connection_manager
-                  typed_config:
-                    "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
-                    stat_prefix: http
-                    codec_type: AUTO
-                    access_log:
-                    - name: envoy.file_access_log
-                      filter:
-                        not_health_check_filter: {}
-                      config:
-                        path: "/dev/stdout"
-                        json_format:
-                          start_time: "%START_TIME%"
-                          req_method: "%REQ(:METHOD)%"
-                          req_path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
-                          resp_code: "%RESPONSE_CODE%"
-                          resp_flags: "%RESPONSE_FLAGS%"
-                          bytes_recv: "%BYTES_RECEIVED%"
-                          bytes_sent: "%BYTES_SENT%"
-                          duration: "%DURATION%"
-                          agent: "%REQ(USER-AGENT)%"
-                          content_type: "%REQ(CONTENT-TYPE)%"
-                          content_length: "%REQ(CONTENT-LENGTH)%"
-                    route_config:
-                      name: local_route
-                      virtual_hosts:
-                      - name: local_service
-                        domains: ["*"]
-                        routes:
-                        - match: { prefix: "/" }
-                          route:
-                            cluster: builds-registry
-                    http_filters:
-                    - name: envoy.health_check
-                      config:
-                        pass_through_mode: false
-                        headers:
-                          name: :path
-                          exact_match: /healthz
-                    - name: envoy.router
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 80
+        volumeMounts:
+        - name: etc-buildkit
+          mountPath: /home/user/.config/buildkit
+      volumes:
+      - name: etc-buildkit
+        configMap:
+          name: etc-buildkit
