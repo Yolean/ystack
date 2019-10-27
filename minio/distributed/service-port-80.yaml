@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: blobs-minio
+  labels:
+    standard-port: http
 spec:
   ports:
   - name: http
