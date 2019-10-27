@@ -1,0 +1,5 @@
+namespace: ystack
+bases:
+- ../rbac-base/
+resources:
+- now-prometheus.yaml

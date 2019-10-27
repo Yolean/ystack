@@ -1,6 +1,4 @@
-namespace: ystack
 resources:
 - prometheus-cluster-role-binding.yaml
 - prometheus-cluster-role.yaml
 - prometheus-service-account.yaml
-- prometheus.yaml
