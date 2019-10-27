@@ -3,4 +3,4 @@ bases:
 - github.com/y-stack/metrics-server/deploy/1.8+?ref=e9bcc0e8d9de4d4b9d1dbc62a736733577f4a3de
 patchesStrategicMerge:
 - resource-limits.yaml
-- metric-resolution.yaml
+#- metric-resolution.yaml
