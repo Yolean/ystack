@@ -4,3 +4,4 @@ bases:
 - ../common
 patchesStrategicMerge:
 - service-port-80.yaml
+- metrics-public.yaml

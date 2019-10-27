@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: blobs-minio
+spec:
+  template:
+    spec:
+      containers:
+      - name: minio
+        env:
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
