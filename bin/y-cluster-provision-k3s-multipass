@@ -90,6 +90,8 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k $YSTACK_HOME/metrics-server
 
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-install-prometheus-operator
+
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER. The cluster should be ready for y-stack converge now."
