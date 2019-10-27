@@ -1,6 +1,4 @@
 namespace: ystack
-bases:
-- github.com/coreos/prometheus-operator/?ref=ab1f8da8d9195339266742dcef535df5b51522e1
 resources:
 - prometheus-cluster-role-binding.yaml
 - prometheus-cluster-role.yaml
