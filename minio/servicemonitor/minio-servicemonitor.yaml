@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: blobs-minio
+  namespace: ystack
+  labels:
+    ystack: now
+spec:
+  selector:
+    matchExpressions:
+    - key: app
+      operator: In
+      values:
+      - minio
+    - key: release
+      operator: In
+      values:
+      - blobs
+    - key: standard-port
+      operator: DoesNotExist
+  endpoints:
+  - port: service
+    path: /minio/prometheus/metrics
