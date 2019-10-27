@@ -31,34 +31,20 @@ export INSTALL_K3S_SKIP_START=true
 # For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
 export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
 
+mkdir -p /etc/rancher/k3s
+cat <<EOF >> /etc/rancher/k3s/registries.yaml
+mirrors:
+  "builds-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://builds-registry.ystack.svc.cluster.local
+  "prod-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://prod-registry.ystack.svc.cluster.local
+EOF
+
 INSTALLER_REVISION=e810ee1678dc59ed35970734e69a5b31b5773550
 export INSTALL_K3S_VERSION=v0.10.1-rc1
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
-
-K3S_DATA_DIR=/var/lib/rancher/k3s
-
-# https://github.com/rancher/k3s/issues/145
-# https://github.com/rancher/k3s/blob/master/pkg/agent/templates/templates.go
-mkdir -p     $K3S_DATA_DIR/agent/etc/containerd
-cat <<EOF >> $K3S_DATA_DIR/agent/etc/containerd/config.toml.tmpl
-[plugins.opt]
-path = "{{ .NodeConfig.Containerd.Opt }}"
-
-[plugins.cri]
-  stream_server_address = "{{ .NodeConfig.AgentConfig.NodeName }}"
-  stream_server_port = "10010"
-
-  [plugins.cri.cni]
-    bin_dir = "{{ .NodeConfig.AgentConfig.CNIBinDir }}"
-    conf_dir = "{{ .NodeConfig.AgentConfig.CNIConfDir }}"
-
-  [plugins.cri.registry]
-    [plugins.cri.registry.mirrors]
-      [plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]
-        endpoint = ["http://builds-registry.ystack.svc.cluster.local"]
-      [plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]
-        endpoint = ["http://prod-registry.ystack.svc.cluster.local"]
-EOF
 
 service k3s start
 k3s crictl info
