@@ -3,3 +3,9 @@ bases:
 - ../rbac-base/
 resources:
 - now-prometheus.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+- name: prometheus-now-additional
+  files:
+  - now-additional.yaml
