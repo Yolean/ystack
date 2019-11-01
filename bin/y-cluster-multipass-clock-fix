@@ -1,0 +1,10 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+# Sometimes needed with multipass VMs, but we're yet to figure out why
+
+[ -z "$VM_NAME" ] && VM_NAME="ystack-master"
+
+DSTR=$(date -u +"%Y-%m-%dT%H:%M:%SZ");
+multipass exec "$VM_NAME" -- sudo date --set=$DSTR

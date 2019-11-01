@@ -1,8 +1,0 @@
-#!/bin/sh
-[ -z "$DEBUG" ] || set -x
-set -e
-
-# Needed after sleep when started with devcluster_driver=hyperkit
-
-# https://github.com/kubernetes/minikube/issues/1378
-DSTR=$(date -u +"%Y-%m-%dT%H:%M:%SZ"); y-minikube ssh "sudo date --set=$DSTR"
