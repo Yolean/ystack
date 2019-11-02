@@ -5,14 +5,14 @@ services:
     command: server --disable-agent
     environment:
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
-    - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
+    - K3S_KUBECONFIG_OUTPUT=/admin/.kube/kubeconfig.yaml
     - K3S_KUBECONFIG_MODE=666
     volumes:
     - k3s-server:/var/lib/rancher/k3s
-    # This is just so that we get the kubeconfig file out
-    - .:/output
-    ports:
-    - 6443:6443
+    - admin:/admin
+    # Host port not needed for CI
+    #ports:
+    #- 6443:6443
 
   node:
     image: rancher/k3s:v0.10.2@sha256:e1f359b0adf3e11db49e9b2c286382f44d8caebde567931eca92e6a9a12153db
@@ -26,5 +26,23 @@ services:
     # Can also use K3S_TOKEN from /var/lib/rancher/k3s/server/node-token instead of K3S_CLUSTER_SECRET
     #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
 
+  sut:
+    image: lachlanevenson/k8s-kubectl:v1.16.2@sha256:a0ec573235c11c6be806d2a8f730666e9627fd5c66984b3b0ea8c99d8c8952c0
+    environment:
+    - KUBECONFIG=/admin/.kube/config
+    volumes:
+    - admin:/admin
+    entrypoint:
+    - /bin/sh
+    - -cex
+    command:
+    - |
+      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
+      # TODO must retry until server is up
+      kubectl get pods --all-namespaces
+      echo "Doing nothing ATM"
+      tail -f /dev/null
+
 volumes:
   k3s-server: {}
+  admin: {}
