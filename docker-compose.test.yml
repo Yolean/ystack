@@ -14,8 +14,7 @@ services:
     #ports:
     #- 6443:6443
 
-  node1:
-    hostname: node1
+  node:
     image: rancher/k3s:v0.10.2@sha256:e1f359b0adf3e11db49e9b2c286382f44d8caebde567931eca92e6a9a12153db
     tmpfs:
     - /run
@@ -26,17 +25,6 @@ services:
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
     # Can also use K3S_TOKEN from /var/lib/rancher/k3s/server/node-token instead of K3S_CLUSTER_SECRET
     #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
-
-  node2:
-    hostname: node2
-    image: rancher/k3s:v0.10.2@sha256:e1f359b0adf3e11db49e9b2c286382f44d8caebde567931eca92e6a9a12153db
-    tmpfs:
-    - /run
-    - /var/run
-    privileged: true
-    environment:
-    - K3S_URL=https://server:6443
-    - K3S_CLUSTER_SECRET=somethingtotallyrandom
 
   sut:
     image: lachlanevenson/k8s-kubectl:v1.16.2@sha256:a0ec573235c11c6be806d2a8f730666e9627fd5c66984b3b0ea8c99d8c8952c0
