@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
+
+COMPOSE="docker-compose -f docker-compose.test.yml -p ystack"
+[ -z "$NODES" ] && NODES=2
+
+(cd $YSTACK_HOME/ && \
+  $COMPOSE up --scale node=$NODES -d && \
+  docker ps && \
+  echo "# Compose commmand:" && echo "$COMPOSE" && \
+  echo "# To tear down:" && echo "$COMPOSE down --remove-orphans -v" && \
+  echo "# Currently, because sut doesn't wait for server to be up, you need another:" && echo "$COMPOSE up -d" && \
+  true )
