@@ -8,7 +8,7 @@ COMPOSE="docker-compose -f docker-compose.test.yml -p ystack"
 [ -z "$NODES" ] && NODES=2
 
 (cd $YSTACK_HOME/ && \
-  $COMPOSE up --scale node=$NODES -d && \
+  $COMPOSE up --scale node=$NODES -d --build && \
   docker ps && \
   echo "# Compose commmand:" && echo "$COMPOSE" && \
   echo "# To tear down:" && echo "$COMPOSE down --remove-orphans -v" && \

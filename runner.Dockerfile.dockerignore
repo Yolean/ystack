@@ -2,3 +2,10 @@
 !bin/y-*
 bin/*-bin
 !bin/kubectl-
+
+# Y-stack currently contains a lot of experiments so let's maintain a (negated) list of what's actually kept up-to-date:
+!converge-generic/
+!minio/
+!registry/generic/
+!registry/node-update-hosts/
+!registry/generic,minio/

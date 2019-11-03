@@ -27,7 +27,10 @@ services:
     #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
 
   sut:
-    image: lachlanevenson/k8s-kubectl:v1.16.2@sha256:a0ec573235c11c6be806d2a8f730666e9627fd5c66984b3b0ea8c99d8c8952c0
+    build:
+      context: .
+      # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
+      dockerfile: runner.Dockerfile
     environment:
     - KUBECONFIG=/admin/.kube/config
     volumes:
@@ -37,9 +40,9 @@ services:
     - -cex
     command:
     - |
+      until test -f /admin/.kube/kubeconfig.yaml; do echo "Waiting for a kubeconfig ..." && sleep 1; done
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
-      # TODO must retry until server is up
-      kubectl get nodes
+      kubectl-waitretry kubectl wait --for=condition=Ready node --all
       echo "Doing nothing ATM"
       tail -f /dev/null
 
