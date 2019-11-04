@@ -4,8 +4,15 @@ set -e
 
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
-COMPOSE="docker-compose -f docker-compose.test.yml -p ystack"
+COMPOSE="docker-compose -p ystack -f docker-compose.test.yml"
 [ -z "$NODES" ] && NODES=2
+# TODO condition to toggle dev/qa mode
+false || {
+  COMPOSE="$COMPOSE -f docker-compose.dev-overrides.yml"
+  # ATM with port-forward we only support one node
+  [ $NODES -eq 1 ] || echo "# Dev mode only supports one node, util we add some kind of load balancer container"
+  NODES=1
+}
 
 (cd $YSTACK_HOME/ && \
   $COMPOSE up --scale node=$NODES -d --build && \
@@ -14,3 +21,16 @@ COMPOSE="docker-compose -f docker-compose.test.yml -p ystack"
   echo "# To tear down:" && echo "$COMPOSE down --remove-orphans -v" && \
   echo "# Currently, because sut doesn't wait for server to be up, you need another:" && echo "$COMPOSE up -d" && \
   true )
+
+cat << EOF
+# Misc notes
+
+docker-compose -p ystack -f docker-compose.test.yml -f docker-compose.dev-overrides.yml exec server sh -c 'cat /admin/.kube/kubeconfig.yaml'
+export KUBECONFIG=$(pwd)/k.yaml
+
+kubectl create namespace ystack
+kubectl apply -k converge-generic/
+
+# nodePort should match port forward
+kubectl -n kube-system edit service traefik
+EOF

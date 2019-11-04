@@ -1,0 +1,11 @@
+version: '3'
+services:
+
+  server:
+    ports:
+    - 6443:6443
+
+  node:
+    ports:
+    - 80:30080
+    - 443:30443
