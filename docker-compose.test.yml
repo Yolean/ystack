@@ -37,13 +37,13 @@ services:
     volumes:
     - admin:/admin
     entrypoint:
-    - /bin/sh
+    - /bin/bash
     - -cex
     command:
     - |
       until test -f /admin/.kube/kubeconfig.yaml; do echo "Waiting for a kubeconfig ..." && sleep 1; done
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
-      kubectl-waitretry kubectl wait --for=condition=Ready node --all
+      kubectl-waitretry --for=condition=Ready node --all
       echo "Doing nothing ATM"
       tail -f /dev/null
 

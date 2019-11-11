@@ -37,3 +37,4 @@ COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
 
 COPY . /usr/local/src/ystack
+WORKDIR /usr/local/src/ystack
