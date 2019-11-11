@@ -44,7 +44,9 @@ services:
       until test -f /admin/.kube/kubeconfig.yaml; do echo "Waiting for a kubeconfig ..." && sleep 1; done
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
-      echo "Doing nothing ATM"
+      kubectl create namespace ystack
+      y-cluster-install-prometheus-operator
+      echo "Will stay running for manual work"
       tail -f /dev/null
 
 volumes:

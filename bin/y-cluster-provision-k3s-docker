@@ -28,9 +28,6 @@ cat << EOF
 docker-compose -p ystack -f docker-compose.test.yml -f docker-compose.dev-overrides.yml exec server sh -c 'cat /admin/.kube/kubeconfig.yaml'
 export KUBECONFIG=$(pwd)/k.yaml
 
-kubectl create namespace ystack
-kubectl apply -k converge-generic/
-
 # nodePort should match port forward
 kubectl -n kube-system edit service traefik
 EOF
