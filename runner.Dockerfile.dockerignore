@@ -9,3 +9,6 @@ bin/*-bin
 !registry/generic/
 !registry/node-update-hosts/
 !registry/generic,minio/
+!buildkit/
+!monitoring/rbac-base/
+!monitoring/instance-now/
