@@ -22,12 +22,9 @@ false || {
   echo "# Currently, because sut doesn't wait for server to be up, you need another:" && echo "$COMPOSE up -d" && \
   true )
 
-cat << EOF
-# Misc notes
+$COMPOSE exec server sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do echo "# Waiting ..." && sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
+  > "$KUBECONFIG.tmp"
 
-docker-compose -p ystack -f docker-compose.test.yml -f docker-compose.dev-overrides.yml exec server sh -c 'cat /admin/.kube/kubeconfig.yaml'
-export KUBECONFIG=$(pwd)/k.yaml
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default local
 
-# nodePort should match port forward
-kubectl -n kube-system edit service traefik
-EOF
+y-kubeconfig-import "$KUBECONFIG.tmp"
