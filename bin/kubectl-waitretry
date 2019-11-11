@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ -z "$WAITRETRIES" ] && WAITRETRIES=10
+
+SLEEP=1
+RETRY=0
+until kubectl wait $@; do
+  [ $RETRY -lt $WAITRETRIES ] || exit 1
+  echo "waitretry after $SLEEP seconds ..."
+  sleep $SLEEP
+  SLEEP=$(( $SLEEP * 2 ))
+  RETRY=$(( $RETRY + 1 ))
+done

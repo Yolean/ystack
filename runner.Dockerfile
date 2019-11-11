@@ -1,4 +1,4 @@
-FROM ubuntu:19.10@sha256:a21f154506cc00974f647e13dbba6b7035da35c7669a4bb919515d895221face
+FROM ubuntu:19.10@sha256:a5193c15d7705bc2be91781355c4932321c06c18914facdd113d5bfcace7f92d
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
@@ -12,10 +12,10 @@ RUN set -ex; \
 
 RUN set -ex; \
   F=$(mktemp); \
-  curl -SLs https://dl.k8s.io/v1.16.1/kubernetes-client-linux-amd64.tar.gz \
+  curl -SLs https://dl.k8s.io/v1.16.2/kubernetes-client-linux-amd64.tar.gz \
     | tee $F \
     | tar xzf - --strip-components=3 -C /usr/local/bin/; \
-  echo "e355a74a17d96785b0b217673e67fa0f02daa1939f10d410602ac0a0d061a4db71d727b67f75aa886007dab95dd5c7f8cc38253d291dc4d2504ce673df69fb32 $F" \
+  echo "69bb92c9b16c0286d7401d87cc73b85c88d6f9a17d2cf1748060e44525194b5be860daf7554c4c6319a546c9ff10f2b4df42a27e32d8f95a4052993b17ef57c0 $F" \
     | sha512sum -c -; \
   rm $F
 
@@ -37,3 +37,4 @@ COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
 
 COPY . /usr/local/src/ystack
+WORKDIR /usr/local/src/ystack
