@@ -34,6 +34,7 @@ services:
       dockerfile: runner.Dockerfile
     environment:
     - KUBECONFIG=/admin/.kube/config
+    - KEEP_RUNNING=false
     volumes:
     - admin:/admin
     entrypoint:
@@ -47,8 +48,10 @@ services:
       kubectl apply -k ./metrics-server/
       kubectl get namespace ystack 2>/dev/null || kubectl create namespace ystack
       y-cluster-install-prometheus-operator
-      echo "Will stay running for manual work"
-      tail -f /dev/null
+      if [ "$$KEEP_RUNNING" = "true" ]; then
+        echo "Will stay running for manual work"
+        sleep infinity
+      fi
 
 volumes:
   k3s-server: {}
