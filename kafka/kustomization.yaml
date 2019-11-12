@@ -1,4 +1,4 @@
 namespace: kafka
 bases:
-- github.com/Yolean/kubernetes-kafka/variants/dev-small?ref=f30ecd9469f531b40d00fd5e2b35fb0faa3a6c31
-- github.com/Yolean/kubernetes-kafka/pixy?ref=f30ecd9469f531b40d00fd5e2b35fb0faa3a6c31
+- github.com/Yolean/kubernetes-kafka/variants/dev-small?ref=2927b49281a748894368ef0e9f5c83df8259ca40
+- github.com/Yolean/kubernetes-kafka/pixy?ref=2927b49281a748894368ef0e9f5c83df8259ca40
