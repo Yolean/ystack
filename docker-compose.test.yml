@@ -28,6 +28,9 @@ services:
     #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
 
   sut:
+    depends_on:
+    - server
+    - node
     build:
       context: .
       # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
