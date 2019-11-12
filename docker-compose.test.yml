@@ -37,6 +37,7 @@ services:
       dockerfile: runner.Dockerfile
     environment:
     - KUBECONFIG=/admin/.kube/config
+    - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
     volumes:
     - admin:/admin
@@ -45,7 +46,12 @@ services:
     - -cex
     command:
     - |
-      until test -f /admin/.kube/kubeconfig.yaml; do echo "Waiting for a kubeconfig ..." && sleep 1; done
+      until test -f /admin/.kube/kubeconfig.yaml; do
+        [ $$KUBECONFIG_WAIT -gt 0 ] || exit 1
+        KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
+        echo "Waiting for a kubeconfig ..."
+        sleep 1
+      done
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
       kubectl apply -k ./metrics-server/
