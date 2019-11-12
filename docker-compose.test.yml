@@ -19,7 +19,7 @@ services:
     # Host port not needed for CI
     #ports:
     #- 6443:6443
-    mem_limit:  300000000
+    mem_limit:  500000000
     memswap_limit: 0
 
   node:
@@ -33,7 +33,7 @@ services:
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
     # Can also use K3S_TOKEN from /var/lib/rancher/k3s/server/node-token instead of K3S_CLUSTER_SECRET
     #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
-    mem_limit: 1500000000
+    mem_limit: 1300000000
     memswap_limit: 0
 
   runner:
