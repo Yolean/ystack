@@ -5,7 +5,7 @@ services:
     depends_on:
     - node
     build: ./k3s/image
-    command: server --disable-agent
+    command: server --disable-agent -v=7
     environment:
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
     - K3S_KUBECONFIG_OUTPUT=/admin/.kube/kubeconfig.yaml
