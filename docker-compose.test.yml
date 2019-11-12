@@ -54,7 +54,7 @@ services:
     command:
     - |
       until test -f /admin/.kube/kubeconfig.yaml; do
-        [ $$KUBECONFIG_WAIT -gt 0 ] || exit 1
+        [ $$KUBECONFIG_WAIT -gt 0 ] || exit ${BULID_EXIT_CODE_ON_NO_CLUSTER:-0}
         KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
         echo "Waiting for a kubeconfig ..." && sleep 1
       done
