@@ -6,7 +6,7 @@ services:
     command:
     - server
     - --disable-agent
-    - -v=7
+    - -v=0
     environment:
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
     - K3S_KUBECONFIG_OUTPUT=/admin/.kube/kubeconfig.yaml
