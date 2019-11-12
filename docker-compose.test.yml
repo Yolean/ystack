@@ -24,7 +24,6 @@ services:
     tmpfs:
     - /run
     - /var/run
-    privileged: true
     environment:
     - K3S_URL=https://sut:6443
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
