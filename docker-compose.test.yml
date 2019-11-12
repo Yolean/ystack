@@ -14,6 +14,8 @@ services:
     # Host port not needed for CI
     #ports:
     #- 6443:6443
+    mem_limit: 268435456
+    memswap_limit: 0
 
   node:
     build: ./k3s/image
@@ -26,6 +28,8 @@ services:
     - K3S_CLUSTER_SECRET=somethingtotallyrandom
     # Can also use K3S_TOKEN from /var/lib/rancher/k3s/server/node-token instead of K3S_CLUSTER_SECRET
     #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
+    mem_limit: 1610612736
+    memswap_limit: 0
 
   sut:
     depends_on:
@@ -49,8 +53,7 @@ services:
       until test -f /admin/.kube/kubeconfig.yaml; do
         [ $$KUBECONFIG_WAIT -gt 0 ] || exit 1
         KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
-        echo "Waiting for a kubeconfig ..."
-        sleep 1
+        echo "Waiting for a kubeconfig ..." && sleep 1
       done
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
@@ -61,6 +64,8 @@ services:
         echo "Will stay running for manual work"
         sleep infinity
       fi
+    mem_limit: 67108864
+    memswap_limit: 0
 
 volumes:
   k3s-server: {}
