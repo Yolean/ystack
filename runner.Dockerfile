@@ -38,3 +38,6 @@ RUN y-skaffold
 
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack
+
+RUN useradd --create-home --home-dir /home/user --uid 1000 -s /bin/bash user
+USER 1000
