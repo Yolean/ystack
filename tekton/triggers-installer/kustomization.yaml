@@ -1,0 +1,5 @@
+namespace: tekton-pipelines
+resources:
+- rbac-serviceaccount-ystack-installer-knative.yaml
+- rbac-cluster-admin-ystack-installer-knative.yaml
+- job.yaml
