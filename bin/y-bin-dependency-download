@@ -38,7 +38,7 @@ bin_link=$YBIN/$bin_name
   chmod u+x $bin_file
 }
 
-if ! ls -l $bin_link | grep $bin_file; then
+if [ "$(readlink $bin_link)" != "$bin_file" ]; then
   [ -L $bin_link ] && rm $bin_link
   ln -s $bin_file $bin_link
 fi
