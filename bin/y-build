@@ -11,9 +11,6 @@ BUILDCTL_OPTS="$@"
 # Settings
 REGISTRY=builds-registry.ystack.svc.cluster.local
 BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
-BUILDCTL_VERSION="buildctl github.com/moby/buildkit v0.6.2 ae10b292fefb00e0fbf9fecd1419c5f252e58895"
-[ "$(buildctl -v)" != "$BUILDCTL_VERSION"  ] && echo "Requires buildctl '$BUILDCTL_VERSION'; see https://github.com/moby/buildkit/releases" && exit 1
-
 if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
 then
   echo "ERROR Skaffold need local access to the builds registry for digest lookup after build"
