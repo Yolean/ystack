@@ -38,3 +38,11 @@ RUN y-skaffold
 
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack
+
+# exists in ubuntu already with uid 65534:
+#USER nobody:nogroup
+# https://github.com/GoogleContainerTools/distroless/pull/368
+# docker run --rm --entrypoint cat gcr.io/distroless/base:debug-nonroot /etc/passwd
+RUN groupadd -g 65532 nonroot && \
+  useradd --create-home --home-dir /home/nonroot --uid 65532 --gid 65532 -c nonroot -s /usr/sbin/nologin nonroot
+USER nonroot:nonroot
