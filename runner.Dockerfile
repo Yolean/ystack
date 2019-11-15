@@ -49,5 +49,4 @@ WORKDIR /usr/local/src/ystack
 # docker run --rm --entrypoint cat gcr.io/distroless/base:debug-nonroot /etc/passwd
 RUN groupadd -g 65532 nonroot && \
   useradd --create-home --home-dir /home/nonroot --uid 65532 --gid 65532 -c nonroot -s /usr/sbin/nologin nonroot
-RUN mkdir -p /builder/home/.docker && echo '{}' > /builder/home/.docker/config.json && chown -R nonroot /builder/home/.docker
 USER nonroot:nonroot
