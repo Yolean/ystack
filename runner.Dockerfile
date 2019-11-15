@@ -36,6 +36,9 @@ RUN y-buildctl
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
 
+COPY --from=gcr.io/go-containerregistry/github.com/google/go-containerregistry/cmd/crane@sha256:2ebe1fffc23ac887cde2718b46f6133511b089e358bc08baa4de465675a1188f \
+  /ko-app/crane /usr/local/bin/crane
+
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack
 
