@@ -33,6 +33,7 @@ RUN y-helm
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl
 
+ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
 
