@@ -35,7 +35,7 @@ bin_link=$YBIN/$bin_name
     tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
     mv $(basename " $bin_tgz_path") $bin_file
   fi
-  chmod u+x $bin_file
+  chmod a+x $bin_file
 }
 
 if [ "$(readlink $bin_link)" != "$bin_file" ]; then
