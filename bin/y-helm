@@ -3,6 +3,12 @@
 set -e
 YBIN="$(dirname $0)"
 
+# TODO
+# Actually 3.0.0 doesn't support
+#   -x, --execute stringArray      only execute the given templates
+# https://github.com/helm/helm/issues/5887
+# https://github.com/helm/helm/issues/6290#issuecomment-526973179
+
 version=3.0.0
 
 bin_name=helm \
