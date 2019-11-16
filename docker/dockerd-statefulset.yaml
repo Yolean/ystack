@@ -32,7 +32,7 @@ spec:
           ln -s /var/lib/docker/overlay2/var-lib-docker-image /var/lib/docker/image
       containers:
       - name: dockerd
-        image: docker:19.03.4-dind@sha256:156e4e723c80223298259dad9a925a71f385456b731c139bec12d29b3a74170c
+        image: docker:19.03.5-dind@sha256:59a346f8cdba3dda88cf1d7dd153be7d4df1b7b5f53f39a451006617caddd5e4
         securityContext:
           privileged: true
         args:

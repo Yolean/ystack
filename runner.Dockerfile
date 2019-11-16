@@ -2,7 +2,7 @@ FROM ubuntu:19.10@sha256:a5193c15d7705bc2be91781355c4932321c06c18914facdd113d5bf
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git'; \
+  runDeps='ca-certificates curl git jq'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
@@ -33,8 +33,12 @@ RUN y-helm
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl
 
+ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
+
+COPY --from=gcr.io/go-containerregistry/github.com/google/go-containerregistry/cmd/crane@sha256:2ebe1fffc23ac887cde2718b46f6133511b089e358bc08baa4de465675a1188f \
+  /ko-app/crane /usr/local/bin/crane
 
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack
