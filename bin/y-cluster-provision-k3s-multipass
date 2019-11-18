@@ -42,8 +42,8 @@ mirrors:
     - http://prod-registry.ystack.svc.cluster.local
 EOF
 
-INSTALLER_REVISION=8833bfd961ff31b7b6de4300b201d01d3fb2bac8
-export INSTALL_K3S_VERSION=v0.10.2
+INSTALLER_REVISION=fe4b9cafd619de7c03f57714cfcf54cb0b9db2e0
+export INSTALL_K3S_VERSION=v1.0.0-rc4
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start
@@ -65,7 +65,7 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k $YSTACK_HOME/metrics-server
+#KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k $YSTACK_HOME/metrics-server
 
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-install-prometheus-operator
 
