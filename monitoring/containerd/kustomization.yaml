@@ -1,4 +1,0 @@
-bases:
-- ../../node-ip
-resources:
-- nodes-containerd-service.yaml
