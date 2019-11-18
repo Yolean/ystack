@@ -2,9 +2,25 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: blobs-minio
+  labels:
+    app: minio
+    release: blobs
 spec:
-  replicas: 1
+  replicas: 1 # Not configured for distributed mode so can't be scaled up
+  serviceName: minio-svc
+  selector:
+    matchLabels:
+      app: minio
+      release: blobs
   template:
+    metadata:
+      labels:
+        app: minio
+        release: blobs
+      annotations:
+        prometheus.io/path: /minio/prometheus/metrics
+        prometheus.io/port: "9000"
+        prometheus.io/scrape: "true"
     spec:
       containers:
       - name: minio
@@ -16,3 +32,48 @@ spec:
         -   /root/.minio/
         - server
         - /export
+        env:
+        - name: MINIO_BROWSER
+          value: "off"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: accesskey
+              name: blobs-minio
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secretkey
+              name: blobs-minio
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 250m
+            memory: 300Mi
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 120
+          periodSeconds: 20
+        ## Recommended to be used only for standalone MinIO Instances (replicas = 1) according to minio-operator
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 120
+          periodSeconds: 20
+        volumeMounts:
+        - mountPath: /export
+          name: export
+  volumeClaimTemplates:
+  - metadata:
+      name: export
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi

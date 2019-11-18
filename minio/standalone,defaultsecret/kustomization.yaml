@@ -1,0 +1,9 @@
+bases:
+- ../standalone
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+- name: blobs-minio
+  literals:
+  - accesskey=AKIAIOSFODNN7EXAMPLE
+  - secretkey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
