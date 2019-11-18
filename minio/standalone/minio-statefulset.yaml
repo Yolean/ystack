@@ -63,7 +63,7 @@ spec:
           httpGet:
             path: /minio/health/ready
             port: 9000
-          initialDelaySeconds: 120
+          initialDelaySeconds: 10
           periodSeconds: 20
         volumeMounts:
         - mountPath: /export
