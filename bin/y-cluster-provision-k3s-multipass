@@ -61,7 +61,7 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
   | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \
   > "$KUBECONFIG.tmp"
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default ystack-k3s
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default local
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl create namespace ystack
 
