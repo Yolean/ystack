@@ -22,6 +22,6 @@ spec:
     key: now-additional.yaml
   alerting:
     alertmanagers:
-    - namespace: ystack
+    - namespace: ystack-monitoring
       name: alertmanager-main
       port: web

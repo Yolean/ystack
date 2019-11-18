@@ -1,4 +1,4 @@
-namespace: ystack
+namespace: ystack-monitoring
 bases:
 - ../rbac-base/
 - ../alertmanager/
