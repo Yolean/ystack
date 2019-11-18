@@ -23,5 +23,5 @@ spec:
   alerting:
     alertmanagers:
     - namespace: ystack-monitoring
-      name: alertmanager-main
+      name: alertmanager-operated # works as long as there's only one alertmanager resource in the namespace
       port: web
