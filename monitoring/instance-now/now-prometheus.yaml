@@ -13,7 +13,15 @@ spec:
   serviceMonitorSelector:
     matchLabels:
       ystack: now
+  ruleSelector:
+    matchLabels:
+      ystack: now
   retention: 8h
   additionalScrapeConfigs:
     name: prometheus-now-additional
     key: now-additional.yaml
+  alerting:
+    alertmanagers:
+    - namespace: ystack
+      name: alertmanager-main
+      port: web

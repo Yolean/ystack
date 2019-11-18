@@ -1,0 +1,8 @@
+resources:
+- main-alertmanager.yaml
+generatorOptions:
+ disableNameSuffixHash: true
+secretGenerator:
+- name: alertmanager-main
+  files:
+  - alertmanager.yaml

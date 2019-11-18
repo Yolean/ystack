@@ -1,6 +1,7 @@
 namespace: ystack
 bases:
 - ../rbac-base/
+- ../alertmanager/
 resources:
 - now-prometheus.yaml
 generatorOptions:
