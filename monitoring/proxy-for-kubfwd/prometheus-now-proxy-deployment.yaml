@@ -14,7 +14,7 @@ spec:
       labels:
         proxy: prometheus-now
       annotations:
-        prometheus.io/path: /stats/prometheus?usedonly
+        prometheus.io/path: /stats/prometheus
         prometheus.io/port: "9901"
         prometheus.io/scrape: "true"
     spec:
