@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: alertmanager-main
+  name: prometheus-now
   labels:
-    proxy: alertmanager-main
+    proxy: prometheus-now
 spec:
   replicas: 1
   selector:
     matchLabels:
-      proxy: alertmanager-main
+      proxy: prometheus-now
   template:
     metadata:
       labels:
-        proxy: alertmanager-main
+        proxy: prometheus-now
       annotations:
         prometheus.io/path: /stats/prometheus?usedonly
         prometheus.io/port: "9901"
@@ -62,22 +62,22 @@ spec:
                         - match:
                             prefix: "/"
                           route:
-                            cluster: ystack_monitoring_alertmanager_main
+                            cluster: ystack_monitoring_prometheus_now
                     http_filters:
                     - name: envoy.router
             clusters:
-            - name: ystack_monitoring_alertmanager_main
+            - name: ystack_monitoring_prometheus_now
               connect_timeout: 0.25s
               type: LOGICAL_DNS
               dns_lookup_family: V4_ONLY
               lb_policy: ROUND_ROBIN
               load_assignment:
-                cluster_name: ystack_monitoring_alertmanager_main
+                cluster_name: ystack_monitoring_prometheus_now
                 endpoints:
                 - lb_endpoints:
                   - endpoint:
                       address:
                         socket_address:
-                          # there's only the "main" instance
-                          address: alertmanager-operated.ystack-monitoring
-                          port_value: 9093
+                          # there's only the "now" instance
+                          address: prometheus-operated.ystack-monitoring
+                          port_value: 9090

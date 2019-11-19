@@ -2,3 +2,5 @@ namespace: ystack
 resources:
 - alertmanager-main-proxy-service.yaml
 - alertmanager-main-proxy-deployment.yaml
+- prometheus-now-proxy-service.yaml
+- prometheus-now-proxy-deployment.yaml
