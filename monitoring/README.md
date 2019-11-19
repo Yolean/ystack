@@ -26,6 +26,10 @@ Tools:
  * [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) both for `kubectl top` and Prometheus
  * [node exporter](https://github.com/prometheus/node_exporter)
  * [Prometheus Operatior](https://github.com/coreos/prometheus-operator/) appears to be rock solid and the `ServiceMonitor` resources really delivers capabilities that service discovery base don annotations can't, such as scraping multiple containers and having custom intervals.
+ * [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin)
+ * [kube-prometheus' alerting rules](https://github.com/coreos/kube-prometheus/commits/master/manifests/prometheus-rules.yaml) with stuff like clock skew
+ * https://github.com/coreos/kube-prometheus/commits/master/manifests/grafana-dashboardDefinitions.yaml also heavily duplicating kubernetes-mixin
+ * https://github.com/brancz/kubernetes-grafana "exists because the Grafana stack in kube-prometheus has gotten close to unmaintainable"
 
 Dashboards:
  * Maybe https://github.com/cloudworkz/kube-eagle
@@ -37,3 +41,6 @@ Web UIs, as a complement:
 Prometheus instances:
  * `now` denotes the instance(s) you'll turn to for observing current state of the cluster, for example when troubleshooting.
    Metrics are of the operational type, volumes are high and retention very low. This is also the instance to use for non-business alerts.
+
+Specific to k3s:
+ * https://github.com/rancher/k3s/issues/425 but let's focus on amd64
