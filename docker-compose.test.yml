@@ -43,24 +43,24 @@ services:
       # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
       dockerfile: runner.Dockerfile
     environment:
-    - KUBECONFIG=/admin/.kube/config
     - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
     volumes:
     - admin:/admin
     entrypoint:
     - /bin/bash
-    - -cex
+    - -cx
     command:
     - |
+      mkdir ~/.kube
       until test -f /admin/.kube/kubeconfig.yaml; do
         [ $$KUBECONFIG_WAIT -gt 0 ] || exit ${BULID_EXIT_CODE_ON_NO_CLUSTER:-0}
         KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
         echo "Waiting for a kubeconfig ..." && sleep 1
       done
-      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > /admin/.kube/config
+      set -e
+      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
-      kubectl apply -k ./metrics-server/
       kubectl get namespace ystack 2>/dev/null || kubectl create namespace ystack
       y-cluster-install-prometheus-operator
       if [ "$$KEEP_RUNNING" = "true" ]; then

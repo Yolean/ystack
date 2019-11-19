@@ -12,10 +12,10 @@ RUN set -ex; \
 
 RUN set -ex; \
   F=$(mktemp); \
-  curl -SLs https://dl.k8s.io/v1.16.2/kubernetes-client-linux-amd64.tar.gz \
+  curl -SLs https://dl.k8s.io/v1.16.3/kubernetes-client-linux-amd64.tar.gz \
     | tee $F \
     | tar xzf - --strip-components=3 -C /usr/local/bin/; \
-  echo "69bb92c9b16c0286d7401d87cc73b85c88d6f9a17d2cf1748060e44525194b5be860daf7554c4c6319a546c9ff10f2b4df42a27e32d8f95a4052993b17ef57c0 $F" \
+  echo "904604839bbf46c11c7934f6f906adbc968234044b9f3268b71c175241626f8d4076812aca789dc5aa2f85fd25a384ad779638231d4d94f3f3c6d043b5d9f062 $F" \
     | sha512sum -c -; \
   rm $F
 
