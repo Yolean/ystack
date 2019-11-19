@@ -7,10 +7,10 @@ spec:
     spec:
       containers:
       - name: mc
-        image: minio/mc:RELEASE.2019-08-07T23-14-43Z@sha256:e106f3759dbbff2e18f71c5d9c98625f5fc3e2a4dc2010fbd6b2de49090b5f86
+        image: minio/mc:RELEASE.2019-10-09T22-54-57Z@sha256:cfa18a5564f7649080792212d0a9281b60b1a732ef329877f56fc108cee5f012
         env:
         - name: MINIO_HOST
-          value: http://blobs-minio:9000
+          value: http://blobs-minio
         - name: MINIO_ACCESS_KEY
           valueFrom:
             secretKeyRef:
