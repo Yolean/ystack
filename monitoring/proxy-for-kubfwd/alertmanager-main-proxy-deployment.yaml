@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-main
+  labels:
+    proxy: alertmanager-main
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      proxy: alertmanager-main
+  template:
+    metadata:
+      labels:
+        proxy: alertmanager-main
+      annotations:
+        prometheus.io/path: /stats/prometheus
+        prometheus.io/port: "9901"
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+      - name: envoy
+        image: envoyproxy/envoy:v1.12.1@sha256:c485247f63de16331fbe56aec8e9d8a83da76ca0fa8dc872691a09b8d99a314f
+        ports:
+        - name: proxy
+          containerPort: 80
+        - name: admin
+          containerPort: 9901
+        command:
+        - /usr/local/bin/envoy
+        - -l info
+        args:
+        - --config-yaml
+        - |
+          admin:
+            access_log_path: /tmp/admin_access.log
+            address:
+              socket_address:
+                protocol: TCP
+                address: 0.0.0.0
+                port_value: 9901
+          static_resources:
+            listeners:
+            - name: listener_0
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: 0.0.0.0
+                  port_value: 80
+              filter_chains:
+              - filters:
+                - name: envoy.http_connection_manager
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
+                    stat_prefix: ingress_http
+                    route_config:
+                      name: local_route
+                      virtual_hosts:
+                      - name: local_service
+                        domains: ["*"]
+                        routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: ystack_monitoring_alertmanager_main
+                    http_filters:
+                    - name: envoy.router
+            clusters:
+            - name: ystack_monitoring_alertmanager_main
+              connect_timeout: 0.25s
+              type: LOGICAL_DNS
+              dns_lookup_family: V4_ONLY
+              lb_policy: ROUND_ROBIN
+              load_assignment:
+                cluster_name: ystack_monitoring_alertmanager_main
+                endpoints:
+                - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          # there's only the "main" instance
+                          address: alertmanager-operated.ystack-monitoring
+                          port_value: 9093
