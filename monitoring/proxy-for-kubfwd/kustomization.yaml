@@ -1,0 +1,4 @@
+namespace: ystack
+resources:
+- alertmanager-main-proxy-service.yaml
+- alertmanager-main-proxy-deployment.yaml
