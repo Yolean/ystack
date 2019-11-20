@@ -1,2 +1,3 @@
 resources:
+- blobs-minio-service.yaml
 - bucket-create-ystack-builds.yaml
