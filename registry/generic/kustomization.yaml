@@ -2,6 +2,8 @@ resources:
 - service-builds.yaml
 - service-prod-placeholder.yaml
 - deployment.yaml
+patchesStrategicMerge:
+- debug-endpoint-readiness-probe.yaml
 configMapGenerator:
 - name: registry-config
   files:
