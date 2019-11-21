@@ -1,5 +1,7 @@
 bases:
 - ../generic
 - ../node-update-hosts
+resources:
+- bucket-create-ystack-builds.yaml
 patchesStrategicMerge:
 - deployment.yaml
