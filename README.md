@@ -74,14 +74,6 @@ To ease the burden of maintaining a dev stack, there's tooling to keep these bin
 If a requred binary exists in path, a version check is performed.
 If not it is downloaded and placed in `$YSTACK_HOME/bin`.
 
-## Hooks
-
-The y-build command is a general purpose util to build a service from its source folder.
-Builds are rarely generic though, so it first invokes an executable file `build-pre` in `$YSTACK_HOOKS` if existent.
-`$YSTACK_HOOKS` defaults to `$YSTACK_HOME/hooks`.
-
-`y-build-buldkit-host` selects a buildkitd endpoint.
-
 ## Namespace
 
 Why do we name the stack namespace with a stage, for example `ystack-dev`?
