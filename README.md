@@ -49,24 +49,6 @@ For that we use https://github.com/solsson/k8s-ingress-hosts/releases
 
 Add `YSTACK_HOME` env poiting to the root of y-stack, and `$YSTACK_HOME/bin` to path.
 
-## Kubectl context management
-
-At Yolean we share kubectl commands that target a specific cluster and namespace.
-This is so that when you copy a command from Slack or a readme, you don't accidentally target a prod cluster.
-
-Cluster management is however _outside_ the scope of Y-stack. Instead look at tools like:
- * https://github.com/jonmosco/kube-ps1
- * https://github.com/aluxian/fish-kube-prompt
- * https://github.com/superbrothers/zsh-kubectl-prompt
- * https://github.com/postfinance/kubectl-ctx
- * https://github.com/jordanwilson230/kubectl-plugins#kubectl-switch
- * https://github.com/solsson/bash-kubectl-git/pull/3
-
-Our policy also implies that we need some bot warning against kubectl without `--context` or `--namespace` in Slack,
-and likewise some CI tool that enforces kubectl hygiene in markdown.
-
-One more thing: We need to agree on kubectl context names. How do we share those?
-
 ## Dependencies
 
 Y-stack doesn't have a CLI, but depends on assorted tooling from the Kubernetes community.
