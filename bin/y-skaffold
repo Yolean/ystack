@@ -24,5 +24,6 @@ grep 'current-context: minikube' $KUBECONFIG && {
 
 # Y-stack opinions, where do we put them?
 SKAFFOLD_NO_PRUNE=true \
+SKAFFOLD_UPDATE_CHECK=false \
   \
   $YBIN/y-skaffold-v${version}-bin "$@" || echo $?
