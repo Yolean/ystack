@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: gitea
-        image: gitea/gitea:1.10.0@sha256:1bb988e5cca6b9a4714713fe2406ce367de4be0e2b624a653137350511ba8761
+        image: gitea/gitea:1.11.0-rc2@sha256:e30b1c409b89c34a3b4d43c1a8c0a2f16069dea8939a20f325d6e2842e5bbd26
         ports:
         - containerPort: 3000
           name: http
