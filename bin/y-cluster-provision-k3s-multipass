@@ -17,47 +17,8 @@ K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $
 
 echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
 
-multipass exec "$VM_NAME" -- sudo bash -cex '
-
-swapoff -a
-# requires reboot, according to https://askubuntu.com/questions/259739/kswapd0-is-taking-a-lot-of-cpu
-echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
-# this process has been seen eating lots of cpu
-kswapd_pid=$(ps aux | grep kswapd | grep -v grep | awk "{ print \$2 }")
-top -b -p $kswapd_pid -n 1
-
-export INSTALL_K3S_SKIP_START=true
-
-# For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
-export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
-
-mkdir -p /etc/rancher/k3s
-cat <<EOF >> /etc/rancher/k3s/registries.yaml
-mirrors:
-  "builds-registry.ystack.svc.cluster.local":
-    endpoint:
-    - http://builds-registry.ystack.svc.cluster.local
-  "prod-registry.ystack.svc.cluster.local":
-    endpoint:
-    - http://prod-registry.ystack.svc.cluster.local
-EOF
-
-INSTALLER_REVISION=18bd921cddee1e95cc03467a1b9636ddacd9d670
-export INSTALL_K3S_VERSION=v1.0.0
-export K3S_TOKEN=somethingtotallyrandom
-export K3S_CLUSTER_SECRET=somethingtotallyrandom
-curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
-
-service k3s start
-k3s crictl info
-
-chmod a+r /etc/rancher/k3s/*
-
-# The default storage class with k3s >= 0.10 is "local-path"
-#k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
-k3s kubectl get node
-k3s kubectl wait --for=condition=Ready node/ystack-master
-';
+multipass exec "$VM_NAME" -- sudo bash -cex "$(cat $YSTACK_HOME/bin/y-ubuntu-swapoff)";
+multipass exec "$VM_NAME" -- sudo bash -cex "$(cat $YSTACK_HOME/bin/y-k3s-install)";
 
 multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
   | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \

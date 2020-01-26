@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ $(id -u) -eq 0 ] || exec sudo $0 $@
+
+swapoff -a
+# requires reboot, according to https://askubuntu.com/questions/259739/kswapd0-is-taking-a-lot-of-cpu
+echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
+# this process has been seen eating lots of cpu
+kswapd_pid=$(ps aux | grep kswapd | grep -v grep | awk "{ print \$2 }")
+top -b -p $kswapd_pid -n 1

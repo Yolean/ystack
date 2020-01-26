@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ $(id -u) -eq 0 ] || exec sudo $0 $@
+
+export INSTALL_K3S_SKIP_START=true
+
+# For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
+export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0"
+
+mkdir -p /etc/rancher/k3s
+cat <<EOF >> /etc/rancher/k3s/registries.yaml
+mirrors:
+  "builds-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://builds-registry.ystack.svc.cluster.local
+  "prod-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://prod-registry.ystack.svc.cluster.local
+EOF
+
+INSTALLER_REVISION=18bd921cddee1e95cc03467a1b9636ddacd9d670
+export INSTALL_K3S_VERSION=v1.0.0
+export K3S_TOKEN=somethingtotallyrandom
+export K3S_CLUSTER_SECRET=somethingtotallyrandom
+curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
+
+service k3s start
+k3s crictl info
+
+chmod a+r /etc/rancher/k3s/*
+
+# The default storage class with k3s >= 0.10 is "local-path"
+#k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
+k3s kubectl get node
+k3s kubectl wait --for=condition=Ready node/ystack-master
