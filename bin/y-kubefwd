@@ -3,14 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=1.9.6
+version=1.11.1
 
 bin_name=kubefwd \
   bin_version=v${version} \
   Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_amd64.tar.gz \
-  Darwin_sha256=8a9a75d5377fbc8fc83152cdab4319b0e72f71ef084ef07703713b63e3ca3388 \
+  Darwin_sha256=6e3bc8c1d576cadad10696e7d2b75998e7817a43dc43a5782b8ff088a2e68806 \
   Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_linux_amd64.tar.gz \
-  Linux_sha256=4a37c2f9763b46d2aba25cb6d07be36775213e208525911df27e398ea7d94d31 \
+  Linux_sha256=9b1ab4fd9daac0cb4354b9753030a43104ddfe598d7baad6e3c717ea58070177 \
   bin_tgz_path=kubefwd \
   y-bin-dependency-download || exit $?
 
