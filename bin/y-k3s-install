@@ -28,7 +28,6 @@ curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh
 service k3s start
 k3s crictl info
 
-sleep 3
 # The default storage class with k3s >= 0.10 is "local-path"
 #k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
 k3s kubectl get node
