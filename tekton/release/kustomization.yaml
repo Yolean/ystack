@@ -1,2 +1,2 @@
-bases:
-- github.com/yolean/unhelm/tekton-releases/?ref=6b49c6360d1650b3215b6061a17430c35ff27cac
+resources:
+- release.yaml
