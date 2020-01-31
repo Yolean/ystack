@@ -1,116 +1,101 @@
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: tekton-triggers
 spec:
-  allowPrivilegeEscalation: false
-  fsGroup:
-    ranges:
-    - max: 65535
-      min: 1
-    rule: MustRunAs
-  hostIPC: false
-  hostNetwork: false
-  hostPID: false
   privileged: false
-  runAsUser:
-    rule: RunAsAny
-  seLinux:
-    rule: RunAsAny
-  supplementalGroups:
-    ranges:
-    - max: 65535
-      min: 1
-    rule: MustRunAs
+  allowPrivilegeEscalation: false
   volumes:
-  - emptyDir
-  - configMap
-  - secret
+  - 'emptyDir'
+  - 'configMap'
+  - 'secret'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+    - min: 1
+      max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+    - min: 1
+      max: 65535
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: tekton-triggers-admin
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - secrets
-  - services
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - delete
-  - patch
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - deployments/finalizers
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - delete
-  - patch
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - delete
-  - patch
-  - watch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - eventlisteners
-  - triggerbindings
-  - triggertemplates
-  - eventlisteners/finalizers
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - delete
-  - patch
-  - watch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - eventlisteners/status
-  - triggerbindings/status
-  - triggertemplates/status
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - delete
-  - patch
-  - watch
-- apiGroups:
-  - policy
-  resourceNames:
-  - tekton-triggers
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
+- apiGroups: [""]
+  resources: ["configmaps", "secrets", "services"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/finalizers"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["tekton.dev"]
+  resources: ["eventlisteners", "triggerbindings", "triggertemplates", "eventlisteners/finalizers"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["tekton.dev"]
+  resources: ["eventlisteners/status", "triggerbindings/status", "triggertemplates/status"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  resourceNames: ["tekton-triggers"]
+  verbs: ["use"]
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -118,78 +103,140 @@ metadata:
   namespace: tekton-pipelines
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: tekton-triggers-controller-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: tekton-triggers-admin
 subjects:
 - kind: ServiceAccount
   name: tekton-triggers-controller
   namespace: tekton-pipelines
+roleRef:
+  kind: ClusterRole
+  name: tekton-triggers-admin
+  apiGroup: rbac.authorization.k8s.io
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: eventlisteners.tekton.dev
 spec:
   group: tekton.dev
+  scope: Namespaced
   names:
+    kind: EventListener
+    plural: eventlisteners
+    singular: eventlistener
+    shortNames:
+    - el
     categories:
     - all
     - tekton-triggers
-    kind: EventListener
-    plural: eventlisteners
-    shortNames:
-    - el
-    singular: eventlistener
-  scope: Namespaced
+  # Opt into the status subresource so metadata.generation
+  # starts to increment
   subresources:
     status: {}
   version: v1alpha1
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: triggerbindings.tekton.dev
 spec:
   group: tekton.dev
+  scope: Namespaced
   names:
+    kind: TriggerBinding
+    plural: triggerbindings
+    singular: triggerbinding
+    shortNames:
+    - tb
     categories:
     - all
     - tekton-triggers
-    kind: TriggerBinding
-    plural: triggerbindings
-    shortNames:
-    - tb
-    singular: triggerbinding
-  scope: Namespaced
+  # Opt into the status subresource so metadata.generation
+  # starts to increment
   subresources:
     status: {}
   version: v1alpha1
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: triggertemplates.tekton.dev
 spec:
   group: tekton.dev
+  scope: Namespaced
   names:
+    kind: TriggerTemplate
+    plural: triggertemplates
+    singular: triggertemplate
+    shortNames:
+    - tt
     categories:
     - all
     - tekton-triggers
-    kind: TriggerTemplate
-    plural: triggertemplates
-    shortNames:
-    - tt
-    singular: triggertemplate
-  scope: Namespaced
+  # Opt into the status subresource so metadata.generation
+  # starts to increment
   subresources:
     status: {}
   version: v1alpha1
@@ -198,10 +245,10 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
-    rbac.authorization.k8s.io/aggregate-to-edit: "true"
   name: tekton-triggers-aggregate-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
 - apiGroups:
   - tekton.dev
@@ -223,9 +270,9 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  name: tekton-triggers-aggregate-view
   labels:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
-  name: tekton-triggers-aggregate-view
 rules:
 - apiGroups:
   - tekton.dev
@@ -239,11 +286,27 @@ rules:
   - watch
 
 ---
+# Copyright 2019 Tekton Authors LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-logging-triggers
+  namespace: tekton-pipelines
 data:
-  loglevel.controller: info
-  loglevel.eventlistener: info
-  loglevel.webhook: info
+  # Common configuration for all knative codebase
   zap-logger-config: |
     {
       "level": "info",
@@ -269,13 +332,31 @@ data:
         "callerEncoder": ""
       }
     }
-kind: ConfigMap
-metadata:
-  name: config-logging-triggers
-  namespace: tekton-pipelines
+  # Log level overrides
+  loglevel.controller: "info"
+  loglevel.webhook: "info"
+  loglevel.eventlistener: "info"
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-observability-triggers
+  namespace: tekton-pipelines
 data:
   _example: |
     ################################
@@ -309,12 +390,22 @@ data:
     # flag to "true" could cause extra Stackdriver charge.
     # If metrics.backend-destination is not Stackdriver, this is ignored.
     metrics.allow-stackdriver-custom-metrics: "false"
-kind: ConfigMap
-metadata:
-  name: config-observability-triggers
-  namespace: tekton-pipelines
 
 ---
+# Copyright 2019 Tekton Authors LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -332,14 +423,28 @@ spec:
     app: tekton-triggers-controller
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/name: tekton-triggers
   name: tekton-triggers-controller
   namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/name: tekton-triggers
+    app.kubernetes.io/component: controller
 spec:
   replicas: 1
   selector:
@@ -352,15 +457,15 @@ spec:
       labels:
         app: tekton-triggers-controller
     spec:
+      serviceAccountName: tekton-triggers-controller
       containers:
-      - args:
-        - -logtostderr
-        - -stderrthreshold
-        - INFO
-        - -el-image
-        - gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/eventlistenersink@sha256:a498577a8d99f151bf95adabbca3bfe2035fd286b96fc5e6a8bc857c5c8c7980
-        - -el-port
-        - "8080"
+      - name: tekton-triggers-controller
+        image: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/controller@sha256:0681945bcbe2177cd7c72aa417b66f8edd191ad1f229051420cbe7a81e6c097c
+        args: ["-logtostderr", "-stderrthreshold", "INFO", "-el-image", "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/eventlistenersink@sha256:5d8d2c94fe995b35b722cb816507959ee3ce82f16936d6fad0e206c488821b96",
+          "-el-port", "8080"]
+        volumeMounts:
+        - name: config-logging
+          mountPath: /etc/config-logging
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -372,16 +477,10 @@ spec:
           value: config-observability-triggers
         - name: METRICS_DOMAIN
           value: tekton.dev/triggers
-        image: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/controller@sha256:4730ef3c5cc678fbd99b486a442bf49e1df8a9c7ddedc284d92b4b6c1421829c
-        name: tekton-triggers-controller
-        volumeMounts:
-        - mountPath: /etc/config-logging
-          name: config-logging
-      serviceAccountName: tekton-triggers-controller
       volumes:
-      - configMap:
+      - name: config-logging
+        configMap:
           name: config-logging-triggers
-        name: config-logging
 
 ---
 apiVersion: v1
@@ -400,14 +499,28 @@ spec:
     app: tekton-triggers-webhook
 
 ---
+# Copyright 2019 The Tekton Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/component: webhook-controller
-    app.kubernetes.io/name: tekton-triggers
   name: tekton-triggers-webhook
   namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/name: tekton-triggers
+    app.kubernetes.io/component: webhook-controller
 spec:
   replicas: 1
   selector:
@@ -420,21 +533,21 @@ spec:
       labels:
         app: tekton-triggers-webhook
     spec:
+      serviceAccountName: tekton-triggers-controller
       containers:
-      - env:
+      - name: webhook
+        image: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/webhook@sha256:be0046ce57914e08aabd2b18ba3309b0f310c39c31ab972f55c5c5a47b740377
+        env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/webhook@sha256:06ce8becc361d577255f7daffb7b94890ec5535222dcb74f1b085f5009e32018
-        name: webhook
         volumeMounts:
-        - mountPath: /etc/config-logging
-          name: config-logging
-      serviceAccountName: tekton-triggers-controller
+        - name: config-logging
+          mountPath: /etc/config-logging
       volumes:
-      - configMap:
+      - name: config-logging
+        configMap:
           name: config-logging-triggers
-        name: config-logging
 
 ---
