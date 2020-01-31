@@ -8,7 +8,7 @@ build:
   - image: builds-registry.ystack.svc.cluster.local/ystack-examples/node-backend
     context: backend
     custom:
-      buildCommand: y-build
+      buildCommand: IMPORT_CACHE=type=local,src=/tmp EXPORT_CACHE=type=local,dest=/tmp y-build
       dependencies:
         dockerfile:
           path: ./Dockerfile

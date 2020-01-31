@@ -10,9 +10,9 @@ BUILDCTL_OPTS="$@"
 
 # Settings
 REGISTRY=builds-registry.ystack.svc.cluster.local
-BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
-IMPORT_CACHE="$BUILDKIT_CACHE"
-EXPORT_CACHE="$BUILDKIT_CACHE"
+[ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
+[ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="$BUILDKIT_CACHE"
+[ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="$BUILDKIT_CACHE"
 
 if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
 then
