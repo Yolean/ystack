@@ -11,8 +11,8 @@ BUILDCTL_OPTS="$@"
 # Settings
 REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
-[ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="$BUILDKIT_CACHE"
-[ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="$BUILDKIT_CACHE"
+[ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
+[ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE"
 
 if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
 then
@@ -58,7 +58,7 @@ BUILDKIT_HOST=$BUILDKIT_HOST \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
-    --import-cache $IMPORT_CACHE \
-    --export-cache $EXPORT_CACHE \
+    $IMPORT_CACHE \
+    $EXPORT_CACHE \
     $BUILDCTL_OPTS \
     --output "$OUTPUT"
