@@ -52,6 +52,8 @@ esac
 
 OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
 
+BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
+
 echo "Build command:"
 set -x
 KUBECONFIG=$KUBECONFIG \
@@ -60,6 +62,7 @@ BUILDKIT_HOST=$BUILDKIT_HOST \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
+    --opt build-arg:build_tag=$BUILD_TAG \
     $IMPORT_CACHE \
     $EXPORT_CACHE \
     $BUILDCTL_OPTS \
