@@ -4,12 +4,13 @@ metadata:
   name: registry
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+    # all examples have this: nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: builds.registry.svc.cluster.local
+  - host: builds-registry.ystack.svc.cluster.local
     http:
       paths:
       - path: /
         backend:
-          serviceName: builds
+          serviceName: builds-registry
           servicePort: 80
