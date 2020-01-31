@@ -13,6 +13,8 @@ REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
 [ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
 [ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE"
+[ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
+[ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
 
 if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
 then
