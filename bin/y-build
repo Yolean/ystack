@@ -52,7 +52,6 @@ esac
 
 OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
 
-BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ");
 BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
 
 # https://github.com/Yolean/build-contract/blob/a7e1a96ccec79bf413d604c344679f7439c34b49/build-contract#L21
@@ -75,7 +74,6 @@ BUILDKIT_HOST=$BUILDKIT_HOST \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
     --opt build-arg:build_tag=$BUILD_TAG \
-    --opt build-arg:build_timestamp=$BUILD_TIMESTAMP \
     --opt build-arg:git_commit=$GIT_COMMIT \
     $IMPORT_CACHE \
     $EXPORT_CACHE \
