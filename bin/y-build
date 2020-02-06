@@ -54,6 +54,15 @@ OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
 
 BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
 
+# https://github.com/Yolean/build-contract/blob/a7e1a96ccec79bf413d604c344679f7439c34b49/build-contract#L21
+GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null || echo '')
+if [[ ! -z "$GIT_COMMIT" ]]; then
+  GIT_STATUS=$(git status --untracked-files=no --porcelain=v2)
+  if [[ ! -z "$GIT_STATUS" ]]; then
+    GIT_COMMIT="$GIT_COMMIT-dev"
+  fi
+fi
+
 echo "Build command:"
 set -x
 KUBECONFIG=$KUBECONFIG \
@@ -63,6 +72,7 @@ BUILDKIT_HOST=$BUILDKIT_HOST \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
     --opt build-arg:build_tag=$BUILD_TAG \
+    --opt build-arg:git_commit=$GIT_COMMIT \
     $IMPORT_CACHE \
     $EXPORT_CACHE \
     $BUILDCTL_OPTS \
