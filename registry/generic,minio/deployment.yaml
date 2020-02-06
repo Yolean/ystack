@@ -21,8 +21,10 @@ spec:
               name: blobs-minio
               key: secretkey
         - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
-          value: http://blobs-minio.ystack.svc.cluster.local:9000
+          value: http://blobs-minio.ystack.svc.cluster.local
         - name: REGISTRY_STORAGE_S3_REGION
           value: us-east-1
         - name: REGISTRY_STORAGE_S3_BUCKET
           value: ystack-builds-registry
+        - name: REGISTRY_STORAGE_REDIRECT_DISABLE
+          value: "true"

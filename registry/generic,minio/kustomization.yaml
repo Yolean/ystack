@@ -1,6 +1,7 @@
 bases:
 - ../generic
 - ../node-update-hosts
+resources:
+- bucket-create-ystack-builds.yaml
 patchesStrategicMerge:
 - deployment.yaml
-- minio-host-from-nodes.yaml

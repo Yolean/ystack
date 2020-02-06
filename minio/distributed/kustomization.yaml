@@ -1,6 +1,0 @@
-namespace: ystack # hard coded in the unhelm script
-bases:
-- https://github.com/Yolean/unhelm/minio/templates?ref=7bc58133166b0297173157b0a02ceac4989731d2
-- ../common
-patchesStrategicMerge:
-- service-port-80.yaml

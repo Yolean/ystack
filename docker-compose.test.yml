@@ -1,0 +1,75 @@
+version: '2.4'
+services:
+
+  server:
+    build: ./k3s/image
+    command:
+    - server
+    - --disable-agent
+    - -v=0
+    environment:
+    - K3S_CLUSTER_SECRET=somethingtotallyrandom
+    - K3S_KUBECONFIG_OUTPUT=/admin/.kube/kubeconfig.yaml
+    - K3S_KUBECONFIG_MODE=666
+    volumes:
+    - k3s-server:/var/lib/rancher/k3s
+    - admin:/admin
+    # Host port not needed for CI
+    #ports:
+    #- 6443:6443
+    mem_limit:  300000000
+    memswap_limit: 0
+
+  node:
+    build: ./k3s/image
+    tmpfs:
+    - /run
+    - /var/run
+    privileged: true
+    environment:
+    - K3S_URL=https://server:6443
+    - K3S_CLUSTER_SECRET=somethingtotallyrandom
+    # Can also use K3S_TOKEN from /var/lib/rancher/k3s/server/node-token instead of K3S_CLUSTER_SECRET
+    #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
+    mem_limit: 1500000000
+    memswap_limit: 0
+
+  sut:
+    depends_on:
+    - server
+    - node
+    build:
+      context: .
+      # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
+      dockerfile: runner.Dockerfile
+    environment:
+    - KUBECONFIG_WAIT=30
+    - KEEP_RUNNING=false
+    volumes:
+    - admin:/admin
+    entrypoint:
+    - /bin/bash
+    - -cx
+    command:
+    - |
+      mkdir ~/.kube
+      until test -f /admin/.kube/kubeconfig.yaml; do
+        [ $$KUBECONFIG_WAIT -gt 0 ] || exit ${BULID_EXIT_CODE_ON_NO_CLUSTER:-0}
+        KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
+        echo "Waiting for a kubeconfig ..." && sleep 1
+      done
+      set -e
+      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
+      kubectl-waitretry --for=condition=Ready node --all
+      kubectl get namespace ystack 2>/dev/null || kubectl create namespace ystack
+      y-cluster-install-prometheus-operator
+      if [ "$$KEEP_RUNNING" = "true" ]; then
+        echo "Will stay running for manual work"
+        sleep infinity
+      fi
+    mem_limit:   80000000
+    memswap_limit: 0
+
+volumes:
+  k3s-server: {}
+  admin: {}

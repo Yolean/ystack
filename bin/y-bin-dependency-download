@@ -15,7 +15,9 @@ case "$platform" in
   Linux )
     url=$Linux_url
     sha256=$Linux_sha256
-    [ -z "$bin_tgz_path" ] || bin_tgz_path="--wildcards */$(basename $bin_tgz_path)"
+    [ -z "$bin_tgz_path" ] || \
+      [[ "$bin_tgz_path" =~ ^[^/]+$ ]] ||  \
+      bin_tgz_path="--wildcards */$(basename $bin_tgz_path)"
     ;;
   * )
     echo "Unsupported platform $platform" && exit 1
@@ -35,8 +37,10 @@ bin_link=$YBIN/$bin_name
     tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
     mv $(basename " $bin_tgz_path") $bin_file
   fi
-  chmod u+x $bin_file
+  chmod a+x $bin_file
 }
 
-[ -L $bin_link ] && rm $bin_link
-ln -s $bin_file $bin_link
+if [ "$(readlink $bin_link)" != "$bin_file" ]; then
+  [ -L $bin_link ] && rm $bin_link
+  ln -s $bin_file $bin_link
+fi
