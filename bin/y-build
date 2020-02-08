@@ -47,6 +47,7 @@ command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
 
 IMAGE=$IMAGE
 case "$IMAGE" in
+  $BUILDS_REGISTRY/* ) ;;
   $PUSH_REGISTRY/* ) ;;
   * ) echo "Output is restricted to PUSH_REGISRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
