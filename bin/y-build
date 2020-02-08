@@ -9,17 +9,19 @@ BUILDCTL_OPTS="$@"
 # We could also build using Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
 
 # Settings
-REGISTRY=builds-registry.ystack.svc.cluster.local
-[ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
+DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
+[ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
+[ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
+[ -z "$BUILDKIT_CACHE" ]  && BUILDKIT_CACHE="type=registry,ref=$BUILDS_REGISTRY/ystack:buildcache"
 [ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
 [ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE"
 [ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
 [ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
 
-if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
+if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
 then
-  echo "ERROR Skaffold need local access to the builds registry for digest lookup after build"
-  echo "Registry: $REGISTRY"
+  echo "ERROR Skaffold need local access to the builds registry for digest lookup"
+  echo "Registry: $BUILDS_REGISTRY"
   echo "Look for y-stack's ingress or port-forward utilities"
   exit 1
 fi
@@ -37,7 +39,7 @@ fi
 
 [ -z "$IMAGE" ] && {
   name=${PWD##*/}
-  IMAGE="$REGISTRY/y-stack-temp-builds/$name"
+  IMAGE="$BUILDS_REGISTRY/y-stack-temp-builds/$name"
   echo "No IMAGE env (from for example Skaffold). Guessing: $IMAGE"
 }
 
@@ -46,8 +48,8 @@ command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
 
 IMAGE=$IMAGE
 case "$IMAGE" in
-  $REGISTRY/* ) ;;
-  * ) echo "Only the ystack builds registry is supported at the moment. Got: $IMAGE" && exit 1 ;;
+  $PUSH_REGISTRY/* ) ;;
+  * ) echo "Output is restricted to PUSH_REGISRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
 OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
