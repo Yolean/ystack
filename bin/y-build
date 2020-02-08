@@ -9,17 +9,23 @@ BUILDCTL_OPTS="$@"
 # We could also build using Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
 
 # Settings
-REGISTRY=builds-registry.ystack.svc.cluster.local
-BUILDKIT_CACHE="type=registry,ref=$REGISTRY/ystack:buildcache"
-if [ "$(curl -s --connect-timeout 3 http://$REGISTRY/v2/)" != "{}" ]
+DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
+[ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
+[ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
+[ -z "$BUILDKIT_CACHE" ]  && BUILDKIT_CACHE="type=registry,ref=$BUILDS_REGISTRY/ystack:buildcache"
+[ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
+[ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE"
+[ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
+[ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
+[ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
+
+if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
 then
-  echo "ERROR Skaffold need local access to the builds registry for digest lookup after build"
-  echo "Registry: $REGISTRY"
+  echo "ERROR Skaffold need local access to the builds registry for digest lookup"
+  echo "Registry: $BUILDS_REGISTRY"
   echo "Look for y-stack's ingress or port-forward utilities"
   exit 1
 fi
-
-[ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
 
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
@@ -32,7 +38,7 @@ fi
 
 [ -z "$IMAGE" ] && {
   name=${PWD##*/}
-  IMAGE="$REGISTRY/y-stack-temp-builds/$name"
+  IMAGE="$BUILDS_REGISTRY/y-stack-temp-builds/$name"
   echo "No IMAGE env (from for example Skaffold). Guessing: $IMAGE"
 }
 
@@ -41,11 +47,23 @@ command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
 
 IMAGE=$IMAGE
 case "$IMAGE" in
-  $REGISTRY/* ) ;;
-  * ) echo "Only the ystack builds registry is supported at the moment. Got: $IMAGE" && exit 1 ;;
+  $BUILDS_REGISTRY/* ) ;;
+  $PUSH_REGISTRY/* ) ;;
+  * ) echo "Output is restricted to PUSH_REGISRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
 OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
+
+BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
+
+# https://github.com/Yolean/build-contract/blob/a7e1a96ccec79bf413d604c344679f7439c34b49/build-contract#L21
+GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null || echo '')
+if [[ ! -z "$GIT_COMMIT" ]]; then
+  GIT_STATUS=$(git status --untracked-files=no --porcelain=v2)
+  if [[ ! -z "$GIT_STATUS" ]]; then
+    GIT_COMMIT="$GIT_COMMIT-dirty"
+  fi
+fi
 
 echo "Build command:"
 set -x
@@ -55,7 +73,9 @@ BUILDKIT_HOST=$BUILDKIT_HOST \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
-    --import-cache $BUILDKIT_CACHE \
-    --export-cache $BUILDKIT_CACHE \
+    --opt build-arg:build_tag=$BUILD_TAG \
+    --opt build-arg:git_commit=$GIT_COMMIT \
+    $IMPORT_CACHE \
+    $EXPORT_CACHE \
     $BUILDCTL_OPTS \
     --output "$OUTPUT"

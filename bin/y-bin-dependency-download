@@ -15,7 +15,10 @@ case "$platform" in
   Linux )
     url=$Linux_url
     sha256=$Linux_sha256
-    [ -z "$bin_tgz_path" ] || bin_tgz_path="--wildcards */$(basename $bin_tgz_path)"
+    case "$bin_tgz_path" in
+      */*) bin_tgz_path="--wildcards */$(basename $bin_tgz_path)" ;;
+      *) ;;
+    esac
     ;;
   * )
     echo "Unsupported platform $platform" && exit 1
