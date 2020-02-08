@@ -1,3 +1,4 @@
+namespace: ystack
 resources:
 - git-service.yaml
 - gitea-statefulset-service.yaml

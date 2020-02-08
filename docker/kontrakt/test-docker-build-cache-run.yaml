@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
       - name: docker
-        image: solsson/build-contract:dind@sha256:4c912256f6c873d7b73324f28551e1c9ff9049efe51280f30162968a4cb6471a
+        image: solsson/build-contract:tekton0.10@sha256:0702df18355ba64238ab78cb38d171e8462e2e642da41b028e2009efb5a9476e
         env:
         - name: DOCKER_HOST
           value: tcp://dockerd.ystack.svc.cluster.local:2376
