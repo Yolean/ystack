@@ -17,6 +17,7 @@ DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE"
 [ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
 [ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
+[ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
 
 if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
 then
@@ -25,8 +26,6 @@ then
   echo "Look for y-stack's ingress or port-forward utilities"
   exit 1
 fi
-
-[ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
 
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
