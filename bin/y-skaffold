@@ -22,6 +22,8 @@ grep 'current-context: minikube' $KUBECONFIG && {
   source $YBIN/y-devcluster-docker.env
 }
 
+[ ! -z "$SKAFFOLD_CACHE_ARTIFACTS" ] || docker version > /dev/null 2>&1 || SKAFFOLD_CACHE_ARTIFACTS=false
+
 # Y-stack opinions, where do we put them?
 SKAFFOLD_NO_PRUNE=true \
 SKAFFOLD_UPDATE_CHECK=false \

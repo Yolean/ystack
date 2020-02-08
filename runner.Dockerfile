@@ -1,4 +1,4 @@
-FROM ubuntu:19.10@sha256:a5193c15d7705bc2be91781355c4932321c06c18914facdd113d5bfcace7f92d
+FROM ubuntu:20.04@sha256:7922db6447e9d1470e3bf821e8ff228d70c3593e822e980c58bf9185821ac645
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
@@ -12,10 +12,10 @@ RUN set -ex; \
 
 RUN set -ex; \
   F=$(mktemp); \
-  curl -SLs https://dl.k8s.io/v1.16.3/kubernetes-client-linux-amd64.tar.gz \
+  curl -SLs https://dl.k8s.io/v1.17.2/kubernetes-client-linux-amd64.tar.gz \
     | tee $F \
     | tar xzf - --strip-components=3 -C /usr/local/bin/; \
-  echo "904604839bbf46c11c7934f6f906adbc968234044b9f3268b71c175241626f8d4076812aca789dc5aa2f85fd25a384ad779638231d4d94f3f3c6d043b5d9f062 $F" \
+  echo "c5cd8954953ea348318f207c99c9dcb679d73dbaf562ac72660f7dab85616fd45b0f349d49eae9ea1f6aac7cae5bba839bf70f40b8be686d35605ae147339399 $F" \
     | sha512sum -c -; \
   rm $F
 
@@ -37,7 +37,7 @@ ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
 
-COPY --from=gcr.io/go-containerregistry/github.com/google/go-containerregistry/cmd/crane@sha256:2ebe1fffc23ac887cde2718b46f6133511b089e358bc08baa4de465675a1188f \
+COPY --from=gcr.io/go-containerregistry/crane:aec8da010de25d23759d972d7896629d6ae897d8 \
   /ko-app/crane /usr/local/bin/crane
 
 COPY . /usr/local/src/ystack
