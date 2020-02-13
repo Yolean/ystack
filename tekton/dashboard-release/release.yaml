@@ -310,7 +310,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:9323113ac1b7915efd9832414f9890fc642bd2cf06178cd943552a7258cc53fe
+        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:14376b01c30bacc0921428caaf7bd6f46547c623bf048f06df18bce1a729ca66
         livenessProbe:
           httpGet:
             path: /health
