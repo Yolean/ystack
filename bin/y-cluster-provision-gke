@@ -96,21 +96,7 @@ gcloud container clusters create "$NAME" $FLAGS "$@"
 
 GKE_CONTEXT_NAME=$(kubectl config current-context)
 
-echo "For outbound Internet access:"
-# https://cloud.google.com/nat/docs/gke-example#step_6_create_a_nat_configuration_using
-echo gcloud compute routers create nat-router \
-    --network $NETWORK \
-    --region $REGION
-echo gcloud compute routers nats create nat-config \
-    --router-region $REGION \
-    --router nat-router \
-    --nat-all-subnet-ip-ranges \
-    --auto-allocate-nat-external-ips
-
-echo "To clean up:"
-echo gcloud container clusters delete --zone $REGION $NAME
-echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
-echo gcloud compute routers delete nat-router --region $REGION
+echo "For outbound Internet access: y-cluster-provision-gke-network-outbound-enable"
 
 kubectl create namespace ystack
 
