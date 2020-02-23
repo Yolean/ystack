@@ -1,0 +1,19 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+ctx=$1
+case $ctx in
+  "--context="*) shift 1 ;;
+  *) echo "Initial arg must be --context=" && exit 1 ;;
+esac
+
+kubectl           $ctx -n default apply -f https://k8s.io/examples/admin/dns/dnsutils.yaml
+kubectl-waitretry $ctx -n default --timeout=10s -n default --for=condition=ready pod dnsutils
+kubectl           $ctx -n default exec -ti dnsutils -- nslookup kubernetes.default
+kubectl           $ctx -n default exec -ti dnsutils -- nslookup docker.io
+
+echo "Testing actual outbound network acess too ..."
+kubectl           $ctx -n default exec -ti dnsutils -- ping -c 3 -W 3 sunet.se
+
+kubectl           $ctx -n default delete --wait=false pod dnsutils
