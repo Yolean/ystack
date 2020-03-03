@@ -26,14 +26,17 @@ read -p "What's the targets' hex code above? " TARGET_HEX
 TARGET=gke-$CLUSTER_NAME-$TARGET_HEX-node
 FIREWALL_RULE_NAME=gke-$CLUSTER_NAME-$TARGET_HEX-master-webhooks
 MASTER_CIDR_BLOCK=172.16.0.0/28
+SOURCE_RANGE=$MASTER_CIDR_BLOCK
 PROTOCOL=tcp
 PORT=8443
+# Other firewall rules might want any port
+#PORT=1-65535
 
 echo "Suggested command:"
 echo \
 gcloud compute firewall-rules create $FIREWALL_RULE_NAME \
     --action ALLOW \
     --direction INGRESS \
-    --source-ranges $MASTER_CIDR_BLOCK \
+    --source-ranges $SOURCE_RANGE \
     --rules $PROTOCOL:$PORT \
     --target-tags $TARGET

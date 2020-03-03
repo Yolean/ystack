@@ -1,0 +1,36 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+NETWORK="$1"
+[ -z "$NETWORK" ] && echo "First argument must be a network name, such as 'default'" && exit 1
+
+REGION="$2"
+[ -z "$REGION" ] && echo "Second argument must be a gcloud region name" && exit 1
+
+PROJECT="$(gcloud config get-value project)"
+
+echo "### What this script will try to do is ..."
+echo "Use the currently configured project: $PROJECT"
+echo "Create NAT router+config for region '$REGION' network '$NETWORK' outbound access"
+echo ""
+
+read -p 'Please confirm [y/n]? ' yn
+case $yn in
+  [Yy]* ) ;;
+  * ) exit;;
+esac
+
+# https://cloud.google.com/nat/docs/gke-example#step_6_create_a_nat_configuration_using
+gcloud compute routers create nat-router \
+    --network $NETWORK \
+    --region $REGION
+gcloud compute routers nats create nat-config \
+    --router-region $REGION \
+    --router nat-router \
+    --nat-all-subnet-ip-ranges \
+    --auto-allocate-nat-external-ips
+
+echo "To clean up:"
+echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
+echo gcloud compute routers delete nat-router --region $REGION
