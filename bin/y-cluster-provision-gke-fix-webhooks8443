@@ -29,6 +29,8 @@ MASTER_CIDR_BLOCK=172.16.0.0/28
 SOURCE_RANGE=$MASTER_CIDR_BLOCK
 PROTOCOL=tcp
 PORT=8443
+# Other firewall rules might want any port
+#PORT=1-65535
 
 echo "Suggested command:"
 echo \
