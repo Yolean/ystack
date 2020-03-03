@@ -1,5 +1,6 @@
 resources:
 - standard-non-default.yaml
+- zonal-pd-resizable-retain.yaml
 - zonal-ssd-resizable-retain.yaml
 - zonal-ssd-resizable-delete.yaml
 patchesStrategicMerge:
