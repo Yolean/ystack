@@ -6,7 +6,7 @@ NETWORK="$1"
 [ -z "$NETWORK" ] && echo "First argument must be a network name, such as 'default'" && exit 1
 
 REGION="$2"
-[ -z "$NETWORK" ] && echo "Second argument must be a gcloud region name" && exit 1
+[ -z "$REGION" ] && echo "Second argument must be a gcloud region name" && exit 1
 
 PROJECT="$(gcloud config get-value project)"
 
