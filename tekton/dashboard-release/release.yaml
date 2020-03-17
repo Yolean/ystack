@@ -285,6 +285,7 @@ kind: Deployment
 metadata:
   labels:
     app: tekton-dashboard
+    version: v0.5.3
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -302,6 +303,8 @@ spec:
       - env:
         - name: PORT
           value: "9097"
+        - name: READ_ONLY
+          value: "false"
         - name: WEB_RESOURCES_DIR
           value: /var/run/ko/web
         - name: PIPELINE_RUN_SERVICE_ACCOUNT
@@ -310,7 +313,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:14376b01c30bacc0921428caaf7bd6f46547c623bf048f06df18bce1a729ca66
+        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:4ba4e91589360748468c6955ce5ba6c6a7a8fa5c02075e06c8249bb65c0cceda
         livenessProbe:
           httpGet:
             path: /health
@@ -394,7 +397,7 @@ spec:
     - $(inputs.params.target-namespace)
     command:
     - kubectl
-    image: lachlanevenson/k8s-kubectl@sha256:6944392a5ab6f762addbe3b3d8fcca7f47abdc44ff6076a6d18dc08510597e30
+    image: lachlanevenson/k8s-kubectl@sha256:429bf937e48c868caaf9525b88cf3a2f564ca59b43379e67a6b0747300b06a17
     name: kubectl-apply
 
 ---
