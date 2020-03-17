@@ -49,7 +49,7 @@ IMAGE=$IMAGE
 case "$IMAGE" in
   $BUILDS_REGISTRY/* ) ;;
   $PUSH_REGISTRY/* ) ;;
-  * ) echo "Output is restricted to PUSH_REGISRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
+  * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
 OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
