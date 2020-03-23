@@ -1,4 +1,4 @@
-FROM ubuntu:20.04@sha256:7922db6447e9d1470e3bf821e8ff228d70c3593e822e980c58bf9185821ac645
+FROM ubuntu:20.04@sha256:1515a62dc73021e2e7666a31e878ef3b4daddc500c3d031b35130ac05067abc0
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
