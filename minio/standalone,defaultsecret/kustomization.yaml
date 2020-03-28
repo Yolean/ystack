@@ -3,7 +3,7 @@ bases:
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
-- name: blobs-minio
+- name: minio
   literals:
   - accesskey=AKIAIOSFODNN7EXAMPLE
   - secretkey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
