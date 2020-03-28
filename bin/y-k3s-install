@@ -2,7 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-[ $(id -u) -eq 0 ] || exec sudo -E $0 $@
+[ $(id -u) -ne 0 ] && echo "su privileges required for the k3s installer" && exec sudo -E $0 $@
 
 export INSTALL_K3S_SKIP_START=true
 export K3S_NODE_NAME=ystack-master

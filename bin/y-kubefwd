@@ -3,15 +3,17 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=1.11.1
+version=1.13.0
 
 bin_name=kubefwd \
   bin_version=v${version} \
   Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_amd64.tar.gz \
-  Darwin_sha256=6e3bc8c1d576cadad10696e7d2b75998e7817a43dc43a5782b8ff088a2e68806 \
+  Darwin_sha256=49bce5f5914d81a478e301fae79ca63698b6eeaffcb38cf80bfc19150bf141e3 \
   Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_linux_amd64.tar.gz \
-  Linux_sha256=9b1ab4fd9daac0cb4354b9753030a43104ddfe598d7baad6e3c717ea58070177 \
+  Linux_sha256=4a6bc0f33bc0cde8738cc9611154702499d9581f3d1c0e65fb2d3951c1154ea5 \
   bin_tgz_path=kubefwd \
   $YBIN/y-bin-dependency-download || exit $?
+
+[ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $@
 
 $YBIN/y-kubefwd-v${version}-bin "$@" || exit $?

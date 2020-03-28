@@ -78,7 +78,7 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
      but individual features only set namespace if thery have configuration that depend on a fixed namespace
 3. Forward
    - port-forward the dev stack for local development
-   - `sudo -E y-kubefwd svc -n ystack`
+   - `y-kubefwd svc -n ystack`
 4. Test "inner development loop"
    - Check that CLIs are ok using `y-buildctl` and `y-skaffold`
    - In `./examples/basic-dev-inner-loop/` run `skaffold dev`
