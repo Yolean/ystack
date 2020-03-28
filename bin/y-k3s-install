@@ -2,7 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-[ $(id -u) -eq 0 ] || exec sudo $0 $@
+[ $(id -u) -eq 0 ] || exec sudo -E $0 $@
 
 export INSTALL_K3S_SKIP_START=true
 export K3S_NODE_NAME=ystack-master
@@ -21,8 +21,8 @@ mirrors:
     - http://prod-registry.ystack.svc.cluster.local
 EOF
 
-INSTALLER_REVISION=37ebb93a771958378e1307e66aad44d8d0a7461b
-export INSTALL_K3S_VERSION=v1.17.3+k3s1
+INSTALLER_REVISION=f741e8f9c5b017f94b92da47c2f772381db52b44
+export INSTALL_K3S_VERSION=v1.17.4+k3s1
 curl -sfL https://github.com/rancher/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start
