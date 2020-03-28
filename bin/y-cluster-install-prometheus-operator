@@ -2,6 +2,6 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-OPERATOR_VERSION=ab1f8da8d9195339266742dcef535df5b51522e1
+OPERATOR_VERSION=6a51e9a90dbb0ad81147e2002fd89f332dacea24
 
 kubectl -n default apply -f https://github.com/coreos/prometheus-operator/raw/$OPERATOR_VERSION/bundle.yaml
