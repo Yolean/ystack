@@ -8,7 +8,7 @@ metadata:
   name: buildkitd
 spec:
   serviceName: buildkitd
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: buildkitd
