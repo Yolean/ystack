@@ -1,9 +1,11 @@
 bases:
 - ../standalone
+patchesStrategicMerge:
+- minio-secret-rename.yaml
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
-- name: minio
+- name: blobs-minio
   literals:
   - accesskey=AKIAIOSFODNN7EXAMPLE
   - secretkey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
