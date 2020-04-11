@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: containerd-registry-http
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
     spec:
       hostPID: true
       hostNetwork: true
