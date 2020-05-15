@@ -1,4 +1,4 @@
-FROM ubuntu:20.04@sha256:1515a62dc73021e2e7666a31e878ef3b4daddc500c3d031b35130ac05067abc0
+FROM ubuntu:20.04@sha256:8bce67040cd0ae39e0beb55bcb976a824d9966d2ac8d2e4bf6119b45505cee64
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
@@ -43,10 +43,6 @@ COPY --from=gcr.io/go-containerregistry/crane:aec8da010de25d23759d972d7896629d6a
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack
 
-# exists in ubuntu already with uid 65534:
-#USER nobody:nogroup
-# https://github.com/GoogleContainerTools/distroless/pull/368
-# docker run --rm --entrypoint cat gcr.io/distroless/base:debug-nonroot /etc/passwd
-RUN groupadd -g 65532 nonroot && \
-  useradd --create-home --home-dir /home/nonroot --uid 65532 --gid 65532 -c nonroot -s /usr/sbin/nologin nonroot
-USER nonroot:nonroot
+RUN echo 'nonroot:x:65532:65534:nonroot:/home/nonroot:/usr/sbin/nologin' >> /etc/passwd && \
+  mkdir -p /home/nonroot && touch /home/nonroot/.bash_history && chown -R 65532:65534 /home/nonroot
+USER nonroot:nogroup
