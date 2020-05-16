@@ -30,5 +30,7 @@ k3s crictl info
 
 # The default storage class with k3s >= 0.10 is "local-path"
 #k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
-k3s kubectl get node
-k3s kubectl wait --for=condition=Ready node/ystack-master
+ctx="--kubeconfig=/etc/rancher/k3s/k3s.yaml"
+k3s kubectl $ctx get node
+sleep 10 # use kubectl-waitretry?
+k3s kubectl $ctl wait --for=condition=Ready node/ystack-master
