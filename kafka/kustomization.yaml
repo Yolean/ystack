@@ -1,7 +1,4 @@
 namespace: kafka
 bases:
-- github.com/Yolean/kubernetes-kafka/variants/dev-small?ref=10d80579de6e9cc122ef6232f9edb25406c6fdb8
-- github.com/Yolean/kubernetes-kafka/pixy?ref=10d80579de6e9cc122ef6232f9edb25406c6fdb8
-patchesStrategicMerge:
-- resources-increase-pzoo.yaml
-- resources-increase-kafka.yaml
+- github.com/Yolean/kubernetes-kafka/variants/dev-small?ref=4ab73a01e9a248b22aa132e5dee8d3979c7ef3b0
+- github.com/Yolean/kubernetes-kafka/pixy?ref=4ab73a01e9a248b22aa132e5dee8d3979c7ef3b0
