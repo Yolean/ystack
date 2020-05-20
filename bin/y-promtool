@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=2.18.1
+
+bin_name=promtool \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.darwin-amd64.tar.gz \
+  Darwin_sha256=e4cfcf8666f76ab1f5384671441c07758266e996b5f6fedff50e0e7d2ddc95f0 \
+  Linux_url=https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.linux-amd64.tar.gz \
+  Linux_sha256=5fcc35b78bd0a1b84afae6de94248a4bea3cdb4daf0d54a37b5491cb86b014d7 \
+  bin_tgz_path=prometheus-2.18.1.darwin-amd64/promtool \
+  y-bin-dependency-download 1>&2 || exit $?
+
+y-promtool-v${version}-bin "$@" || exit $?
