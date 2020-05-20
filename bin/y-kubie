@@ -12,4 +12,8 @@ bin_name=kubie \
   Linux_sha256=edbc338f72f547157fe94a97b0562e7a7e7b74113967b50ac50b689143e9113e \
   y-bin-dependency-download || exit $?
 
+command -v fzf > /dev/null || echo "Note that kubie recommends having fzf installed"
+
+[ "$1" = "completion" ] && curl -sLS https://github.com/sbstp/kubie/raw/3ebbf728cc52a57dfd9913da120d47a44e783702/completion/kubie.bash && exit 0
+
 y-kubie-v${version}-bin "$@" || echo $?
