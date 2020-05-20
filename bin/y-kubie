@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+version=0.9.1
+
+bin_name=kubie \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/sbstp/kubie/releases/download/v${version}/kubie-darwin-amd64 \
+  Darwin_sha256=c789bcc4ecd02e1abd4e82d2df5f6529815cfeea84ee90b66437c8671a015d5f \
+  Linux_url=https://github.com/sbstp/kubie/releases/download/v${version}/kubie-linux-amd64 \
+  Linux_sha256=edbc338f72f547157fe94a97b0562e7a7e7b74113967b50ac50b689143e9113e \
+  y-bin-dependency-download || exit $?
+
+y-kubie-v${version}-bin "$@" || echo $?
