@@ -1,7 +1,7 @@
 mirrors:
   "builds-registry.ystack.svc.cluster.local":
     endpoint:
-    - http://builds-registry.ystack.svc.cluster.local
+    - http://10.43.0.50
   "prod-registry.ystack.svc.cluster.local":
     endpoint:
     - http://prod-registry.ystack.svc.cluster.local

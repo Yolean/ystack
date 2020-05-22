@@ -1,0 +1,4 @@
+bases:
+- ../../registry/builds-service
+patchesStrategicMerge:
+- builds-registry-magic-numbers.yaml

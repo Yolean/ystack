@@ -87,3 +87,21 @@ Still doesn't guard against mistakes, because `kubectl -n ystack-dev delete pod`
 
 Y-stack is opinionated on Kubernetes devops tooling as well.
 We therefore download some CLIs to the aforementioned `PATH` entry.
+
+## CI test suite
+
+```
+docker volume rm ystack_admin 2> /dev/null || true
+./test.sh
+```
+
+## Development
+
+```
+compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrides.yml'
+$compose down \
+  ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
+sudo rm test/.kube/kubeconfig.yaml
+$compose up --build -d builds-registry.ystack.svc.cluster.local
+export KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
+```

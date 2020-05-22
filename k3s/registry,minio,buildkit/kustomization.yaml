@@ -1,0 +1,6 @@
+bases:
+- ../../buildkit
+- ../../minio/standalone,defaultsecret
+- ../../registry/generic,minio
+patchesStrategicMerge:
+- builds-registry-replicas-1.yaml

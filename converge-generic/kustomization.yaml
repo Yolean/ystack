@@ -1,5 +1,8 @@
 namespace: ystack
 bases:
+- ../registry/builds-service
+- ../registry/prod-service
+- ../registry/node-update-hosts
 - ../buildkit
 - ../minio/standalone,defaultsecret
 #- ../registry/generic,kafka  # Note that kafka isn't a base (as it has its own namespace) and must be applied separately
