@@ -5,6 +5,10 @@ metadata:
 build:
   artifacts:
   - image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
+    kaniko:
+      reproducible: true
+      skipTLS: true
+  cluster: {}
 deploy:
   kubectl:
     manifests:
