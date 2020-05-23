@@ -9,7 +9,6 @@ build:
       infer: ["**/*"]
     kaniko:
       reproducible: true
-      skipTLS: true
   cluster: {}
 deploy:
   kubectl:
