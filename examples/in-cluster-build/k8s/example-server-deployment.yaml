@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-server
+spec:
+  selector:
+    matchLabels:
+      app: example-server
+  template:
+    metadata:
+      labels:
+        app: example-server
+    spec:
+      containers:
+      - name: busybox
+        image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
+        ports:
+        - containerPort: 8080
