@@ -5,6 +5,8 @@ metadata:
 build:
   artifacts:
   - image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
+    sync:
+      infer: ["**/*"]
     kaniko:
       reproducible: true
       skipTLS: true
