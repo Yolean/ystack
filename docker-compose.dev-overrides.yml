@@ -14,6 +14,13 @@ services:
     mem_limit: 8589934592
     memswap_limit: 0
 
+  ystack-proxy:
+    ports:
+    # To run skaffold build/run/dev locally
+    - 80:80
+    # To support y-build as skaffold build (TODO - proxying fails)
+    - 8547:8547
+
   sut:
     environment:
     - KEEP_RUNNING=true
