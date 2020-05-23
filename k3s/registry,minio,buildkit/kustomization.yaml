@@ -2,5 +2,7 @@ bases:
 - ../../buildkit
 - ../../minio/standalone,defaultsecret
 - ../../registry/generic,minio
+resources:
+- buildkitd-nodeport-service.yaml
 patchesStrategicMerge:
 - builds-registry-replicas-1.yaml

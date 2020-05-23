@@ -18,6 +18,6 @@ COPY bin/kubectl-waitretry /usr/local/bin/kubectl-waitretry
 
 COPY --from=kubectl /var/lib/rancher/k3s/server/manifests /var/lib/rancher/k3s/server/manifests
 
-COPY k3s/builds-registry-proxy/envoy.template.yaml /envoy.template.yaml
-COPY k3s/builds-registry-proxy/entrypoint.sh /usr/local/bin/entrypoint
+COPY k3s/docker-ystack-proxy/envoy.template.yaml /envoy.template.yaml
+COPY k3s/docker-ystack-proxy/entrypoint.sh /usr/local/bin/entrypoint
 ENTRYPOINT [ "entrypoint" ]

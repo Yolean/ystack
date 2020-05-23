@@ -102,6 +102,6 @@ compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrid
 $compose down \
   ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
 sudo rm test/.kube/kubeconfig.yaml
-$compose up --build -d builds-registry.ystack.svc.cluster.local
+$compose up --build -d ystack-proxy
 export KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
 ```

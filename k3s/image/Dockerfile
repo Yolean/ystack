@@ -1,6 +1,8 @@
 FROM rancher/k3s:v1.17.5-k3s1@sha256:3025ecfa3c7c3a262a97435cb7c9c182d22b93d014bac767019d65bdce586786
 
 COPY k3s/image/registries.yaml /etc/rancher/k3s/registries.yaml
+# The clusterIP should be predefined
+RUN sed -i 's|http://builds-registry.ystack.svc.cluster.local|http://10.43.0.50|' /etc/rancher/k3s/registries.yaml
 
 # Unfortunately /var/lib/rancher/k3s is a VOLUME so this has no effect on server start
 # COPY registry/generic /etc/ystack/registry/generic

@@ -51,23 +51,25 @@ services:
     mem_limit: 1500000000
     memswap_limit: 0
 
-  builds-registry.ystack.svc.cluster.local:
+  ystack-proxy:
     depends_on:
     - server
     - agent
     build:
       context: .
-      dockerfile: ./k3s/builds-registry-proxy/Dockerfile
+      dockerfile: ./k3s/docker-ystack-proxy/Dockerfile
     environment:
     - KUBECONFIG_WAIT=30
     expose:
     - 80
+    - 8547
     volumes:
     - admin:/admin
 
   sut:
-    depends_on:
-    - builds-registry.ystack.svc.cluster.local
+    links:
+    - ystack-proxy:builds-registry.ystack.svc.cluster.local
+    - ystack-proxy:buildkitd.ystack.svc.cluster.local
     build:
       context: .
       # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore

@@ -14,11 +14,13 @@ kubectl-waitretry --for=condition=Ready node --all
 kubectl -n ystack apply -f /var/lib/rancher/k3s/server/manifests/
 
 NODE=agent
-NODEPORT=$(kubectl -n ystack get service builds-registry -o jsonpath={.spec.ports[0].nodePort})
+REGISTRY=$(kubectl -n ystack get service builds-registry -o jsonpath={.spec.ports[0].nodePort})
+BUILDKIT=$(kubectl -n ystack get service buildkitd-nodeport -o jsonpath={.spec.ports[0].nodePort})
 
 cat envoy.template.yaml \
   | sed "s|{{ node }}|$NODE|g" \
-  | sed "s|{{ nodeport }}|$NODEPORT|g" \
+  | sed "s|{{ registry_nodeport }}|$REGISTRY|g" \
+  | sed "s|{{ buildkit_nodeport }}|$BUILDKIT|g" \
   > /envoy.yaml
 
 # TODO do we pass on signals?
