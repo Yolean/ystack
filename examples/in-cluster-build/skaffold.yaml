@@ -1,0 +1,12 @@
+apiVersion: skaffold/v2beta4
+kind: Config
+metadata:
+  name: in-cluster-build
+build:
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
+deploy:
+  kubectl:
+    manifests:
+    - k8s/example-server-deployment.yaml
+    - k8s/example-server-service.yaml
