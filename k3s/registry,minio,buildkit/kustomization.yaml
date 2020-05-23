@@ -6,3 +6,5 @@ resources:
 - buildkitd-nodeport-service.yaml
 patchesStrategicMerge:
 - builds-registry-replicas-1.yaml
+# Making it work with ystack-proxy is a todo, and maybe we could do some kind of scale up on demand
+- buildkitd-replicas-0.yaml
