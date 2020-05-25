@@ -1,4 +1,2 @@
-bases:
-- ../../ingress-tls-local
 resources:
 - ./ingress.yaml

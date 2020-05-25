@@ -1,4 +1,5 @@
 bases:
+- ../../ingress-tls-local
 - ../ingress
 patchesStrategicMerge:
 - ingress-tls-patch.yaml
