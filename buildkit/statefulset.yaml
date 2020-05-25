@@ -2,9 +2,6 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  labels:
-    app: buildkitd
-    status: accepts-new-builds
   name: buildkitd
 spec:
   serviceName: buildkitd
@@ -17,6 +14,7 @@ spec:
     metadata:
       labels:
         app: buildkitd
+        status: accepts-new-builds
       annotations:
         container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
         container.seccomp.security.alpha.kubernetes.io/buildkitd: unconfined
