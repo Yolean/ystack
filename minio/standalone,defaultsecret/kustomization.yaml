@@ -1,5 +1,7 @@
 bases:
 - ../standalone
+patchesStrategicMerge:
+- minio-secret-rename.yaml
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
