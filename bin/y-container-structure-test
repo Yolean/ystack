@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+version=1.9.0
+
+bin_name=container-structure-test \
+  bin_version=v${version} \
+  Darwin_url=https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-darwin-amd64 \
+  Darwin_sha256=32e4841ce1590fd14cda096742c1680c8dccd5bc1a8c5993651f839d5ae9250a \
+  Linux_url=https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-linux-amd64 \
+  Linux_sha256=09cb373a9e622a4120577391acb28c6b2aea55f883a4351db8e8de85f0cf8a5b \
+  y-bin-dependency-download || exit $?
+
+y-container-structure-test-v${version}-bin "$@" || echo $?
