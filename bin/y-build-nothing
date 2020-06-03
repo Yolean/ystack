@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+# Settings
+DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
+[ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
+[ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
+
+if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
+then
+  echo "ERROR Skaffold need local access to the builds registry for digest lookup"
+  echo "Registry: $BUILDS_REGISTRY"
+  echo "Look for y-stack's ingress or port-forward utilities"
+  exit 1
+fi
+
+[ -z "$IMAGE" ] && echo "No IMAGE env (from for example Skaffold)" && exit 1
+
+IMAGE=$IMAGE
+case "$IMAGE" in
+  $BUILDS_REGISTRY/* ) ;;
+  $PUSH_REGISTRY/* ) echo "Unlike y-build this script won't push to non-build registries" && exit 1 ;;
+  * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
+esac
+
+[ -z "$ctx" ] && ctx="--context=$(kubectl config current-context)" && echo "No 'ctx' env, guessing: $ctx"
+
+CRANE_IMAGE=gcr.io/go-containerregistry/crane:96cf69f03a3cf2d9c8850ce9d8e1f33da354826a@sha256:7b4f1fc7c681e49ce7bf6ed95bd30d6c749f4a1cd2467f994fc045e6433ebde9
+NOTHING_IMAGE=gcr.io/distroless/base:nonroot@sha256:54c459100e9d420e023b0aecc43f7010d2731b6163dd8e060906e2dec4c59890
+
+BUILD_NAME=y-build-nothing-$(date -u +"%Y%m%dt%H%M%Sz")
+
+# TODO copy is significantly faster if the source image is already in the target repo
+
+# crane hangs for a long time if it doesn't know that the registry is plain http
+NOTHING_IMAGE=$(echo $NOTHING_IMAGE | sed 's|.local|.local:80|')
+IMAGE=$(echo $IMAGE | sed 's|.local|.local:80|')
+
+set -x
+kubectl $ctx -n ystack run --restart=Never --attach \
+  --image=$CRANE_IMAGE y-build-nothing-$(date -u +"%Y%m%dt%H%M%Sz") -- \
+  cp $NOTHING_IMAGE $IMAGE
