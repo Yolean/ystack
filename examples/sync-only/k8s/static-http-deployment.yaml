@@ -29,9 +29,6 @@ spec:
           mountPath: /var/www
       - name: content
         image: builds-registry.ystack.svc.cluster.local/ystack-examples/sync-only
-        command:
-        - sleep
-        - infinity
         volumeMounts:
         - name: www-static
           mountPath: /var/www
