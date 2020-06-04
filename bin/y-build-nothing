@@ -27,7 +27,7 @@ esac
 [ -z "$ctx" ] && ctx="--context=$(kubectl config current-context)" && echo "No 'ctx' env, guessing: $ctx"
 
 CRANE_IMAGE=gcr.io/go-containerregistry/crane:96cf69f03a3cf2d9c8850ce9d8e1f33da354826a@sha256:7b4f1fc7c681e49ce7bf6ed95bd30d6c749f4a1cd2467f994fc045e6433ebde9
-NOTHING_IMAGE=gcr.io/google_containers/pause-amd64:3.1@sha256:59eec8837a4d942cc19a52b8c09ea75121acc38114a2c68b98983ce9356b8610
+NOTHING_IMAGE=busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
 
 BUILD_NAME=y-build-nothing-$(date -u +"%Y%m%dt%H%M%Sz")
 

@@ -18,5 +18,5 @@ build:
 deploy:
   kubectl:
     manifests:
+    - k8s/static-http-service.yaml
     - k8s/static-http-deployment.yaml
-    #- k8s/static-http-service.yaml
