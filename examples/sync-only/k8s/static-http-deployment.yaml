@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-http
+spec:
+  selector:
+    matchLabels:
+      app: ystack-examples-sync-only
+  template:
+    metadata:
+      labels:
+        app: ystack-examples-sync-only
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      containers:
+      - name: busybox
+        image: busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+        ports:
+        - containerPort: 8080
+        command:
+        - busybox
+        - httpd
+        - -f
+        - -p
+        - "8080"
+        - -h
+        - /var/www/
+        volumeMounts:
+        - name: www-static
+          mountPath: /var/www
+      - name: content
+        image: builds-registry.ystack.svc.cluster.local/ystack-examples/sync-only
+        command:
+        - tail
+        - -f
+        - /dev/null
+        volumeMounts:
+        - name: www-static
+          mountPath: /var/www
+      volumes:
+      - name: www-static
+        emptyDir: {}
