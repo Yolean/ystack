@@ -48,6 +48,7 @@ services:
     expose:
     - 8472
     - 10250
+    # It's a feature that we keep ystack with kubernetes-assert light enough to fit these limits
     mem_limit: 1500000000
     memswap_limit: 0
 
