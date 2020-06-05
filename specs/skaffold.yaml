@@ -1,0 +1,22 @@
+apiVersion: skaffold/v2beta4
+kind: Config
+metadata:
+  name: ystack-specs
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/yolean/ystack-specs
+    context: ./
+    custom:
+      buildCommand: y-build
+      dependencies:
+        dockerfile:
+          path: Dockerfile
+    sync:
+      infer: ["**/*"]
+deploy:
+  kustomize: {}
+profiles:
+- name: y-assert
