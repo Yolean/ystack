@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+function log {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+[ "$1" = "help" ] && echo '
+A convention for running https://github.com/Yolean/kubernetes-assert
+using ephemeral namespaces.
+' && exit 0
+
+[ -z "$DIR" ] && DIR="$PWD" && echo "$(log) Module dir: $DIR"
+
+[ ! -f $DIR/skaffold.yaml ] && echo "Missing a skaffold.yaml in project dir $DIR" && exit 1
+
+[ -z "$PROJECT" ] && PROJECT=$(echo $DIR | awk -F/ '{print $NF}' | tr -cd [:alnum:]- | tr '[:upper:]' '[:lower:]')
+
+[ -z "$ID" ] && ID=assert-$(date -u +"%Y%m%dt%H%M%Sz")-${PROJECT:0:10} && echo "$(log) Generated test ID: $ID"
+
+# What cleanup solutions are there? Let's start with https://github.com/hjacobs/kube-janitor
+TTL="janitor/ttl: 23h"
+
+ctx=$1
+case $ctx in
+  "--context="*) shift 1 ;;
+  *)
+    [ "$CI" != "true" ] && echo "First arg should be --context" && exit 1
+    ctx="--context=$(kubectl config current-context)" && echo "$(log) Current ctx: $ctx"
+    ;;
+esac
+skaffoldflags=$(echo $ctx | sed 's|^--|--kube-|')
+
+CIRUN=$1
+[ -z "$CIRUN" ] && CIRUN="run"
+
+# --- Up to this point we didn't actually do anything in any cluster, from here on we will ---
+
+if [ "$CI" = true ]; then
+  [ -f /run/secrets/kubernetes.io/serviceaccount/namespace ] && namespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+  [ -z "$namespace" ] && namespace=$(kubectl $ctx config view --minify --output 'jsonpath={..namespace}')
+  [ -z "$namespace" ] && echo "$(log) Failed to find a current namespace for CI=true mode" && exit 1
+else
+  namespace=$ID
+  echo "$(log) Creating (in $ctx) temp namespace: $namespace"
+  cat <<EOF | kubectl $ctx apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $namespace
+  labels:
+    $TTL
+EOF
+fi
+skaffoldflags="$skaffoldflags -n $namespace"
+
+set -x
+y-skaffold $skaffoldflags --cache-artifacts=false $CIRUN
+
+echo "$(log) cleanup-ish: kubectl $ctx get namespace -l $(echo $TTL | sed 's/: */=/') -o name | xargs kubectl $ctx delete"
