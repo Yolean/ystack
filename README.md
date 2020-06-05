@@ -104,7 +104,6 @@ $compose down \
 sudo rm test/.kube/kubeconfig.yaml
 $compose up --build -d ystack-proxy
 export KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
-kubectl -n ystack scale --replicas=1 statefulset buildkitd
 ```
 
 With kubectl access to the in-docker cluster you might want to start with
