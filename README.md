@@ -101,9 +101,8 @@ docker volume rm ystack_admin 2> /dev/null || true
 compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrides.yml'
 $compose down \
   ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
-sudo rm test/.kube/kubeconfig.yaml
 $compose up --build -d ystack-proxy
-export KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
+y-kubie ctx -f ./test/.kube/kubeconfig.yaml
 ```
 
 With kubectl access to the in-docker cluster you might want to start with
