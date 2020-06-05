@@ -1,9 +1,10 @@
 *
+
+# ystack-runner components
 !bin/y-*
 bin/*-bin
 !bin/kubectl-*
 
-#!metrics-server/
 #!converge-generic/
 !minio/
 !registry/builds-service/
@@ -12,8 +13,6 @@ bin/*-bin
 !registry/node-update-hosts/
 !registry/generic,minio/
 !buildkit/
-#!monitoring/rbac-base/
-#!monitoring/instance-now/
 
 # k3s configuration
 !k3s/image/registries.yaml
