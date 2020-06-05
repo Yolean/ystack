@@ -1,4 +1,4 @@
-FROM builds-registry.ystack.svc.cluster.local/yolean/kubernetes-assert/runtime-nodejs:a37053500670cc936b3b9fb05362bea5005ee20c
+FROM builds-registry.ystack.svc.cluster.local/yolean/kubernetes-assert/runtime-nodejs:594d9886eca5175b90dcd96584578b8a42d5fc26
 
 WORKDIR /usr/src/specs
 
