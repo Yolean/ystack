@@ -79,9 +79,11 @@ services:
     - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
     - EXAMPLES=sync-only in-cluster-build basic-dev-inner-loop
+    - CI=true
     volumes:
     - admin:/admin
     - ./examples:/usr/local/src/ystack/examples
+    - ./specs:/usr/local/src/ystack/specs
     entrypoint:
     - /bin/bash
     - -cx
@@ -109,8 +111,7 @@ services:
       curl -f --retry 5 http://builds-registry.ystack.svc.cluster.local/v2/
 
       y-cluster-install-prometheus-operator
-
-      kubectl create namespace monitoring
+      kubectl get namespace monitoring 2>/dev/null || kubectl create namespace monitoring
       kubectl apply -k github.com/Yolean/kubernetes-assert/example-small?ref=f0318952dd4990bb3d4c9d163f8044f13e2b647d
 
       kubectl-waitretry --for=condition=Ready -n monitoring pod --all
@@ -122,7 +123,9 @@ services:
       done
 
       echo "# Running main specs ..."
-      y-assert
+      kubectl create namespace                         ystack-specs
+      kubectl config set-context --current --namespace=ystack-specs
+      (cd /usr/local/src/ystack/specs && y-assert)
 
       if [ "$$KEEP_RUNNING" = "true" ]; then
         echo "Will stay running for manual work"
