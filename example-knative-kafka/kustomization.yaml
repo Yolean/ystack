@@ -1,7 +1,0 @@
-namespace: test-knative-eventing
-resources:
-- sequence-kafka.yaml
-# The sequence is independent, the remainder belongs together
-- broker-trigger-kafka.yaml
-- apiserver-source-kafka.yaml
-- inspect-kafka001.yaml
