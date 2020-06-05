@@ -43,7 +43,7 @@ ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
 
-COPY --from=gcr.io/go-containerregistry/crane:aec8da010de25d23759d972d7896629d6ae897d8 \
+COPY --from=gcr.io/go-containerregistry/crane:57766c1fee7bdc67c4e70680efffed535d50b459 \
   /ko-app/crane /usr/local/bin/crane
 
 COPY . /usr/local/src/ystack
