@@ -101,8 +101,11 @@ docker volume rm ystack_admin 2> /dev/null || true
 compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrides.yml'
 $compose down \
   ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
+KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
+previous=$(stat -c %Y $KUBECONFIG 2>/dev/null)
 $compose up --build -d ystack-proxy
-y-kubie ctx -f ./test/.kube/kubeconfig.yaml
+while [ "$prev" = "$(stat -c %Y $KUBECONFIG 2>/dev/null)" ]; do echo "Waiting for $KUBECONFIG" && sleep 1; done
+y-kubie ctx -f $KUBECONFIG
 ```
 
 With kubectl access to the in-docker cluster you might want to start with
