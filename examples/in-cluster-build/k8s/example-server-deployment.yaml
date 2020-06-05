@@ -13,6 +13,6 @@ spec:
     spec:
       containers:
       - name: busybox
-        image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
+        image: builds-registry.ystack.svc.cluster.local:80/ystack-examples/example-server
         ports:
         - containerPort: 8080
