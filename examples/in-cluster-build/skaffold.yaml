@@ -7,7 +7,7 @@ build:
     gitCommit:
       variant: CommitSha
   artifacts:
-  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
+  - image: builds-registry.ystack.svc.cluster.local:80/ystack-examples/example-server
     sync:
       infer: ["**/*"]
     kaniko:

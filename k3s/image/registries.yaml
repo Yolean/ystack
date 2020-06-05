@@ -2,6 +2,12 @@ mirrors:
   "builds-registry.ystack.svc.cluster.local":
     endpoint:
     - http://builds-registry.ystack.svc.cluster.local
+  "builds-registry.ystack.svc.cluster.local:80":
+    endpoint:
+    - http://builds-registry.ystack.svc.cluster.local
   "prod-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://prod-registry.ystack.svc.cluster.local
+  "prod-registry.ystack.svc.cluster.local:80":
     endpoint:
     - http://prod-registry.ystack.svc.cluster.local
