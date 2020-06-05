@@ -3,6 +3,9 @@ kind: Config
 metadata:
   name: in-cluster-build
 build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
   artifacts:
   - image: builds-registry.ystack.svc.cluster.local/ystack-examples/example-server
     sync:
