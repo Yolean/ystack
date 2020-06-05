@@ -1,3 +1,3 @@
 bases:
 - ../common
-- github.com/Yolean/kubernetes-minio/ystack-scale-1?ref=1803a42c13289c06e070f197392ce3125f537e68
+- github.com/Yolean/kubernetes-minio/ystack-scale-1?ref=2858be3d0787bf436b3e5db7b49ac68295f869ec
