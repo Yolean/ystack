@@ -37,10 +37,14 @@ spec:
           if ! grep builds-registry.ystack.svc.cluster.local $CONFIG_PATH; then
             echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]' >> $CONFIG_PATH
             echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"]'          >> $CONFIG_PATH
+            echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local:80"]' >> $CONFIG_PATH
+            echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"]'          >> $CONFIG_PATH
             touch /results/config-updated
           fi
           if ! grep prod-registry.ystack.svc.cluster.local $CONFIG_PATH; then
             echo '[plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]'   >> $CONFIG_PATH
+            echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"]'            >> $CONFIG_PATH
+            echo '[plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local:80"]'   >> $CONFIG_PATH
             echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"]'            >> $CONFIG_PATH
             touch /results/config-updated
           fi
