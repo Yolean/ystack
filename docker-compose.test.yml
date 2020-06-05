@@ -104,7 +104,9 @@ services:
       kubectl get namespaces
       kubectl-waitretry --for=condition=Ready -n ystack pod -l app=minio
       kubectl-waitretry --for=condition=Ready -n ystack pod -l ystack-builds-registry=http
-      curl -f --retry 5 --retry-connrefused http://builds-registry.ystack.svc.cluster.local/v2/
+      kubectl -n ystack scale --replicas=1 statefulset buildkitd
+      kubectl-waitretry --for=condition=Ready -n ystack pod -l app=buildkitd
+      curl -f --retry 5 http://builds-registry.ystack.svc.cluster.local/v2/
 
       y-cluster-install-prometheus-operator
 
