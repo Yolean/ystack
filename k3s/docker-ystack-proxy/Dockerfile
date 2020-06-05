@@ -1,5 +1,7 @@
 FROM lachlanevenson/k8s-kubectl:v1.18.3@sha256:495f41912554fde10e41ac54e8df6fdbd0e859e893a4cab61c9224b296f3454d as kubectl
 
+RUN apk add --no-cache git
+
 COPY . /etc/ystack
 RUN set -ex; \
   mkdir -p /var/lib/rancher/k3s/server/manifests; \
