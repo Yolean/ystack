@@ -32,6 +32,9 @@ case $ctx in
 esac
 skaffoldflags=$(echo $ctx | sed 's|^--|--kube-|')
 
+[ -z "$PROFILES" ] && PROFILES="y-assert"
+skaffoldflags="$skaffoldflags -p $PROFILES"
+
 CIRUN=$1
 [ -z "$CIRUN" ] && CIRUN="run"
 
