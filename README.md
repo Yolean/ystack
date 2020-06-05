@@ -105,3 +105,6 @@ sudo rm test/.kube/kubeconfig.yaml
 $compose up --build -d ystack-proxy
 export KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
 ```
+
+With kubectl access to the in-docker cluster you might want to start with
+some of the steps from the "sut" script in [docker-compose.test.yml](./docker-compose.test.yml).

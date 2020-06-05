@@ -77,6 +77,7 @@ services:
     environment:
     - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
+    - EXAMPLES=sync-only in-cluster-build basic-dev-inner-loop
     volumes:
     - admin:/admin
     - ./examples:/usr/local/src/ystack/examples
@@ -85,6 +86,8 @@ services:
     - -cx
     command:
     - |
+      [ "$$KEEP_RUNNING" = "true" ] || set -e
+
       mkdir ~/.kube
       until test -f /admin/.kube/kubeconfig.yaml; do
         [ $$KUBECONFIG_WAIT -gt 0 ] || exit ${BULID_EXIT_CODE_ON_NO_CLUSTER:-0}
@@ -94,12 +97,29 @@ services:
       set -e
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
-      kubectl get namespace ystack 2>/dev/null || kubectl create namespace ystack
+      kubectl get nodes
+
+      echo "Our ystack-proxy image should install ystack essentials ..."
+      kubectl get namespaces
+      kubectl-waitretry --for=condition=Ready -n ystack pod -l app=minio
+      kubectl-waitretry --for=condition=Ready -n ystack pod -l ystack-builds-registry=http
+      curl -f --retry 5 --retry-connrefused http://builds-registry.ystack.svc.cluster.local/v2/
 
       y-cluster-install-prometheus-operator
 
-      cd /usr/local/src/ystack/examples/basic-dev-inner-loop
-      y-skaffold run
+      kubectl create namespace monitoring
+      kubectl apply -k github.com/Yolean/kubernetes-assert/example-small?ref=f0318952dd4990bb3d4c9d163f8044f13e2b647d
+
+      kubectl-waitretry --for=condition=Ready -n monitoring pod --all
+
+      for EXAMPLE in $$EXAMPLES; do
+        echo "# Running example $$EXAMPLE ..."
+        cd /usr/local/src/ystack/examples/$$EXAMPLE
+        y-skaffold run
+      done
+
+      echo "# Running main specs ..."
+      y-assert
 
       if [ "$$KEEP_RUNNING" = "true" ]; then
         echo "Will stay running for manual work"
