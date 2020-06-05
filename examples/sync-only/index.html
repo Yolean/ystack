@@ -1,0 +1,14 @@
+<html>
+<head><title>Example sync</title></head>
+<body>
+This file will only be hosted (by the runtime container) after <code>skaffold dev</code> and modification.
+
+The example could be a bit lighter if:
+<ul>
+<p>The <code>NOTHING_IMAGE</code>; was already in the target repo. Crane cp would be faster.</p>
+<p>The image had a nonroot <code>USER</code>. We could remove <code>securityContext</code>.</p>
+<p>The image had a sleep entrypoint. We could remove the <code>command</code>.</p>
+<p>With https://github.com/kubernetes/kubernetes/issues/58512 we wouldn't need tar in the image.</p>
+</ul>
+</body>
+</html>

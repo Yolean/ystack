@@ -1,0 +1,22 @@
+apiVersion: skaffold/v2beta4
+kind: Config
+metadata:
+  name: sync-only
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/sync-only
+    custom:
+      buildCommand: y-build-nothing
+    sync:
+      manual:
+      - src: '**'
+        dest: /var/www
+  cluster: {}
+deploy:
+  kubectl:
+    manifests:
+    - k8s/static-http-service.yaml
+    - k8s/static-http-deployment.yaml

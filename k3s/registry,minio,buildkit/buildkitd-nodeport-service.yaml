@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: buildkitd-nodeport
+spec:
+  type: NodePort
+  ports:
+  - port: 8547
+    protocol: TCP
+  selector:
+    app: buildkitd
+    status: accepts-new-builds

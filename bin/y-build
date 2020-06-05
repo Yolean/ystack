@@ -67,9 +67,9 @@ fi
 
 echo "Build command:"
 set -x
-KUBECONFIG=$KUBECONFIG \
-BUILDKIT_HOST=$BUILDKIT_HOST \
-  y-buildctl build \
+y-buildctl \
+  --addr $BUILDKIT_HOST \
+  build \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \

@@ -2,42 +2,74 @@ version: '2.4'
 services:
 
   server:
-    build: ./k3s/image
+    build:
+      context: .
+      dockerfile: ./k3s/image/Dockerfile
     command:
     - server
+    - --https-listen-port=17143
     - --disable-agent
-    - -v=0
-    environment:
-    - K3S_CLUSTER_SECRET=somethingtotallyrandom
-    - K3S_KUBECONFIG_OUTPUT=/admin/.kube/kubeconfig.yaml
-    - K3S_KUBECONFIG_MODE=666
-    volumes:
-    - k3s-server:/var/lib/rancher/k3s
-    - admin:/admin
-    # Host port not needed for CI
-    #ports:
-    #- 6443:6443
-    mem_limit:  300000000
-    memswap_limit: 0
-
-  node:
-    build: ./k3s/image
+    - --node-name=server
+    - --no-deploy=traefik
+    - --no-deploy=servicelb
+    - --kube-apiserver-arg
+    -   service-node-port-range=31710-31719
     tmpfs:
     - /run
     - /var/run
     privileged: true
     environment:
-    - K3S_URL=https://server:6443
-    - K3S_CLUSTER_SECRET=somethingtotallyrandom
-    # Can also use K3S_TOKEN from /var/lib/rancher/k3s/server/node-token instead of K3S_CLUSTER_SECRET
-    #- K3S_TOKEN=K13849a67fc385fd3c0fa6133a8649d9e717b0258b3b09c87ffc33dae362c12d8c0::node:2e373dca319a0525745fd8b3d8120d9c
+    - K3S_TOKEN=somethingtotallyrandom
+    - K3S_KUBECONFIG_OUTPUT=/admin/.kube/kubeconfig.yaml
+    - K3S_KUBECONFIG_MODE=666
+    expose:
+    - 17143
+    - 8472
+    - 10250
+    volumes:
+    - k3s-server:/var/lib/rancher/k3s
+    - admin:/admin
+    mem_limit:  300000000
+    memswap_limit: 0
+
+  agent:
+    depends_on:
+    - server
+    build:
+      context: .
+      dockerfile: ./k3s/image/Dockerfile
+    tmpfs:
+    - /run
+    - /var/run
+    privileged: true
+    environment:
+    - K3S_URL=https://server:17143
+    - K3S_TOKEN=somethingtotallyrandom
+    expose:
+    - 8472
+    - 10250
     mem_limit: 1500000000
     memswap_limit: 0
 
-  sut:
+  ystack-proxy:
     depends_on:
     - server
-    - node
+    - agent
+    build:
+      context: .
+      dockerfile: ./k3s/docker-ystack-proxy/Dockerfile
+    environment:
+    - KUBECONFIG_WAIT=30
+    expose:
+    - 80
+    - 8547
+    volumes:
+    - admin:/admin
+
+  sut:
+    links:
+    - ystack-proxy:builds-registry.ystack.svc.cluster.local
+    - ystack-proxy:buildkitd.ystack.svc.cluster.local
     build:
       context: .
       # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
@@ -47,6 +79,7 @@ services:
     - KEEP_RUNNING=false
     volumes:
     - admin:/admin
+    - ./examples:/usr/local/src/ystack/examples
     entrypoint:
     - /bin/bash
     - -cx
@@ -62,7 +95,12 @@ services:
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
       kubectl get namespace ystack 2>/dev/null || kubectl create namespace ystack
+
       y-cluster-install-prometheus-operator
+
+      cd /usr/local/src/ystack/examples/basic-dev-inner-loop
+      y-skaffold run
+
       if [ "$$KEEP_RUNNING" = "true" ]; then
         echo "Will stay running for manual work"
         sleep infinity

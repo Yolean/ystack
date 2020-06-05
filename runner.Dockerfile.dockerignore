@@ -3,13 +3,22 @@
 bin/*-bin
 !bin/kubectl-*
 
-# Y-stack currently contains a lot of experiments so let's maintain a (negated) list of what's actually kept up-to-date:
-!metrics-server/
-!converge-generic/
+#!metrics-server/
+#!converge-generic/
 !minio/
+!registry/builds-service/
+!registry/prod-service/
 !registry/generic/
 !registry/node-update-hosts/
 !registry/generic,minio/
 !buildkit/
-!monitoring/rbac-base/
-!monitoring/instance-now/
+#!monitoring/rbac-base/
+#!monitoring/instance-now/
+
+# k3s configuration
+!k3s/image/registries.yaml
+!k3s/00-ystack-namespace
+!k3s/10-builds-registry-service
+!k3s/registry,minio,buildkit
+!k3s/docker-ystack-proxy/envoy.template.yaml
+!k3s/docker-ystack-proxy/entrypoint.sh
