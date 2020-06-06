@@ -24,12 +24,7 @@ case "$IMAGE" in
   * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
-[ -z "$ctx" ] && ctx="--context=$(kubectl config current-context)" && echo "No 'ctx' env, guessing: $ctx"
-
-CRANE_IMAGE=gcr.io/go-containerregistry/crane:96cf69f03a3cf2d9c8850ce9d8e1f33da354826a@sha256:7b4f1fc7c681e49ce7bf6ed95bd30d6c749f4a1cd2467f994fc045e6433ebde9
 NOTHING_IMAGE=busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
-
-BUILD_NAME=y-build-nothing-$(date -u +"%Y%m%dt%H%M%Sz")
 
 # TODO copy is significantly faster if the source image is already in the target repo
 
@@ -38,6 +33,4 @@ NOTHING_IMAGE=$(echo $NOTHING_IMAGE | sed 's|.local|.local:80|')
 IMAGE=$(echo $IMAGE | sed 's|.local|.local:80|')
 
 set -x
-kubectl $ctx -n ystack run --restart=Never --attach \
-  --image=$CRANE_IMAGE y-build-nothing-$(date -u +"%Y%m%dt%H%M%Sz") -- \
-  cp $NOTHING_IMAGE $IMAGE
+y-crane cp $NOTHING_IMAGE $IMAGE
