@@ -112,7 +112,7 @@ services:
         KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
         echo "Waiting for a kubeconfig ..." && sleep 1
       done
-      set -e
+
       cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
       kubectl get nodes
