@@ -13,8 +13,6 @@ services:
     - admin:/admin
 
   server:
-    depends_on:
-    - cleanup
     build:
       context: .
       dockerfile: ./k3s/image/Dockerfile
