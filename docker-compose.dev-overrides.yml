@@ -30,5 +30,5 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: $PWD/test
+      device: $PWD/devcluster
       o: bind

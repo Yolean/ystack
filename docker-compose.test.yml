@@ -1,7 +1,20 @@
 version: '2.4'
 services:
 
+  cleanup:
+    image: busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+    command:
+    - sh
+    - -ce
+    - |
+      [ ! -f /admin/.kube/kubeconfig.yaml ] || rm -v /admin/.kube/kubeconfig.yaml
+      echo "Done. Exiting."
+    volumes:
+    - admin:/admin
+
   server:
+    depends_on:
+    - cleanup
     build:
       context: .
       dockerfile: ./k3s/image/Dockerfile
