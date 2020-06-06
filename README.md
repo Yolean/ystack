@@ -104,7 +104,7 @@ $compose down \
 KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
 previous=$(stat -c %Y $KUBECONFIG 2>/dev/null)
 $compose up --build -d ystack-proxy
-while [ "$prev" = "$(stat -c %Y $KUBECONFIG 2>/dev/null)" ]; do echo "Waiting for $KUBECONFIG" && sleep 1; done
+while [ "$previous" = "$(stat -c %Y $KUBECONFIG 2>/dev/null)" ]; do echo "Waiting for $KUBECONFIG" && sleep 1; done
 y-kubie ctx -f $KUBECONFIG
 ```
 
