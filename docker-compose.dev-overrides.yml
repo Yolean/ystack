@@ -5,7 +5,7 @@ services:
     ports:
     - 17143:17143
 
-  agent:
+  agent1:
     ports:
     # Failed to get traefik to work in docker-compose; using a predefined nodeport range instead
     #- 80:80

@@ -45,7 +45,8 @@ services:
     mem_limit:  300000000
     memswap_limit: 0
 
-  agent:
+  agent1:
+    hostname: agent1
     depends_on:
     - server
     build:
@@ -68,7 +69,7 @@ services:
   ystack-proxy:
     depends_on:
     - server
-    - agent
+    - agent1
     build:
       context: .
       dockerfile: ./k3s/docker-ystack-proxy/Dockerfile

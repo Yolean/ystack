@@ -15,7 +15,7 @@ kubectl -n ystack apply -f /var/lib/rancher/k3s/server/manifests/
 
 [ -z "$BUILDKITD_REPLICAS" ] || kubectl -n ystack scale --replicas=$BUILDKITD_REPLICAS statefulset/buildkitd
 
-NODE=agent
+NODE=agent1
 REGISTRY=$(kubectl -n ystack get service builds-registry -o jsonpath={.spec.ports[0].nodePort})
 BUILDKIT=$(kubectl -n ystack get service buildkitd-nodeport -o jsonpath={.spec.ports[0].nodePort})
 
