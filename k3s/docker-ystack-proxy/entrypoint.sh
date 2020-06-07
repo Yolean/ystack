@@ -11,7 +11,7 @@ set -e
 cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
 kubectl-waitretry --for=condition=Ready node --all
 
-kubectl -n ystack apply -f /var/lib/rancher/k3s/server/manifests/
+kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 
 [ -z "$BUILDKITD_REPLICAS" ] || kubectl -n ystack scale --replicas=$BUILDKITD_REPLICAS statefulset/buildkitd
 

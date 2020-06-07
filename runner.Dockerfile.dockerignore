@@ -13,11 +13,13 @@ bin/*-bin
 !registry/node-update-hosts/
 !registry/generic,minio/
 !buildkit/
+!y-assert-support/
 
 # k3s configuration
 !k3s/image/registries.yaml
 !k3s/00-ystack-namespace
 !k3s/10-builds-registry-service
 !k3s/registry,minio,buildkit
+!k3s/2*
 !k3s/docker-ystack-proxy/envoy.template.yaml
 !k3s/docker-ystack-proxy/entrypoint.sh

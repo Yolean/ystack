@@ -58,6 +58,10 @@ EOF
 fi
 skaffoldflags="$skaffoldflags -n $namespace"
 
+# At this point we should know how to identify relevant assert metrics
+[ -z "$assertlabels" ] && assertlabels="namespace=\"$namespace\"";
+echo "$(log) Prometheus queries for test results will use labels: $assertlabels"
+
 set -x
 y-skaffold $skaffoldflags --cache-artifacts=false $CIRUN
 

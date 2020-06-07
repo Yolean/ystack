@@ -1,3 +1,4 @@
+namespace: ystack
 bases:
 - ../../buildkit
 - ../../minio/standalone,defaultsecret
