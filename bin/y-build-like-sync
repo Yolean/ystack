@@ -46,7 +46,7 @@ dest=/usr/src/app
 dest=usr/src/app
 
 list=$(mktemp)
-(cd $context; git --no-pager status --porcelain=v2 --short --untracked=all --no-renames -- . | cut -c 4-) > $list
+(cd $context; git ls-files -c -o --exclude-standard -- .) > $list
 tar=$(mktemp)
 tar --transform "s|^|$dest/|" --show-transformed-names -cvhf $tar -T $list
 rm $list
