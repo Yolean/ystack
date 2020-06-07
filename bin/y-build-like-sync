@@ -41,9 +41,11 @@ IMAGE=$(echo $IMAGE | sed 's|.local|.local:80|')
 # This is a PoC, let's make a lot of assumptions to simplify
 context=.
 src='**'
-dest=/usr/src/app
+# assuming a single manual sync, which is the reasonable use case for a runtime
+[ ! -f skaffold.yaml ] && echo "This composition example assumes a sync defined in a skaffold.yaml" && exit 1
+dest=$(cat skaffold.yaml | grep 'dest:' | awk '{ print $2 }')
 # this avoids "tar: Removing leading `/' from member names" and could come in handy if we can't use --transform
-dest=usr/src/app
+dest=$(echo $dest | sed 's|^/||')
 
 list=$(mktemp)
 (cd $context; git ls-files -c -o --exclude-standard -- .) > $list
