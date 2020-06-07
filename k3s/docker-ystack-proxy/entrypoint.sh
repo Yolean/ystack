@@ -11,6 +11,10 @@ set -e
 cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
 kubectl-waitretry --for=condition=Ready node --all
 
+# TODO this script does apply but a second apply is really slow on resource strapped clusters, should be avoided if we want this script to be idempotent
+y-cluster-install-prometheus-operator
+sleep 10 # TODO Can we explicitly wait for CRDs to be registered?
+
 kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 
 [ -z "$BUILDKITD_REPLICAS" ] || kubectl -n ystack scale --replicas=$BUILDKITD_REPLICAS statefulset/buildkitd
@@ -18,11 +22,13 @@ kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 NODE=agent1
 REGISTRY=$(kubectl -n ystack get service builds-registry -o jsonpath={.spec.ports[0].nodePort})
 BUILDKIT=$(kubectl -n ystack get service buildkitd-nodeport -o jsonpath={.spec.ports[0].nodePort})
+PROMETHEUS=$(kubectl -n ystack get service prometheus-nodeport -o jsonpath={.spec.ports[0].nodePort})
 
 cat envoy.template.yaml \
   | sed "s|{{ node }}|$NODE|g" \
   | sed "s|{{ registry_nodeport }}|$REGISTRY|g" \
   | sed "s|{{ buildkit_nodeport }}|$BUILDKIT|g" \
+  | sed "s|{{ prometheus_nodeport }}|$PROMETHEUS|g" \
   > /envoy.yaml
 
 # TODO do we pass on signals?

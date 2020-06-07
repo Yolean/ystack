@@ -92,7 +92,7 @@ services:
     environment:
     - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
-    - EXAMPLES=sync-only in-cluster-build basic-dev-inner-loop
+    - EXAMPLES=sync-only sync-to-runtime in-cluster-build basic-dev-inner-loop
     - CI=true
     volumes:
     - admin:/admin
