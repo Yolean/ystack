@@ -2,9 +2,14 @@
 
 # our executables are symlinked to real names
 buildctl
+container-structure-test
+crane
 helm
+kubie
+kustomize
 minikube
 mkcert
+promtool
 rio
 skaffold
 kubefwd
