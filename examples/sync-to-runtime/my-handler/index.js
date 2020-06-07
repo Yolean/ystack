@@ -1,3 +1,3 @@
 module.exports = async () => {
-  return "OK from handler 2";
+  return "OK from handler";
 };
