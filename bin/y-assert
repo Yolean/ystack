@@ -69,8 +69,10 @@ echo "$(log) cleanup-ish: kubectl $ctx get namespace -l $(echo $TTL | sed 's/: *
 query=assertions_failed{$assertlabels}
 
 [ -z "$INTERVAL" ] && INTERVAL=5
-# This loop will continuously list errors and TODO! must fail on http errors or absence of the metric
-until curl -f -s --data "query=$query" $MONITORING_HOST:9090/api/v1/query \
-  | jq -r '.data.result[] | . as {$metric, $values} | .value[1] | . as $vs | tonumber as $v | if $v > 0 then error($metric.namespace+" "+$metric.pod+" "+$vs) else empty end'
+# This loop will continuously list errors and must fail on http errors or absence of the metric
+until curl -s --data "query=$query" $MONITORING_HOST:9090/api/v1/query \
+  | jq -r '.data.result | if length > 0 then . else error("No results") end | .[] | . as {$metric, $values} | .value[1] | . as $vs | tonumber as $v | if $v > 0 then error($metric.namespace+" "+$metric.pod+" "+$vs) else empty end'
 do sleep $INTERVAL
 done
+
+echo "Zero failures now with: curl -s --data query=$query $MONITORING_HOST:9090/api/v1/query"
