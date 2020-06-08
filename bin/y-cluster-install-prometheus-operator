@@ -1,7 +1,0 @@
-#!/bin/sh
-[ -z "$DEBUG" ] || set -x
-set -e
-
-OPERATOR_VERSION=1b525b8a77f79e08b8653101f622e73083daf293
-
-kubectl -n default apply -f https://github.com/coreos/prometheus-operator/raw/$OPERATOR_VERSION/bundle.yaml

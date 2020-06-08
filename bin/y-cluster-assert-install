@@ -1,0 +1,23 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+OPERATOR_VERSION=1b525b8a77f79e08b8653101f622e73083daf293
+KUBERNETES_ASSERT_VERSION=f0318952dd4990bb3d4c9d163f8044f13e2b647d
+
+ctx=$1
+case $ctx in
+  "--context="*) shift 1 ;;
+  *) echo "Initial arg must be --context=" && exit 1 ;;
+esac
+
+# If we're to make this script idempotent we must make sure that re-applying the operator's bundle isn't painfully slow
+kubectl $ctx create namespace monitoring
+
+kubectl $ctx -n default apply -f https://github.com/coreos/prometheus-operator/raw/$OPERATOR_VERSION/bundle.yaml
+
+kubectl-waitretry $ctx -n default --for=condition=Ready pod -l app.kubernetes.io/name=prometheus-operator
+
+kubectl $ctx -n monitoring apply -k github.com/Yolean/kubernetes-assert/example-small?ref=$KUBERNETES_ASSERT_VERSION
+
+kubectl-waitretry $ctx -n monitoring --for=condition=Ready pod --all
