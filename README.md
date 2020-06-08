@@ -102,6 +102,8 @@ compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrid
 $compose down \
   ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
 $compose up cleanup
+$compose up --build -d server
+$compose up --build -d agent1
 $compose up --build -d ystack-proxy
 y-kubie ctx -f ./devcluster/.kube/kubeconfig.yaml
 ```
