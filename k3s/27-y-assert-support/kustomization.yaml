@@ -1,0 +1,5 @@
+namespace: ystack
+bases:
+- ../../y-assert-support
+resources:
+- prometheus-nodeport-service.yaml
