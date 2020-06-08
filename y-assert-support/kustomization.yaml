@@ -1,0 +1,3 @@
+resources:
+- prometheus-service.yaml
+- prometheus-proxy-deployment.yaml
