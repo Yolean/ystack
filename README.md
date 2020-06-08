@@ -126,4 +126,4 @@ curl http://monitoring.ystack.svc.cluster.local:9090/api/v1/alertmanagers | jq '
 curl http://monitoring.ystack.svc.cluster.local:9093/api/v2/status
 ```
 
-Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js.
+Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js. Run `y-assert` for CI-like runs until completion.
