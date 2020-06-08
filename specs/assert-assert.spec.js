@@ -1,5 +1,5 @@
 // This is quite imporant to keep up-to-date while we're getting used to non-interactive Jest watch
-const ASSERT_FILES_MIN = 3;
+const ASSERT_FILES_MIN = 4;
 
 describe("Ystack specs validity", () => {
 
