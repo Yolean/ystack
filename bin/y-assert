@@ -60,9 +60,17 @@ skaffoldflags="$skaffoldflags -n $namespace"
 
 # At this point we should know how to identify relevant assert metrics
 [ -z "$assertlabels" ] && assertlabels="namespace=\"$namespace\"";
-echo "$(log) Prometheus queries for test results will use labels: $assertlabels"
 
-set -x
 y-skaffold $skaffoldflags --cache-artifacts=false $CIRUN
 
+echo "$(log) Prometheus queries for test results will use labels: $assertlabels"
 echo "$(log) cleanup-ish: kubectl $ctx get namespace -l $(echo $TTL | sed 's/: */=/') -o name | xargs kubectl $ctx delete"
+
+query=assertions_failed{$assertlabels}
+
+[ -z "$INTERVAL" ] && INTERVAL=5
+# This loop will continuously list errors and TODO! must fail on http errors or absence of the metric
+until curl -f -s --data "query=$query" $MONITORING_HOST:9090/api/v1/query \
+  | jq -r '.data.result[] | . as {$metric, $values} | .value[1] | . as $vs | tonumber as $v | if $v > 0 then error($metric.namespace+" "+$metric.pod+" "+$vs) else empty end'
+do sleep $INTERVAL
+done
