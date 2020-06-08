@@ -2,4 +2,4 @@ namespace: ystack
 bases:
 - ../../y-assert-support
 resources:
-- prometheus-nodeport-service.yaml
+- monitoring-nodeport-service.yaml

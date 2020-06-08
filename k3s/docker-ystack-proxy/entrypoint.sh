@@ -23,13 +23,16 @@ kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 NODE=agent1
 REGISTRY=$(kubectl -n ystack get service builds-registry -o jsonpath={.spec.ports[0].nodePort})
 BUILDKIT=$(kubectl -n ystack get service buildkitd-nodeport -o jsonpath={.spec.ports[0].nodePort})
-PROMETHEUS=$(kubectl -n ystack get service prometheus-nodeport -o jsonpath={.spec.ports[0].nodePort})
+# Assuming ordering is predictable ...
+PROMETHEUS=$(kubectl -n ystack get service monitoring-nodeport -o jsonpath={.spec.ports[0].nodePort})
+ALERTMANAGER=$(kubectl -n ystack get service monitoring-nodeport -o jsonpath={.spec.ports[1].nodePort})
 
 cat envoy.template.yaml \
   | sed "s|{{ node }}|$NODE|g" \
   | sed "s|{{ registry_nodeport }}|$REGISTRY|g" \
   | sed "s|{{ buildkit_nodeport }}|$BUILDKIT|g" \
   | sed "s|{{ prometheus_nodeport }}|$PROMETHEUS|g" \
+  | sed "s|{{ alertmanager_nodeport }}|$ALERTMANAGER|g" \
   > /envoy.yaml
 
 # TODO do we pass on signals?

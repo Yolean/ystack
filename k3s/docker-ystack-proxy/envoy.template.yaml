@@ -46,6 +46,19 @@ static_resources:
           "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
           stat_prefix: tcp_stats
           cluster: "prometheus"
+  - name: alertmanager
+    address:
+      socket_address:
+        protocol: TCP
+        address: 0.0.0.0
+        port_value: 9093
+    filter_chains:
+    - filters:
+      - name: tcp
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+          stat_prefix: tcp_stats
+          cluster: "alertmanager"
   clusters:
   - name: registry
     type: STRICT_DNS
@@ -89,3 +102,17 @@ static_resources:
               socket_address:
                 address: {{ node }}
                 port_value: {{ prometheus_nodeport }}
+  - name: alertmanager
+    type: STRICT_DNS
+    connect_timeout: 30s
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: service_alertmanager
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: {{ node }}
+                port_value: {{ alertmanager_nodeport }}
