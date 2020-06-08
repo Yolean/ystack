@@ -73,6 +73,7 @@ services:
       dockerfile: ./k3s/docker-ystack-proxy/Dockerfile
     environment:
     - KUBECONFIG_WAIT=30
+    # Scaled to zero by default because we'll want to introduce automated scale to demand
     - BUILDKITD_REPLICAS=1
     expose:
     - 80
@@ -120,8 +121,9 @@ services:
       kubectl-waitretry --for=condition=Ready -n ystack pod -l app=minio
       kubectl-waitretry --for=condition=Ready -n ystack pod -l ystack-builds-registry=http
       kubectl-waitretry --for=condition=Ready -n ystack pod -l app=buildkitd
-      kubectl-waitretry --for=condition=Ready -n monitoring pod --all
       curl -f --retry 5 http://builds-registry.ystack.svc.cluster.local/v2/
+
+      y-cluster-assert-install --context=default
 
       for EXAMPLE in $$EXAMPLES; do
         echo "# Running example $$EXAMPLE ..."

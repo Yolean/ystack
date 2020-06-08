@@ -1,3 +1,0 @@
-namespace: monitoring
-bases:
-- github.com/Yolean/kubernetes-assert/example-small?ref=f0318952dd4990bb3d4c9d163f8044f13e2b647d

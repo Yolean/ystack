@@ -94,19 +94,20 @@ esac
 
 gcloud container clusters create "$NAME" $FLAGS "$@"
 
-GKE_CONTEXT_NAME=$(kubectl config current-context)
+GKE_CONTEXT_NAME=$(kubectl $ctx config current-context)
+ctx="--context=${GKE_CONTEXT_NAME}"
 
 echo "For outbound Internet access: y-cluster-provision-gke-network-outbound-enable"
 
-kubectl create namespace ystack
+kubectl $ctx create namespace ystack
 
-kubectl -n ystack apply -k $YSTACK_HOME/registry/node-update-containerd/
+kubectl $ctx -n ystack apply -k $YSTACK_HOME/registry/node-update-containerd/
 
 ### To be moved to registry provision script, but we do want the initial context name
 
 [ -z "${BUILDS_BUCKET_NAME}" ] && BUILDS_BUCKET_NAME=${GKE_CONTEXT_NAME}_builds
 
-kubectl create secret generic -n ystack registry-persistence --from-literal=gcsBucketName=${BUILDS_BUCKET_NAME}
+kubectl $ctx create secret generic -n ystack registry-persistence --from-literal=gcsBucketName=${BUILDS_BUCKET_NAME}
 
 gcloud compute backend-buckets list
 gsutil ls
@@ -120,8 +121,8 @@ metadata:
 spec: {}
 EOF
 
-kubectl apply -f gke/registry/builds-gcs-storagebucket.yaml || \
+kubectl $ctx apply -f gke/registry/builds-gcs-storagebucket.yaml || \
   gsutil mb -c regional -l $REGION gs://${BUILDS_BUCKET_NAME} || \
   echo "Warning: failed to create builds registry storage bucket"
 
-y-cluster-assert-install
+y-cluster-assert-install $ctx

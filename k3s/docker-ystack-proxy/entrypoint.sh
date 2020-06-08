@@ -11,9 +11,10 @@ set -e
 cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
 kubectl-waitretry --for=condition=Ready node --all
 
-# TODO this script does apply but a second apply is really slow on resource strapped clusters, should be avoided if we want this script to be idempotent
-y-cluster-install-prometheus-operator
-sleep 10 # TODO Can we explicitly wait for CRDs to be registered?
+# Might speed up provision, due to the dependency minio -> registry -> builds, but should't be necessary
+kubectl apply -f /var/lib/rancher/k3s/server/manifests/ystack-00-ystack-namespace.yaml
+kubectl apply -f /var/lib/rancher/k3s/server/manifests/ystack-10-minio.yaml
+kubectl-waitretry -n ystack --for=condition=Ready pod minio-0
 
 kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 
