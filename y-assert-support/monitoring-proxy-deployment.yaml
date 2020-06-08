@@ -156,5 +156,5 @@ spec:
                       address:
                         socket_address:
                           protocol: TCP
-                          port_value: 9090
+                          port_value: 9093
                           address: alertmanager-main.monitoring.svc.cluster.local

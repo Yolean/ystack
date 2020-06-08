@@ -79,6 +79,7 @@ services:
     - 80
     - 8547
     - 9090
+    - 9093
     volumes:
     - admin:/admin
 

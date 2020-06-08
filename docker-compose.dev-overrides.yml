@@ -22,6 +22,7 @@ services:
     - 8547:8547
     # To support y-assert
     - 9090:9090
+    - 9093:9093
 
   sut:
     environment:
