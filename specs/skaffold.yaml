@@ -10,12 +10,13 @@ build:
   - image: builds-registry.ystack.svc.cluster.local/yolean/ystack-specs
     context: ./
     custom:
-      buildCommand: y-build
-      dependencies:
-        dockerfile:
-          path: Dockerfile
+      buildCommand: >-
+        y-build-like-sync
+        builds-registry.ystack.svc.cluster.local/yolean/kubernetes-assert/runtime-nodejs:825e4973566d3a736e3bbb689c533a33a3092173
     sync:
-      infer: ["**/*"]
+      manual:
+      - src: '**'
+        dest: /usr/src/specs
 deploy:
   kustomize: {}
 profiles:

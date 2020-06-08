@@ -110,8 +110,8 @@ y-kubie ctx -f ./devcluster/.kube/kubeconfig.yaml
 
 To add monitoring support run `y-cluster-assert-install`.
 
-For [dev loops](./examples/) and `y-assert` the docker stack replaces `y-kubefwd` (hard to use in CI) with container ports:
-
+For [dev loops](./examples/) and `y-assert` the docker stack replaces `y-kubefwd` (hard to use in CI)
+with container ports.
 You need `cat /etc/hosts | grep 127.0.0 | grep cluster.local` to have something like:
 ```
 127.0.0.1	builds-registry.ystack.svc.cluster.local
@@ -125,3 +125,5 @@ curl http://builds-registry.ystack.svc.cluster.local/v2/
 curl http://monitoring.ystack.svc.cluster.local:9090/api/v1/alertmanagers | jq '.data.activeAlertmanagers[0]'
 curl http://monitoring.ystack.svc.cluster.local:9093/api/v2/status
 ```
+
+Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js.
