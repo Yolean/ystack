@@ -22,6 +22,11 @@ using ephemeral namespaces.
 # What cleanup solutions are there? Let's start with https://github.com/hjacobs/kube-janitor
 TTL="janitor/ttl: 23h"
 
+[ -z "$MONITORING_HOST" ] && MONITORING_HOST=http://monitoring.ystack.svc.cluster.local
+
+! curl -f -s --connect-timeout 3 $MONITORING_HOST:9090/ >/dev/null && echo "Failed to access the Prometheus endpoint" && exit 1
+! curl -f -s --connect-timeout 3 $MONITORING_HOST:9093/ >/dev/null && echo "Failed to access the Alertmanager endpoint" && exit 1
+
 ctx=$1
 case $ctx in
   "--context="*) shift 1 ;;
