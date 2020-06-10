@@ -35,8 +35,8 @@ RUNTIME_IMAGE=$1
   && echo "To improve build times use a runtime image in the target repo" && exit 1
 
 # crane hangs for a long time if it doesn't know that the registry is plain http
-RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local|.local:80|')
-IMAGE=$(echo $IMAGE | sed 's|.local|.local:80|')
+RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local/|.local:80/|')
+IMAGE=$(echo $IMAGE | sed 's|.local/|.local:80/|')
 
 # This is a PoC, let's make a lot of assumptions to simplify
 context=.
