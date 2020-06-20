@@ -8,7 +8,7 @@ until test -f /admin/.kube/kubeconfig.yaml; do
 done
 
 set -e
-cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
+cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|master1|' > ~/.kube/config
 kubectl-waitretry --for=condition=Ready node --all
 
 # Might speed up provision, due to the dependency minio -> registry -> builds, but should't be necessary
@@ -20,7 +20,7 @@ kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 
 [ -z "$BUILDKITD_REPLICAS" ] || kubectl -n ystack scale --replicas=$BUILDKITD_REPLICAS statefulset/buildkitd
 
-NODE=agent1
+NODE=server
 REGISTRY=$(kubectl -n ystack get service builds-registry -o jsonpath={.spec.ports[0].nodePort})
 BUILDKIT=$(kubectl -n ystack get service buildkitd-nodeport -o jsonpath={.spec.ports[0].nodePort})
 # Assuming ordering is predictable ...
