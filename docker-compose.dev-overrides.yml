@@ -27,5 +27,5 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: $PWD/devcluster
+      device: $YSTACK_HOME/devcluster
       o: bind
