@@ -103,7 +103,8 @@ Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docke
 y-docker-compose down
 y-docker-compose up --build -d master1
 y-docker-compose up --build -d ystack-proxy
-y-kubie ctx -f ./devcluster/.kube/kubeconfig.yaml
+kubectl --kubeconfig=$YSTACK_HOME/devcluster/.kube/kubeconfig.yaml config rename-context default ystack-local
+y-kubie ctx -f $YSTACK_HOME/devcluster/.kube/kubeconfig.yaml
 ```
 
 To add monitoring support run `y-cluster-assert-install`.
