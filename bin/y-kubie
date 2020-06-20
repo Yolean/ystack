@@ -16,4 +16,4 @@ command -v fzf > /dev/null || echo "Note that kubie recommends having fzf instal
 
 [ "$1" = "completion" ] && curl -sLS https://github.com/sbstp/kubie/raw/3ebbf728cc52a57dfd9913da120d47a44e783702/completion/kubie.bash && exit 0
 
-y-kubie-v${version}-bin "$@" || echo $?
+y-kubie-v${version}-bin "$@" || exit $?
