@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ -z "$YSTACK_HOME" ] && echo "Missing an YSTACK_HOME env" && exit 1
+
+COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml $COMPOSEFILES"
+docker-compose $COMPOSEFILES "$@"
+
+[ "$1" = "down" ] && \
+  echo "Cleaning up volumes" && \
+  (docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true) && \
+  echo "Removing local config" && \
+  (docker-compose $COMPOSEFILES up cleanup)

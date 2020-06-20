@@ -8,7 +8,7 @@ until test -f /admin/.kube/kubeconfig.yaml; do
 done
 
 set -e
-cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
+cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|master1|' > ~/.kube/config
 kubectl-waitretry --for=condition=Ready node --all
 
 # Might speed up provision, due to the dependency minio -> registry -> builds, but should't be necessary

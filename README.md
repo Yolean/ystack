@@ -97,14 +97,13 @@ docker volume rm ystack_admin 2> /dev/null || true
 
 ## Development
 
+Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docker-compose.test.yml](./docker-compose.test.yml) that is used for CI with [docker-compose.dev-overrides.yml](./docker-compose.dev-overrides.yml). The k3s [image](./k3s/docker-image/) is the stock k3s image with y-stack's local registry config.
+
 ```
-compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrides.yml'
-$compose down \
-  ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
-$compose up cleanup
-$compose up --build -d server
-$compose up --build -d agent1
-$compose up --build -d ystack-proxy
+y-docker-compose down
+y-docker-compose up --build -d master1
+#y-docker-compose up --build -d agent1
+y-docker-compose up --build -d ystack-proxy
 y-kubie ctx -f ./devcluster/.kube/kubeconfig.yaml
 ```
 

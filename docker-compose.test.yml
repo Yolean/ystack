@@ -12,15 +12,15 @@ services:
     volumes:
     - admin:/admin
 
-  server:
+  master1:
     build:
       context: .
-      dockerfile: ./k3s/image/Dockerfile
+      dockerfile: ./k3s/docker-image/Dockerfile
     command:
     - server
     - --https-listen-port=17143
   #  - --disable-agent
-    - --node-name=server
+    - --node-name=master1
     - --no-deploy=traefik
     - --no-deploy=servicelb
     - --kube-apiserver-arg
@@ -46,7 +46,7 @@ services:
   # agent1:
   #   hostname: agent1
   #   depends_on:
-  #   - server
+  #   - master1
   #   build:
   #     context: .
   #     dockerfile: ./k3s/image/Dockerfile
@@ -55,7 +55,7 @@ services:
   #   - /var/run
   #   privileged: true
   #   environment:
-  #   - K3S_URL=https://server:17143
+  #   - K3S_URL=https://master1:17143
   #   - K3S_TOKEN=somethingtotallyrandom
   #   expose:
   #   - 8472
@@ -66,7 +66,7 @@ services:
 
   ystack-proxy:
     depends_on:
-    - server
+    - master1
   #  - agent1
     build:
       context: .
@@ -114,7 +114,7 @@ services:
         echo "Waiting for a kubeconfig ..." && sleep 1
       done
 
-      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
+      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|master1|' > ~/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
       kubectl get nodes
 

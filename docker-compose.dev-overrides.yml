@@ -1,7 +1,7 @@
 version: '2.4'
 services:
 
-  server:
+  master1:
     ports:
     - 17143:17143
     #
