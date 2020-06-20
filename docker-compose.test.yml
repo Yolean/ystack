@@ -19,7 +19,6 @@ services:
     command:
     - server
     - --https-listen-port=17143
-  #  - --disable-agent
     - --node-name=master1
     - --no-deploy=traefik
     - --no-deploy=servicelb
@@ -40,34 +39,12 @@ services:
     volumes:
     - k3s-server:/var/lib/rancher/k3s
     - admin:/admin
-    mem_limit:  300000000
+    mem_limit:  1800000000
     memswap_limit: 0
-
-  # agent1:
-  #   hostname: agent1
-  #   depends_on:
-  #   - master1
-  #   build:
-  #     context: .
-  #     dockerfile: ./k3s/image/Dockerfile
-  #   tmpfs:
-  #   - /run
-  #   - /var/run
-  #   privileged: true
-  #   environment:
-  #   - K3S_URL=https://master1:17143
-  #   - K3S_TOKEN=somethingtotallyrandom
-  #   expose:
-  #   - 8472
-  #   - 10250
-  #   # It's a feature that we keep ystack with kubernetes-assert light enough to fit these limits
-  #   mem_limit: 1500000000
-  #   memswap_limit: 0
 
   ystack-proxy:
     depends_on:
     - master1
-  #  - agent1
     build:
       context: .
       dockerfile: ./k3s/docker-ystack-proxy/Dockerfile

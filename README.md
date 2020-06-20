@@ -102,7 +102,6 @@ Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docke
 ```
 y-docker-compose down
 y-docker-compose up --build -d master1
-#y-docker-compose up --build -d agent1
 y-docker-compose up --build -d ystack-proxy
 y-kubie ctx -f ./devcluster/.kube/kubeconfig.yaml
 ```
