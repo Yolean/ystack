@@ -22,6 +22,11 @@ using ephemeral namespaces.
 # What cleanup solutions are there? Let's start with https://github.com/hjacobs/kube-janitor
 TTL="janitor/ttl: 23h"
 
+[ -z "$MONITORING_HOST" ] && MONITORING_HOST=http://monitoring.ystack.svc.cluster.local
+
+! curl -f -s --connect-timeout 3 $MONITORING_HOST:9090/ >/dev/null && echo "Failed to access the Prometheus endpoint" && exit 1
+! curl -f -s --connect-timeout 3 $MONITORING_HOST:9093/ >/dev/null && echo "Failed to access the Alertmanager endpoint" && exit 1
+
 ctx=$1
 case $ctx in
   "--context="*) shift 1 ;;
@@ -31,6 +36,9 @@ case $ctx in
     ;;
 esac
 skaffoldflags=$(echo $ctx | sed 's|^--|--kube-|')
+
+[ -z "$PROFILES" ] && PROFILES="y-assert"
+skaffoldflags="$skaffoldflags -p $PROFILES"
 
 CIRUN=$1
 [ -z "$CIRUN" ] && CIRUN="run"
@@ -55,7 +63,21 @@ EOF
 fi
 skaffoldflags="$skaffoldflags -n $namespace"
 
-set -x
+# At this point we should know how to identify relevant assert metrics
+[ -z "$assertlabels" ] && assertlabels="namespace=\"$namespace\"";
+
 y-skaffold $skaffoldflags --cache-artifacts=false $CIRUN
 
+echo "$(log) Prometheus queries for test results will use labels: $assertlabels"
 echo "$(log) cleanup-ish: kubectl $ctx get namespace -l $(echo $TTL | sed 's/: */=/') -o name | xargs kubectl $ctx delete"
+
+query=assertions_failed{$assertlabels}
+
+[ -z "$INTERVAL" ] && INTERVAL=5
+# This loop will continuously list errors and must fail on http errors or absence of the metric
+until curl -s --data "query=$query" $MONITORING_HOST:9090/api/v1/query \
+  | jq -r '.data.result | if length > 0 then . else error("No results") end | .[] | . as {$metric, $values} | .value[1] | . as $vs | tonumber as $v | if $v > 0 then error($metric.namespace+" "+$metric.pod+" "+$vs) else empty end'
+do sleep $INTERVAL
+done
+
+echo "Zero failures now with: curl -s --data query=$query $MONITORING_HOST:9090/api/v1/query"

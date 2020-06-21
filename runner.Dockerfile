@@ -36,12 +36,12 @@ RUN y-buildctl
 COPY bin/y-container-structure-test /usr/local/src/ystack/bin/
 RUN y-container-structure-test
 
+COPY bin/y-crane /usr/local/src/ystack/bin/
+RUN y-crane
+
 ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
-
-COPY --from=gcr.io/go-containerregistry/crane:57766c1fee7bdc67c4e70680efffed535d50b459 \
-  /ko-app/crane /usr/local/bin/crane
 
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack

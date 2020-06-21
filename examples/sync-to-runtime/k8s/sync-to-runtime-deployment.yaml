@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sync-to-runtime
+spec:
+  selector:
+    matchLabels:
+      app: ystack-examples-sync-to-runtime
+  template:
+    metadata:
+      labels:
+        app: ystack-examples-sync-to-runtime
+    spec:
+      containers:
+      - name: runtime
+        image: builds-registry.ystack.svc.cluster.local/ystack-examples/sync-to-runtime
+        ports:
+        - containerPort: 8080
+        command:
+        - node
+        - /usr/src/app

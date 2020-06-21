@@ -12,4 +12,4 @@ bin_name=container-structure-test \
   Linux_sha256=09cb373a9e622a4120577391acb28c6b2aea55f883a4351db8e8de85f0cf8a5b \
   y-bin-dependency-download || exit $?
 
-y-container-structure-test-v${version}-bin "$@" || echo $?
+y-container-structure-test-v${version}-bin "$@" || exit $?

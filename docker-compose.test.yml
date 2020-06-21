@@ -1,15 +1,25 @@
 version: '2.4'
 services:
 
-  server:
+  cleanup:
+    image: busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+    command:
+    - sh
+    - -ce
+    - |
+      [ ! -f /admin/.kube/kubeconfig.yaml ] || rm -v /admin/.kube/kubeconfig.yaml
+      echo "Done. Exiting."
+    volumes:
+    - admin:/admin
+
+  master1:
     build:
       context: .
-      dockerfile: ./k3s/image/Dockerfile
+      dockerfile: ./k3s/docker-image/Dockerfile
     command:
     - server
     - --https-listen-port=17143
-    - --disable-agent
-    - --node-name=server
+    - --node-name=master1
     - --no-deploy=traefik
     - --no-deploy=servicelb
     - --kube-apiserver-arg
@@ -29,40 +39,24 @@ services:
     volumes:
     - k3s-server:/var/lib/rancher/k3s
     - admin:/admin
-    mem_limit:  300000000
-    memswap_limit: 0
-
-  agent:
-    depends_on:
-    - server
-    build:
-      context: .
-      dockerfile: ./k3s/image/Dockerfile
-    tmpfs:
-    - /run
-    - /var/run
-    privileged: true
-    environment:
-    - K3S_URL=https://server:17143
-    - K3S_TOKEN=somethingtotallyrandom
-    expose:
-    - 8472
-    - 10250
-    mem_limit: 1500000000
+    mem_limit:  1800000000
     memswap_limit: 0
 
   ystack-proxy:
     depends_on:
-    - server
-    - agent
+    - master1
     build:
       context: .
       dockerfile: ./k3s/docker-ystack-proxy/Dockerfile
     environment:
     - KUBECONFIG_WAIT=30
+    # Scaled to zero by default because we'll want to introduce automated scale to demand
+    - BUILDKITD_REPLICAS=1
     expose:
     - 80
     - 8547
+    - 9090
+    - 9093
     volumes:
     - admin:/admin
 
@@ -70,6 +64,7 @@ services:
     links:
     - ystack-proxy:builds-registry.ystack.svc.cluster.local
     - ystack-proxy:buildkitd.ystack.svc.cluster.local
+    - ystack-proxy:monitoring.ystack.svc.cluster.local
     build:
       context: .
       # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
@@ -77,29 +72,48 @@ services:
     environment:
     - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
+    - EXAMPLES=sync-only sync-to-runtime in-cluster-build basic-dev-inner-loop
+    - CI=true
     volumes:
     - admin:/admin
     - ./examples:/usr/local/src/ystack/examples
+    - ./specs:/usr/local/src/ystack/specs
     entrypoint:
     - /bin/bash
     - -cx
     command:
     - |
+      [ "$$KEEP_RUNNING" = "true" ] || set -e
+
       mkdir ~/.kube
       until test -f /admin/.kube/kubeconfig.yaml; do
         [ $$KUBECONFIG_WAIT -gt 0 ] || exit ${BULID_EXIT_CODE_ON_NO_CLUSTER:-0}
         KUBECONFIG_WAIT=$$(( $$KUBECONFIG_WAIT - 1 ))
         echo "Waiting for a kubeconfig ..." && sleep 1
       done
-      set -e
-      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|server|' > ~/.kube/config
+
+      cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|master1|' > ~/.kube/config
       kubectl-waitretry --for=condition=Ready node --all
-      kubectl get namespace ystack 2>/dev/null || kubectl create namespace ystack
+      kubectl get nodes
 
-      y-cluster-install-prometheus-operator
+      echo "Our ystack-proxy image should install ystack essentials ..."
+      kubectl-waitretry --for=condition=Ready -n ystack pod -l app=minio
+      kubectl-waitretry --for=condition=Ready -n ystack pod -l ystack-builds-registry=http
+      kubectl-waitretry --for=condition=Ready -n ystack pod -l app=buildkitd
+      curl -f --retry 5 http://builds-registry.ystack.svc.cluster.local/v2/
 
-      cd /usr/local/src/ystack/examples/basic-dev-inner-loop
-      y-skaffold run
+      y-cluster-assert-install --context=default
+
+      for EXAMPLE in $$EXAMPLES; do
+        echo "# Running example $$EXAMPLE ..."
+        cd /usr/local/src/ystack/examples/$$EXAMPLE
+        y-skaffold run
+      done
+
+      echo "# Running main specs ..."
+      kubectl create namespace                         ystack-specs
+      kubectl config set-context --current --namespace=ystack-specs
+      (cd /usr/local/src/ystack/specs && y-assert)
 
       if [ "$$KEEP_RUNNING" = "true" ]; then
         echo "Will stay running for manual work"

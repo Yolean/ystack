@@ -11,4 +11,4 @@ bin_name=minikube \
   Darwin_sha256=5bda29e2d990bb8ac9da1767143e228772adc45507d22a49b5af70b03e7db682 \
   y-bin-dependency-download || exit $?
 
-y-minikube-v${version}-bin "$@" || echo $?
+y-minikube-v${version}-bin "$@" || exit $?

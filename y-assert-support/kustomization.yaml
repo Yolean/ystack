@@ -1,0 +1,3 @@
+resources:
+- monitoring-service.yaml
+- monitoring-proxy-deployment.yaml

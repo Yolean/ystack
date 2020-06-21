@@ -1,0 +1,23 @@
+apiVersion: skaffold/v2beta4
+kind: Config
+metadata:
+  name: ystack-specs
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/yolean/ystack-specs
+    context: ./
+    custom:
+      buildCommand: >-
+        y-build-like-sync
+        yolean/assert-runtime-nodejs:41207ccf8536ce022919d9aef86d2124b2c142b1@sha256:8c44b3817e81c4d6cb01b6decbffb7628b701a5b860161263b008f9d45646e35
+    sync:
+      manual:
+      - src: '**'
+        dest: /usr/src/specs
+deploy:
+  kustomize: {}
+profiles:
+- name: y-assert

@@ -1,15 +1,9 @@
 version: '2.4'
 services:
 
-  server:
+  master1:
     ports:
     - 17143:17143
-
-  agent:
-    ports:
-    # Failed to get traefik to work in docker-compose; using a predefined nodeport range instead
-    #- 80:80
-    #- 443:443
     - "31710-31719:31710-31719"
     mem_limit: 8589934592
     memswap_limit: 0
@@ -18,8 +12,11 @@ services:
     ports:
     # To run skaffold build/run/dev locally
     - 80:80
-    # To support y-build as skaffold build (TODO - proxying fails)
+    # To support y-build as skaffold build
     - 8547:8547
+    # To support y-assert
+    - 9090:9090
+    - 9093:9093
 
   sut:
     environment:
@@ -30,5 +27,5 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: $PWD/test
+      device: $YSTACK_HOME/devcluster
       o: bind

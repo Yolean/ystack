@@ -1,0 +1,8 @@
+namespace: ystack
+bases:
+- ../../buildkit
+- ../../minio/standalone,defaultsecret
+resources:
+- buildkitd-nodeport-service.yaml
+patchesStrategicMerge:
+- buildkitd-replicas-0.yaml

@@ -12,4 +12,4 @@ bin_name=kustomize \
   Linux_sha256=a04d79a013827c9ebb0abfe9d41cbcedf507a0310386c8d9a7efec7a36f9d7a3 \
   y-bin-dependency-download || exit $?
 
-y-kustomize-v${version}-bin "$@" || echo $?
+y-kustomize-v${version}-bin "$@" || exit $?

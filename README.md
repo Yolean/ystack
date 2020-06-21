@@ -97,11 +97,32 @@ docker volume rm ystack_admin 2> /dev/null || true
 
 ## Development
 
+Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docker-compose.test.yml](./docker-compose.test.yml) that is used for CI with [docker-compose.dev-overrides.yml](./docker-compose.dev-overrides.yml). The k3s [image](./k3s/docker-image/) is the stock k3s image with y-stack's local registry config.
+
 ```
-compose='docker-compose -f docker-compose.test.yml -f docker-compose.dev-overrides.yml'
-$compose down \
-  ;docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true
-sudo rm test/.kube/kubeconfig.yaml
-$compose up --build -d ystack-proxy
-export KUBECONFIG=$PWD/test/.kube/kubeconfig.yaml
+y-docker-compose down
+y-docker-compose up --build -d master1
+y-docker-compose up --build -d ystack-proxy
+kubectl --kubeconfig=$YSTACK_HOME/devcluster/.kube/kubeconfig.yaml config rename-context default ystack-local
+y-kubie ctx -f $YSTACK_HOME/devcluster/.kube/kubeconfig.yaml
 ```
+
+To add monitoring support run `y-cluster-assert-install`.
+
+For [dev loops](./examples/) and `y-assert` the docker stack replaces `y-kubefwd` (hard to use in CI)
+with container ports.
+You need `cat /etc/hosts | grep 127.0.0 | grep cluster.local` to have something like:
+```
+127.0.0.1	builds-registry.ystack.svc.cluster.local
+127.0.0.1	buildkitd.ystack.svc.cluster.local
+127.0.0.1	monitoring.ystack.svc.cluster.local
+```
+
+Test using:
+```
+curl http://builds-registry.ystack.svc.cluster.local/v2/
+curl http://monitoring.ystack.svc.cluster.local:9090/api/v1/alertmanagers | jq '.data.activeAlertmanagers[0]'
+curl http://monitoring.ystack.svc.cluster.local:9093/api/v2/status
+```
+
+Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js. Run `y-assert` for CI-like runs until completion.

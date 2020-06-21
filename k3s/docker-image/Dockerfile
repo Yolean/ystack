@@ -1,6 +1,6 @@
-FROM rancher/k3s:v1.18.3-k3s1@sha256:faddccf57fa09d7e11698eae56cbcf4f764ffa5a6917de9f4326af0b26c9b746
+FROM rancher/k3s:v1.18.4-k3s1@sha256:2555ed1896512b320c175859a95a5f1d6a2c64b501a84bc45d853a9bd0be0dfd
 
-COPY k3s/image/registries.yaml /etc/rancher/k3s/registries.yaml
+COPY k3s/docker-image/registries.yaml /etc/rancher/k3s/registries.yaml
 # The clusterIP should be predefined
 RUN sed -i 's|http://builds-registry.ystack.svc.cluster.local|http://10.43.0.50|' /etc/rancher/k3s/registries.yaml
 

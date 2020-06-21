@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=0.1.0
+
+bin_name=crane \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${version}_Darwin_x86_64.tar.gz \
+  Darwin_sha256=4bef595a9d0b6781b452b302317f6b70c72e43cce664f817fa777ff72f9ffe5f \
+  Linux_url=https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${version}_Linux_x86_64.tar.gz \
+  Linux_sha256=ee5bb44cc9097835d12e6b34e1c1e3399efb8ed3dfb68ee0f28c6e66952dc335 \
+  bin_tgz_path=crane \
+  $YBIN/y-bin-dependency-download || exit $?
+
+$YBIN/y-crane-v${version}-bin "$@" || exit $?

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -e
+
+# Bash isn't a good tool for producing a tar from a build context
+# but this script is an experiment on how to compose an image
+# from a runtime and some static files using go-containerregistry's crane
+# The user shouldn't need to write Dockerfile or .dockerignore,
+# but we could probably use a generated Dockerfile + kaniko instead, or Buildpacks
+
+# Settings
+DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
+[ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
+[ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
+
+if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
+then
+  echo "ERROR Skaffold need local access to the builds registry for digest lookup"
+  echo "Registry: $BUILDS_REGISTRY"
+  echo "Look for y-stack's ingress or port-forward utilities"
+  exit 1
+fi
+
+[ -z "$IMAGE" ] && echo "No IMAGE env (from for example Skaffold)" && exit 1
+
+IMAGE=$IMAGE
+case "$IMAGE" in
+  $BUILDS_REGISTRY/* ) ;;
+  $PUSH_REGISTRY/* ) echo "Unlike y-build this script won't push to non-build registries" && exit 1 ;;
+  * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
+esac
+
+RUNTIME_IMAGE=$1
+[ -z "$RUNTIME_IMAGE" ] && echo "First argument must be a runtime image to append the layer to" \
+  && echo "To improve build times use a runtime image in the target repo" && exit 1
+
+# crane hangs for a long time if it doesn't know that the registry is plain http
+RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local/|.local:80/|')
+IMAGE=$(echo $IMAGE | sed 's|.local/|.local:80/|')
+
+# This is a PoC, let's make a lot of assumptions to simplify
+context=.
+src='**'
+# assuming a single manual sync, which is the reasonable use case for a runtime
+[ ! -f skaffold.yaml ] && echo "This composition example assumes a sync defined in a skaffold.yaml" && exit 1
+dest=$(cat skaffold.yaml | grep 'dest:' | awk '{ print $2 }')
+# this avoids "tar: Removing leading `/' from member names" and could come in handy if we can't use --transform
+dest=$(echo $dest | sed 's|^/||')
+
+list=$(mktemp)
+(cd $context; git ls-files -c -o --exclude-standard -- . || find . -type f) > $list
+tar=$(mktemp)
+tar --transform "s|^|$dest/|" --show-transformed-names -cvhf $tar -T $list --mode='ug+rw' --group=65534 --owner=65532
+rm $list
+
+set -x
+y-crane append --insecure -b $RUNTIME_IMAGE -f $tar -t $IMAGE
+set +x
+rm $tar

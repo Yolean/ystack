@@ -1,0 +1,23 @@
+apiVersion: skaffold/v2beta4
+kind: Config
+metadata:
+  name: sync-to-runtime
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/sync-to-runtime
+    custom:
+      buildCommand: >-
+        y-build-like-sync
+        node:12.18.0-alpine3.11@sha256:53cd04d947b6c097fde5ea031622f917e8a61378890effd8d548b1204628a3fc
+    sync:
+      manual:
+      - src: '**'
+        dest: /usr/src/app
+deploy:
+  kubectl:
+    manifests:
+    - k8s/sync-to-runtime-service.yaml
+    - k8s/sync-to-runtime-deployment.yaml
