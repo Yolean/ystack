@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 bases:
-- github.com/Yolean/kubernetes-assert/runtime-nodejs/kustomize?ref=0054d175107ecd8363a4ddd68b6ad082f2a780b3
+- github.com/Yolean/kubernetes-assert/runtime-nodejs/kustomize?ref=cae925e86004a4ecfe852aec3b54ee8f01c2063a
 namePrefix: ystack-
 commonLabels:
   app: ystack
