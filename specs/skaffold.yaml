@@ -12,7 +12,7 @@ build:
     custom:
       buildCommand: >-
         y-build-like-sync
-        solsson/kubernetes-assert:runtime-nodejs@sha256:73ca64bdef6d9df38a8a5f5cef2d7d8375d9d14a77c304d0617c83ae69483bfd
+        yolean/assert-runtime-nodejs:41207ccf8536ce022919d9aef86d2124b2c142b1@sha256:8c44b3817e81c4d6cb01b6decbffb7628b701a5b860161263b008f9d45646e35
     sync:
       manual:
       - src: '**'
