@@ -12,11 +12,6 @@ BUILDCTL_OPTS="$@"
 DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
 [ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
-[ -z "$BUILDKIT_CACHE" ]  && BUILDKIT_CACHE="type=registry,ref=$BUILDS_REGISTRY/ystack:buildcache"
-[ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
-[ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE,mode=max"
-[ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
-[ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
 [ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
 
 if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
@@ -64,6 +59,12 @@ if [[ ! -z "$GIT_COMMIT" ]]; then
     GIT_COMMIT="$GIT_COMMIT-dirty"
   fi
 fi
+
+[ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$(echo $IMAGE | sed 's|/|/ystack-buildcache/|' | sed s/:$BUILD_TAG//)"
+[ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
+[ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE,mode=max"
+[ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
+[ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
 
 echo "Build command:"
 set -x
