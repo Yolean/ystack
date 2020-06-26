@@ -48,6 +48,7 @@ dest=$(cat skaffold.yaml | grep 'dest:' | awk '{ print $2 }')
 dest=$(echo $dest | sed 's|^/||')
 
 list=$(mktemp)
+# Wanted: a way to produce a build context like buildctl would
 (cd $context; git ls-files -c -o --exclude-standard -- . || find . -type f) > $list
 tar=$(mktemp)
 tar --transform "s|^|$dest/|" --show-transformed-names -cvhf $tar -T $list --mode='ug+rw' --group=65534 --owner=65532
