@@ -60,7 +60,8 @@ if [[ ! -z "$GIT_COMMIT" ]]; then
   fi
 fi
 
-[ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$(echo $IMAGE | sed 's|/|/ystack-buildcache/|' | sed s/:$BUILD_TAG//)"
+REGISTRY_CACHE_DEFAULT=$(echo $IMAGE | sed "s|[^/]*|$BUILDS_REGISTRY/ystack-buildcache|" | sed "s/:$BUILD_TAG//")
+[ -z "$BUILDKIT_CACHE" ] && BUILDKIT_CACHE="type=registry,ref=$REGISTRY_CACHE_DEFAULT"
 [ -z "$IMPORT_CACHE" ] && IMPORT_CACHE="--import-cache=$BUILDKIT_CACHE"
 [ -z "$EXPORT_CACHE" ] && EXPORT_CACHE="--export-cache=$BUILDKIT_CACHE,mode=max"
 [ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
