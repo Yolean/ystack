@@ -25,3 +25,6 @@ YSTACK_SUT_KEEP_RUNNING=false y-docker-compose up --build sut
 
 # specs currently don't clean up after themselves
 kubectl --context=$CONTEXTNAME -n ystack-specs scale --replicas=0 deploy --all
+
+echo "Done"
+echo "Note the remarks about /etc/hosts in README.md"

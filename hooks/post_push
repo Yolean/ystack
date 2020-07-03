@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 
-echo "post_push listing env"
+echo "# post_push # Env:"
 printenv
 
-echo "post_push listing images"
+echo "# post_push # Images:"
 docker images
+
+tagCommit=$(echo $IMAGE_NAME | sed "s|:.*|:$SOURCE_COMMIT|")
+docker tag $IMAGE_NAME $tagCommit
+docker push $tagCommit
+
+tagServer=$(echo $IMAGE_NAME | sed "s|:.*|:$SOURCE_COMMIT-k3s|")
+docker tag ${BUILD_CODE}_master1 $tagServer
+docker push $tagServer
+
+tagProxy=$(echo $IMAGE_NAME | sed "s|:.*|:$SOURCE_COMMIT-proxy|")
+docker tag ${BUILD_CODE}_ystack-proxy $tagProxy
+docker push $tagProxy
+
+echo "# post_push # Completed."

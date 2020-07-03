@@ -100,14 +100,8 @@ docker volume rm ystack_admin 2> /dev/null || true
 Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docker-compose.test.yml](./docker-compose.test.yml) that is used for CI with [docker-compose.dev-overrides.yml](./docker-compose.dev-overrides.yml). The k3s [image](./k3s/docker-image/) is the stock k3s image with y-stack's local registry config.
 
 ```
-y-docker-compose down
-y-docker-compose up --build -d master1
-y-docker-compose up --build -d ystack-proxy
-kubectl --kubeconfig=$YSTACK_HOME/devcluster/.kube/kubeconfig.yaml config rename-context default ystack-local
-y-kubie ctx -f $YSTACK_HOME/devcluster/.kube/kubeconfig.yaml
+y-cluster-provision-k3s-docker
 ```
-
-To add monitoring support run `y-cluster-assert-install`.
 
 For [dev loops](./examples/) and `y-assert` the docker stack replaces `y-kubefwd` (hard to use in CI)
 with container ports.
