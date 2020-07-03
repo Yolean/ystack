@@ -22,7 +22,7 @@ docker-compose $COMPOSEFILES "$@"
 
 if [ "$1" = "down" ]; then
   echo "Removing local config"
-  (docker-compose $COMPOSEFILES up cleanup)
+  (docker-compose $COMPOSEFILES up cleanup && docker-compose $COMPOSEFILES rm -f cleanup)
   echo "Cleaning up volumes"
   (docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true)
   echo "Done"
