@@ -4,7 +4,7 @@ set -e
 
 [ -z "$YSTACK_HOME" ] && echo "Missing an YSTACK_HOME env" && exit 1
 
-COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml -f $YSTACK_HOME/docker-compose.known-good-build.yml $COMPOSEFILES"
+COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml $COMPOSEFILES"
 
 KUBECONFIG=$YSTACK_HOME/devcluster/.kube/kubeconfig.yaml
 

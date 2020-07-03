@@ -6,22 +6,24 @@ set -e
 
 [ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
-COMPOSE=y-docker-compose
-$COMPOSE up --build -d ystack-proxy
+COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml -f $YSTACK_HOME/docker-compose.known-good-build.yml $COMPOSEFILES"
+# Workaround for https://github.com/docker/compose/issues/3729
+
+docker-compose $COMPOSEFILES up --no-build -d ystack-proxy
 
 echo "# Compose command:"
 echo "$COMPOSE"
 echo "# To tear down:"
 echo "$COMPOSE down --remove-orphans -v"
 
-$COMPOSE exec master1 sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
+docker-compose $COMPOSEFILES exec master1 sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
   > "$KUBECONFIG.tmp"
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
-YSTACK_SUT_KEEP_RUNNING=false y-docker-compose up --build sut
+YSTACK_SUT_KEEP_RUNNING=false docker-compose $COMPOSEFILES up --no-build sut
 
 # specs currently don't clean up after themselves
 kubectl --context=$CONTEXTNAME -n ystack-specs scale --replicas=0 deploy --all
