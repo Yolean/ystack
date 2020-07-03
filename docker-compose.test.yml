@@ -85,9 +85,6 @@ services:
     - |
       [ "$$KEEP_RUNNING" = "true" ] || set -e
 
-      echo "Temporarily skipping tests, while working with build hooks"
-      exit 0
-
       mkdir ~/.kube
       until test -f /admin/.kube/kubeconfig.yaml; do
         [ $$KUBECONFIG_WAIT -gt 0 ] || exit ${BULID_EXIT_CODE_ON_NO_CLUSTER:-0}
