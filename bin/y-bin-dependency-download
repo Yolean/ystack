@@ -1,5 +1,5 @@
 #!/bin/sh
-[ -z "$DEBUG" ] || set -x
+[ -z "$DEBUGDEBUG" ] || set -x
 set -e
 YBIN="$(dirname $0)"
 
