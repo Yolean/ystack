@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+echo "post_push listing env"
+printenv
+
+echo "post_push listing images"
+docker images

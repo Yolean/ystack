@@ -4,6 +4,8 @@ set -e
 
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
+[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+
 [ -z "$VM_NAME" ] && VM_NAME="ystack-master"
 [ -z "$VM_RESOURCES" ] && VM_RESOURCES="-m 8G -d 40G -c 4"
 
@@ -24,7 +26,7 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
   | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \
   > "$KUBECONFIG.tmp"
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default local
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=local create namespace ystack
 

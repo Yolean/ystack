@@ -4,27 +4,24 @@ set -e
 
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
-COMPOSE="docker-compose -p ystack -f docker-compose.test.yml"
-[ -z "$NODES" ] && NODES=2
-# TODO condition to toggle dev/qa mode
-false || {
-  COMPOSE="$COMPOSE -f docker-compose.dev-overrides.yml"
-  # ATM with port-forward we only support one node
-  [ $NODES -eq 1 ] || echo "# Dev mode only supports one node, util we add some kind of load balancer container"
-  NODES=1
-}
+[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
-(cd $YSTACK_HOME/ && \
-  $COMPOSE up --scale node=$NODES -d --build && \
-  docker ps && \
-  echo "# Compose commmand:" && echo "$COMPOSE" && \
-  echo "# To tear down:" && echo "$COMPOSE down --remove-orphans -v" && \
-  echo "# Currently, because sut doesn't wait for server to be up, you need another:" && echo "$COMPOSE up -d" && \
-  true )
+COMPOSE=y-docker-compose
+$COMPOSE up --build -d ystack-proxy
 
-$COMPOSE exec server sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do echo "# Waiting ..." && sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
+echo "# Compose command:"
+echo "$COMPOSE"
+echo "# To tear down:"
+echo "$COMPOSE down --remove-orphans -v"
+
+$COMPOSE exec master1 sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
   > "$KUBECONFIG.tmp"
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default local
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
+
+YSTACK_SUT_KEEP_RUNNING=false y-docker-compose up --build sut
+
+# specs currently don't clean up after themselves
+kubectl --context=$CONTEXTNAME -n ystack-specs scale --replicas=0 deploy --all

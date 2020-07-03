@@ -20,7 +20,8 @@ services:
 
   sut:
     environment:
-    - KEEP_RUNNING=true
+    - KEEP_RUNNING=${YSTACK_SUT_KEEP_RUNNING-true}
+    - EXAMPLES=${YSTACK_SUT_EXAMPLES-}
 
 volumes:
   admin:

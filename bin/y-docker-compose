@@ -8,19 +8,22 @@ COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-com
 
 KUBECONFIG=$YSTACK_HOME/devcluster/.kube/kubeconfig.yaml
 
-[ "$1" = "kubeconfig-path" ] && \
+if [ "$1" = "kubeconfig-path" ]; then
   echo "$KUBECONFIG" && \
   exit 0
+fi
 
-[ "$1" = "kubie" ] && \
-  y-kubie ctx -f $KUBECONFIG && \
+if [ "$1" = "kubie" ]; then
+  y-kubie ctx -f $KUBECONFIG
   exit 0
+fi
 
 docker-compose $COMPOSEFILES "$@"
 
-[ "$1" = "down" ] && \
-  echo "Removing local config" && \
-  (docker-compose $COMPOSEFILES up cleanup) && \
-  echo "Cleaning up volumes" && \
-  (docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true) && \
+if [ "$1" = "down" ]; then
+  echo "Removing local config"
+  (docker-compose $COMPOSEFILES up cleanup)
+  echo "Cleaning up volumes"
+  (docker volume rm ystack_admin ystack_k3s-server 2>/dev/null || true)
   echo "Done"
+fi
