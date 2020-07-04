@@ -11,6 +11,7 @@ RUN set -ex; \
       00-ystack-namespace \
       10-minio \
       20-builds-registry \
+      21-prod-registry \
       30-y-assert-support \
       40-buildkit; do \
     kubectl kustomize /etc/ystack/k3s/$base > /var/lib/rancher/k3s/server/manifests/ystack-$base.yaml; \

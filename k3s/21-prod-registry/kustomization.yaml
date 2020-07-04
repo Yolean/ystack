@@ -1,0 +1,5 @@
+namespace: ystack
+bases:
+- ../../registry/prod-service
+patchesStrategicMerge:
+- prod-registry-magic-numbers.yaml
