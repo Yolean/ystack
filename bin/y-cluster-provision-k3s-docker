@@ -6,7 +6,7 @@ set -e
 
 [ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
-COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml -f $YSTACK_HOME/docker-compose.known-good-build.yml $COMPOSEFILES"
+COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml -f $YSTACK_HOME/docker-compose.builds.yml $COMPOSEFILES"
 # Workaround for https://github.com/docker/compose/issues/3729
 
 docker-compose $COMPOSEFILES up --no-build -d ystack-proxy
