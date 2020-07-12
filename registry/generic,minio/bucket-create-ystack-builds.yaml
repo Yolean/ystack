@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
       - name: mc
-        image: minio/mc:RELEASE.2019-10-09T22-54-57Z@sha256:cfa18a5564f7649080792212d0a9281b60b1a732ef329877f56fc108cee5f012
+        image: minio/mc:RELEASE.2020-07-11T05-18-52Z@sha256:fd5c0b878f2f1d2b531d966c599a78055aaf334c0a47ac66e20f40fae0e54d9a
         env:
         - name: MINIO_HOST
           value: http://blobs-minio
