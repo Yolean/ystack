@@ -38,5 +38,5 @@ k3s crictl info
 #k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
 ctx="--kubeconfig=/etc/rancher/k3s/k3s.yaml"
 k3s kubectl $ctx get node
-sleep 10 # use kubectl-waitretry?
-k3s kubectl $ctl wait --for=condition=Ready node/ystack-master
+sleep 5
+until k3s kubectl $ctl wait --for=condition=Ready node/ystack-master; do sleep 5; done
