@@ -38,6 +38,10 @@ bin_link=$YBIN/$bin_name
     tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
     mv $(basename " $bin_tgz_path") $bin_file
   fi
+  if [ ! -z "$bin_zip_path" ]; then
+    unzip $bin_file
+    mv $(basename " $bin_zip_path") $bin_file
+  fi
   chmod a+x $bin_file
 }
 

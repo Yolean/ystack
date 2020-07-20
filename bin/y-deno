@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=1.2.0
+
+bin_name=deno \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/denoland/deno/releases/download/v${version}/deno-x86_64-apple-darwin.zip \
+  Darwin_sha256=18e0a7024f9cdc7ee498bf23909ebbe8286fafabc72aca07335ef500d9101fec \
+  Linux_url=https://github.com/denoland/deno/releases/download/v${version}/deno-x86_64-unknown-linux-gnu.zip \
+  Linux_sha256=3352aa03b92283d7a9058cc552330268180df08cbf68d7750aacf08f548bd381 \
+  bin_zip_path=deno \
+  $YBIN/y-bin-dependency-download || exit $?
+
+$YBIN/y-deno-v${version}-bin "$@" || exit $?
