@@ -2,7 +2,7 @@ FROM ubuntu:20.04@sha256:8bce67040cd0ae39e0beb55bcb976a824d9966d2ac8d2e4bf6119b4
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq'; \
+  runDeps='ca-certificates curl git jq unzip'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
