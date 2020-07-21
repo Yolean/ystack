@@ -7,14 +7,19 @@ set -e
 [ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
 COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml -f $YSTACK_HOME/docker-compose.builds.yml $COMPOSEFILES"
-# Workaround for https://github.com/docker/compose/issues/3729
+echo "# docker-compose $COMPOSEFILES"
 
+status=$(docker-compose $COMPOSEFILES ps -q)
+if [ ! -z "$status" ]; then
+  echo "# Aborting because there seems to exist ystack containers already. See:"
+  echo docker-compose $COMPOSEFILES ps
+  echo "# To tear down:"
+  echo docker-compose $COMPOSEFILES down --remove-orphans -v
+  exit 1
+fi
+
+# --no-build is a workaround for https://github.com/docker/compose/issues/3729
 docker-compose $COMPOSEFILES up --no-build -d ystack-proxy
-
-echo "# Compose command:"
-echo "$COMPOSE"
-echo "# To tear down:"
-echo "$COMPOSE down --remove-orphans -v"
 
 docker-compose $COMPOSEFILES exec master1 sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
   > "$KUBECONFIG.tmp"

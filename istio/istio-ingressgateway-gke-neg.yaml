@@ -1,0 +1,22 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: istio-ingressgateway-gke-neg
+  namespace: istio-system
+  annotations:
+    cloud.google.com/neg: '{"ingress":false,"exposed_ports":{"80":{},"443":{}}}'
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local # https://kubernetes.io/docs/tutorials/services/source-ip/
+  selector:
+    app: istio-ingressgateway
+    istio: ingressgateway
+  ports:
+  - name: http2
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 8443

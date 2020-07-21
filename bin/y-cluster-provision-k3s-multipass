@@ -9,10 +9,12 @@ set -e
 [ -z "$VM_NAME" ] && VM_NAME="ystack-master"
 [ -z "$VM_RESOURCES" ] && VM_RESOURCES="-m 8G -d 40G -c 4"
 
-if ! multipass info "$VM_NAME" 2>/dev/null
+if multipass list | grep "$VM_NAME"
 then
-  multipass launch -n "$VM_NAME" $VM_RESOURCES
+  echo "Y-stack appears to be running already" && exit
 fi
+
+multipass launch -n "$VM_NAME" $VM_RESOURCES
 
 # https://medium.com/@mattiaperi/kubernetes-cluster-with-k3s-and-multipass-7532361affa3
 K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $2}')"
