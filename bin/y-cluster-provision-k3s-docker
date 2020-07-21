@@ -14,6 +14,7 @@ if [ ! -z "$status" ]; then
   echo "# Aborting because there seems to exist ystack containers already. See:"
   echo docker-compose $COMPOSEFILES ps
   echo "# To tear down:"
+  echo docker-compose $COMPOSEFILES up cleanup
   echo docker-compose $COMPOSEFILES down --remove-orphans -v
   exit 1
 fi

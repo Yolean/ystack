@@ -5,6 +5,7 @@ RUN apk add --no-cache git
 COPY . /etc/ystack
 
 # Install the things we need to proxy, but nothing more because big apply chunks are hard to maintain
+# This list of bases also exists in ../../bin/y-cluster-provision-k3s-multipass
 RUN set -ex; \
   mkdir -p /var/lib/rancher/k3s/server/manifests; \
   for base in \

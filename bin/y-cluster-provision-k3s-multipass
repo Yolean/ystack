@@ -30,12 +30,21 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=local create namespace ystack
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
 
-#KUBECONFIG="$KUBECONFIG.tmp" kubectl apply -k $YSTACK_HOME/metrics-server
-
-KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=local
+# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
+for base in \
+    00-ystack-namespace \
+    10-minio \
+    20-builds-registry \
+    21-prod-registry \
+    30-y-assert-support \
+    40-buildkit; do \
+  basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying $basepath ..."
+  kubectl --context=$CONTEXTNAME apply -k $basepath
+done
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
-echo "# Done. Master IP: $K3S_NODEIP_MASTER. The cluster should be ready for y-stack converge now."
+echo "# Done. Master IP: $K3S_NODEIP_MASTER"
