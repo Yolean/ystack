@@ -42,8 +42,10 @@ for base in \
     40-buildkit; do \
   basepath="$YSTACK_HOME/k3s/$base/"
   echo "# Applying $basepath ..."
-  kubectl --context=$CONTEXTNAME apply -k $basepath
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME apply -k $basepath
 done
+
+KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/node-update-hosts/
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
