@@ -1,4 +1,13 @@
+FROM solsson/y-docker-base:node@sha256:4577a962b58fdb0371eab189a5d210a956d6537a676642c7573e82171b615534 as yolean-node
+
 FROM ubuntu:20.04@sha256:c844b5fee673cd976732dda6860e09b8f2ae5b324777b6f9d25fd70a0904c2e0
+
+COPY --from=yolean-node /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=yolean-node /usr/local/bin/node /usr/local/bin/
+RUN cd /usr/local/bin && ln -s ../lib/node_modules/npm/bin/npm-cli.js npm
+
+COPY lib/package* /usr/local/src/ystack/lib/
+RUN cd /usr/local/src/ystack/lib/ && npm install --ignore-scripts -g
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \

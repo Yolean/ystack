@@ -5,6 +5,9 @@
 bin/*-bin
 !bin/kubectl-*
 
+# libraries
+!lib/
+
 #!converge-generic/
 !minio/
 !registry/builds-service/
