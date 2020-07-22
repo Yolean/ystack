@@ -14,3 +14,6 @@ rio
 skaffold
 kubefwd
 kail
+deno
+k8s-ingress-hosts
+istioctl
