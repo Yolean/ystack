@@ -1,8 +1,25 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
   name: extensions.dashboard.tekton.dev
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.apiVersion
+    name: API version
+    type: string
+  - JSONPath: .spec.name
+    name: Kind
+    type: string
+  - JSONPath: .spec.displayname
+    name: Display name
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: dashboard.tekton.dev
   names:
     categories:
@@ -10,120 +27,41 @@ spec:
     - tekton-dashboard
     kind: Extension
     plural: extensions
+    shortNames:
+    - ext
+    - exts
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
-  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app: tekton-dashboard
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
   name: tekton-dashboard
   namespace: tekton-pipelines
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: tekton-dashboard-minimal
-  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-backend
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  - configmaps
-  verbs:
-  - create
-  - update
-  - delete
-- apiGroups:
-  - extensions
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - tasks
-  - clustertasks
-  - taskruns
-  - pipelines
-  - pipelineruns
-  - pipelineresources
-  - conditions
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - taskruns/finalizers
-  - pipelineruns/finalizers
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - tasks/status
-  - clustertasks/status
-  - taskruns/status
-  - pipelines/status
-  - pipelineruns/status
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - dashboard.tekton.dev
-  resources:
-  - extensions
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - eventlisteners
-  - triggerbindings
-  - triggertemplates
-  verbs:
-  - create
-  - update
-  - delete
-  - patch
-  - add
 - apiGroups:
   - apiextensions.k8s.io
   resources:
@@ -137,6 +75,68 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
+- apiGroups:
+  - tekton.dev
+  resources:
+  - clustertasks
+  - clustertasks/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - clustertriggerbindings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dashboard.tekton.dev
+  resources:
+  - extensions
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - tekton.dev
+  resources:
+  - clustertasks
+  - clustertasks/status
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - clustertriggerbindings
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - add
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-dashboard
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - list
 - apiGroups:
   - route.openshift.io
   resources:
@@ -153,81 +153,49 @@ rules:
   - get
   - list
   - watch
+---
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      rbac.dashboard.tekton.dev/aggregate-to-dashboard: "true"
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-extensions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-pipelines
+rules:
 - apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/log
-  - namespaces
-  - events
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - extensions
   - apps
   resources:
   - deployments
   verbs:
-  - get
   - list
-  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-tenant
+rules:
 - apiGroups:
-  - tekton.dev
+  - ""
   resources:
-  - tasks
-  - clustertasks
-  - taskruns
-  - pipelines
-  - pipelineruns
-  - pipelineresources
-  - conditions
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - taskruns/finalizers
-  - pipelineruns/finalizers
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - tasks/status
-  - clustertasks/status
-  - taskruns/status
-  - pipelines/status
-  - pipelineruns/status
+  - services
   verbs:
   - get
   - list
@@ -241,7 +209,36 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - pods/log
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - tekton.dev
+  resources:
+  - tasks
+  - taskruns
+  - pipelines
+  - pipelineruns
+  - pipelineresources
+  - conditions
+  - tasks/status
+  - taskruns/status
+  - pipelines/status
+  - pipelineruns/status
+  - taskruns/finalizers
+  - pipelineruns/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - triggers.tekton.dev
   resources:
   - eventlisteners
   - triggerbindings
@@ -250,15 +247,85 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - tekton.dev
+  resources:
+  - tasks
+  - taskruns
+  - pipelines
+  - pipelineruns
+  - pipelineresources
+  - conditions
+  - taskruns/finalizers
+  - pipelineruns/finalizers
+  - tasks/status
+  - taskruns/status
+  - pipelines/status
+  - pipelineruns/status
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - eventlisteners
+  - triggerbindings
+  - triggertemplates
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - add
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-triggers
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: tekton-dashboard-minimal
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-backend
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: tekton-dashboard-minimal
+  name: tekton-dashboard-backend
 subjects:
 - kind: ServiceAccount
   name: tekton-dashboard
@@ -269,6 +336,13 @@ kind: Service
 metadata:
   labels:
     app: tekton-dashboard
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/name: dashboard
+    app.kubernetes.io/part-of: tekton-dashboard
+    app.kubernetes.io/version: v0.8.0
+    dashboard.tekton.dev/release: v0.8.0
+    version: v0.8.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -278,42 +352,63 @@ spec:
     protocol: TCP
     targetPort: 9097
   selector:
-    app: tekton-dashboard
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/name: dashboard
+    app.kubernetes.io/part-of: tekton-dashboard
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: tekton-dashboard
-    version: v0.5.3
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/name: dashboard
+    app.kubernetes.io/part-of: tekton-dashboard
+    app.kubernetes.io/version: v0.8.0
+    dashboard.tekton.dev/release: v0.8.0
+    version: v0.8.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tekton-dashboard
+      app.kubernetes.io/component: dashboard
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: dashboard
+      app.kubernetes.io/part-of: tekton-dashboard
   template:
     metadata:
       labels:
         app: tekton-dashboard
+        app.kubernetes.io/component: dashboard
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/name: dashboard
+        app.kubernetes.io/part-of: tekton-dashboard
+        app.kubernetes.io/version: v0.8.0
       name: tekton-dashboard
     spec:
       containers:
-      - env:
-        - name: PORT
-          value: "9097"
-        - name: READ_ONLY
-          value: "false"
-        - name: WEB_RESOURCES_DIR
-          value: /var/run/ko/web
-        - name: PIPELINE_RUN_SERVICE_ACCOUNT
-          value: ""
+      - args:
+        - --port=9097
+        - --logout-url=
+        - --pipelines-namespace=tekton-pipelines
+        - --triggers-namespace=tekton-pipelines
+        - --read-only=false
+        - --csrf-secure-cookie=false
+        - --log-level=info
+        - --log-format=json
+        - --namespace=
+        - --openshift=false
+        - --stream-logs=false
+        env:
         - name: INSTALLED_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:4ba4e91589360748468c6955ce5ba6c6a7a8fa5c02075e06c8249bb65c0cceda
+        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:49c6695e80eeb53b81a07e74767976df1f69f2e2caae47dcf21e5481f0d04356
         livenessProbe:
           httpGet:
             path: /health
@@ -325,79 +420,97 @@ spec:
           httpGet:
             path: /readiness
             port: 9097
+      securityContext:
+        runAsNonRoot: true
       serviceAccountName: tekton-dashboard
----
-apiVersion: tekton.dev/v1alpha1
-kind: Pipeline
-metadata:
-  name: pipeline0
-  namespace: tekton-pipelines
-spec:
-  params:
-  - default: /workspace/git-source
-    description: The path to the resource files to apply
-    name: pathToResourceFiles
-    type: string
-  - default: .
-    description: The directory from which resources are to be applied
-    name: apply-directory
-    type: string
-  - default: tekton-pipelines
-    description: The namespace in which to create the resources being imported
-    name: target-namespace
-    type: string
-  resources:
-  - name: git-source
-    type: git
-  tasks:
-  - name: pipeline0-task
-    params:
-    - name: pathToResourceFiles
-      value: $(params.pathToResourceFiles)
-    - name: apply-directory
-      value: $(params.apply-directory)
-    - name: target-namespace
-      value: $(params.target-namespace)
-    resources:
-      inputs:
-      - name: git-source
-        resource: git-source
-    taskRef:
-      name: pipeline0-task
----
-apiVersion: tekton.dev/v1alpha1
-kind: Task
-metadata:
-  name: pipeline0-task
-  namespace: tekton-pipelines
-spec:
-  inputs:
-    params:
-    - default: /workspace/git-source
-      description: The path to the resource files to apply
-      name: pathToResourceFiles
-      type: string
-    - default: .
-      description: The directory from which resources are to be applied
-      name: apply-directory
-      type: string
-    - default: tekton-pipelines
-      description: The namespace where created resources will go
-      name: target-namespace
-      type: string
-    resources:
-    - name: git-source
-      type: git
-  steps:
-  - args:
-    - apply
-    - -f
-    - $(inputs.params.pathToResourceFiles)/$(inputs.params.apply-directory)
-    - -n
-    - $(inputs.params.target-namespace)
-    command:
-    - kubectl
-    image: lachlanevenson/k8s-kubectl@sha256:429bf937e48c868caaf9525b88cf3a2f564ca59b43379e67a6b0747300b06a17
-    name: kubectl-apply
+      volumes: []
 
 ---
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-pipelines
+  namespace: tekton-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-dashboard-pipelines
+subjects:
+  - kind: ServiceAccount
+    name: tekton-dashboard
+    namespace: tekton-pipelines
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-dashboard
+  namespace: tekton-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-dashboard-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: tekton-dashboard
+    namespace: tekton-pipelines
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-triggers
+  namespace: tekton-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-dashboard-triggers
+subjects:
+  - kind: ServiceAccount
+    name: tekton-dashboard
+    namespace: tekton-pipelines
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-dashboard-tenant
+subjects:
+  - kind: ServiceAccount
+    name: tekton-dashboard
+    namespace: tekton-pipelines
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-dashboard
+  name: tekton-dashboard-extensions
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-dashboard-extensions
+subjects:
+  - kind: ServiceAccount
+    name: tekton-dashboard
+    namespace: tekton-pipelines
