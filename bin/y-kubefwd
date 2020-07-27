@@ -11,13 +11,7 @@ case $ctx in
   *) echo "Warning: deprecated use of default context for kubefwd" ;;
 esac
 
-if [ $(id -u) -ne 0 ] && \
-    [ ! -z "$ctx" ] && \
-    [ "0" == "$(kubectl $ctx -n ystack get statefulset buildkitd -o jsonpath='{.spec.replicas}')" ]; then
-  echo "buildkitd is at scale zero, scaling up before port forward ..."
-  kubectl $ctx -n ystack scale --replicas=1 statefulset buildkitd
-  kubectl-waitretry $ctx -n ystack --timeout=10s --for=condition=ready pod buildkitd-0
-fi
+[ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
 
 bin_name=kubefwd \
   bin_version=v${version} \
