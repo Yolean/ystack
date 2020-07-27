@@ -5,6 +5,20 @@ YBIN="$(dirname $0)"
 
 version=1.14.0
 
+ctx=$1
+case $ctx in
+  "--context="*) shift 1 ;;
+  *) echo "Warning: deprecated use of default context for kubefwd" ;;
+esac
+
+if [ $(id -u) -ne 0 ] && \
+    [ ! -z "$ctx" ] && \
+    [ "0" == "$(kubectl $ctx -n ystack get statefulset buildkitd -o jsonpath='{.spec.replicas}')" ]; then
+  echo "buildkitd is at scale zero, scaling up before port forward ..."
+  kubectl $ctx -n ystack scale --replicas=1 statefulset buildkitd
+  kubectl-waitretry $ctx -n ystack --timeout=10s --for=condition=ready pod buildkitd-0
+fi
+
 bin_name=kubefwd \
   bin_version=v${version} \
   Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_amd64.tar.gz \
