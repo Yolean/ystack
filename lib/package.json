@@ -2,6 +2,7 @@
   "name": "@yolean/ystack",
   "version": "1.0.0",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
