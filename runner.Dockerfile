@@ -11,7 +11,7 @@ RUN cd /usr/local/src/ystack/lib/ && npm install --ignore-scripts -g
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq unzip'; \
+  runDeps='ca-certificates curl git jq unzip findutils'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
