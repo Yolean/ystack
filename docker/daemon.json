@@ -4,6 +4,7 @@
     "prod-registry.ystack.svc.cluster.local"
   ],
   "tls": false,
+  "dns-search": ["."],
   "hosts": [
     "tcp://0.0.0.0:2376"
   ]
