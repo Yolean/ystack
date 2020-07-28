@@ -1,7 +1,6 @@
 #!/bin/sh
 [ -z "$DEBUG" ] || set -x
 set -e
-YBIN="$(dirname $0)"
 
 ctx=$1
 case $ctx in

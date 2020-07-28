@@ -3,14 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=0.7.1
+version=0.7.2
 
 bin_name=buildctl \
   bin_version=v${version} \
   Darwin_url=https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.darwin-amd64.tar.gz \
-  Darwin_sha256=7a10c791359772953c4fb83e5176daf8bb3875af47597707b7cb5f200314490a \
+  Darwin_sha256=3a1afc0c60cee51558a4c589a1415c754035145c3782c21c572e1e348150c46d \
   Linux_url=https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.linux-amd64.tar.gz \
-  Linux_sha256=eaaf4bb57d3ddfc5e2446c1db6df1dd7bdf15270fbb28c8331969dabb6c0e74e \
+  Linux_sha256=33bcaa49b31bc3a277ac75d32fce3f5442d39f53a1799b8624e985279b579f74 \
   bin_tgz_path=bin/buildctl \
   y-bin-dependency-download || exit $?
 
