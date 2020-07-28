@@ -13,6 +13,7 @@ services:
     - admin:/admin
 
   master1:
+    hostname: master1
     build:
       context: .
       dockerfile: ./k3s/docker-image/Dockerfile
@@ -41,6 +42,7 @@ services:
     memswap_limit: 0
 
   ystack-proxy:
+    hostname: ystack-proxy
     depends_on:
     - master1
     build:
