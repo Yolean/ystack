@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 [ -z "$DEBUG" ] || set -x
-set -e
+set -eo pipefail
 
 [ $(id -u) -eq 0 ] || exec sudo $0 $@
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 [ -z "$DEBUG" ] || set -x
-set -e
+set -eo pipefail
 
 [ $(id -u) -ne 0 ] && echo "su privileges required for the k3s installer" && exec sudo -E $0 $@
 

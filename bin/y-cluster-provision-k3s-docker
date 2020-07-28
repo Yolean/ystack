@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 [ -z "$DEBUG" ] || set -x
-set -e
+set -eo pipefail
 
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
