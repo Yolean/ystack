@@ -1,6 +1,6 @@
-FROM solsson/y-docker-base:node@sha256:4577a962b58fdb0371eab189a5d210a956d6537a676642c7573e82171b615534 as yolean-node
+FROM yolean/node:3baccea320a5d1b644e37044fa7445a972a0a9c2@sha256:7c5162114bbd280a59c12e9c5bc9076e82b081b1ba65440b83ef3fb9417ba719 as yolean-node
 
-FROM ubuntu:20.04@sha256:c844b5fee673cd976732dda6860e09b8f2ae5b324777b6f9d25fd70a0904c2e0
+FROM ubuntu:20.04@sha256:5d1d5407f353843ecf8b16524bc5565aa332e9e6a1297c73a92d3e754b8a636d
 
 COPY --from=yolean-node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=yolean-node /usr/local/bin/node /usr/local/bin/
