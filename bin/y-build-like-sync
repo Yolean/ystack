@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 [ -z "$DEBUG" ] || set -x
-set -e
+set -eo pipefail
 
 # Bash isn't a good tool for producing a tar from a build context
 # but this script is an experiment on how to compose an image

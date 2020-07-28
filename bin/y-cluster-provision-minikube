@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 [ -z "$DEBUG" ] || set -x
-set -e
+set -eo pipefail
 YBIN="$(dirname $0)"
 
 [ "$1" = "help" ] && echo '
