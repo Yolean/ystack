@@ -13,6 +13,7 @@ services:
     - admin:/admin
 
   master1:
+    hostname: master1
     build:
       context: .
       dockerfile: ./k3s/docker-image/Dockerfile
@@ -20,7 +21,6 @@ services:
     - server
     - --https-listen-port=17143
     - --node-name=master1
-    - --no-deploy=traefik
     - --no-deploy=servicelb
     - --kube-apiserver-arg
     -   service-node-port-range=31710-31719
@@ -43,6 +43,7 @@ services:
     memswap_limit: 0
 
   ystack-proxy:
+    hostname: ystack-proxy
     depends_on:
     - master1
     build:

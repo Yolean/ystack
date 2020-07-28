@@ -26,9 +26,13 @@ BUILDKIT=$(kubectl -n ystack get service buildkitd-nodeport -o jsonpath={.spec.p
 # Assuming ordering is predictable ...
 PROMETHEUS=$(kubectl -n ystack get service monitoring-nodeport -o jsonpath={.spec.ports[0].nodePort})
 ALERTMANAGER=$(kubectl -n ystack get service monitoring-nodeport -o jsonpath={.spec.ports[1].nodePort})
+HTTP=$(kubectl -n kube-system get service traefik -o jsonpath={.spec.ports[0].nodePort})
+HTTPS=$(kubectl -n kube-system get service traefik -o jsonpath={.spec.ports[1].nodePort})
 
 cat envoy.template.yaml \
   | sed "s|{{ node }}|$NODE|g" \
+  | sed "s|{{ http_nodeport }}|$HTTP|g" \
+  | sed "s|{{ https_nodeport }}|$HTTPS|g" \
   | sed "s|{{ registry_nodeport }}|$REGISTRY|g" \
   | sed "s|{{ buildkit_nodeport }}|$BUILDKIT|g" \
   | sed "s|{{ prometheus_nodeport }}|$PROMETHEUS|g" \
