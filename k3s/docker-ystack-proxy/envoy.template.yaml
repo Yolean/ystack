@@ -112,7 +112,7 @@ static_resources:
             address:
               socket_address:
                 address: {{ node }}
-                port_value: 80
+                port_value: {{ http_nodeport }}
   - name: https
     type: STRICT_DNS
     connect_timeout: 30s
@@ -126,7 +126,7 @@ static_resources:
             address:
               socket_address:
                 address: {{ node }}
-                port_value: 443
+                port_value: {{ https_nodeport }}
   - name: registry
     type: STRICT_DNS
     connect_timeout: 1s

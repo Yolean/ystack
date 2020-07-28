@@ -21,6 +21,7 @@ services:
     - server
     - --https-listen-port=17143
     - --node-name=master1
+    - --no-deploy=servicelb
     - --kube-apiserver-arg
     -   service-node-port-range=31710-31719
     tmpfs:
