@@ -10,8 +10,9 @@ services:
 
   ystack-proxy:
     ports:
-    # To run skaffold build/run/dev locally
+    # Registry and ingress
     - 80:80
+    - 443:443
     # To support y-build as skaffold build
     - 8547:8547
     # To support y-assert
