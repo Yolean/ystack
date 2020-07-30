@@ -6,8 +6,13 @@ COPY --from=yolean-node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=yolean-node /usr/local/bin/node /usr/local/bin/
 RUN cd /usr/local/bin && ln -s ../lib/node_modules/npm/bin/npm-cli.js npm
 
-COPY lib/package* /usr/local/src/ystack/lib/
-RUN cd /usr/local/src/ystack/lib/ && npm install --ignore-scripts -g
+COPY lib/package* /usr/local/lib/node_modules/@yolean/ystack/
+RUN cd /usr/local/lib/node_modules/@yolean/ystack && npm ci --ignore-scripts
+RUN for B in \
+  tsc ts-node \
+  jest ts-jest \
+  rollup \
+  ; do ln -s -v /usr/local/lib/node_modules/@yolean/ystack/node_modules/.bin/$B /usr/local/bin/$B; done
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
