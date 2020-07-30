@@ -84,8 +84,6 @@ services:
     - -cx
     command:
     - |
-      echo "TEMP disable tests" && exit 0
-
       [ "$$KEEP_RUNNING" = "true" ] || set -e
 
       mkdir ~/.kube
