@@ -12,7 +12,7 @@ build:
     custom:
       buildCommand: >-
         y-build-like-sync
-        yolean/assert-runtime-nodejs:41207ccf8536ce022919d9aef86d2124b2c142b1@sha256:8c44b3817e81c4d6cb01b6decbffb7628b701a5b860161263b008f9d45646e35
+        yolean/assert-runtime-nodejs:32321eb581b76e744d5415283ffb67ca55a94ab2@sha256:8fd98536df86d77a913d55b961f1e336c8484e6dabee96bb88d486ea686a62d5
     sync:
       manual:
       - src: '**'
