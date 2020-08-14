@@ -1,14 +1,25 @@
-#!/bin/sh
+#!/usr/bin/env bash
 [ -z "$DEBUG" ] || set -x
-set -e
+set -eo pipefail
 YBIN="$(dirname $0)"
 
 version=1.14.0
 
+current_context="$(kubectl config current-context)"
+
 ctx=$1
 case $ctx in
-  "--context="*) shift 1 ;;
-  *) echo "Warning: deprecated use of default context for kubefwd" ;;
+  "--context=${current_context}") shift 1 ;;
+  "--context="*)
+    shift 1
+    contextname="$(echo -n $ctx | cut -d '=' -f 2)"
+    echo "Aborted because kubefwd always uses current-context ('$contextname' != '$current_context')"
+    [ -z "$KUBECONFIG" ] || kubie_f_suggest="-f $KUBECONFIG"
+    echo "Try:  y-kubie ctx $kubie_f_suggest -- $contextname"
+    echo "Then: $(basename $0) $@"
+    exit 1
+    ;;
+  *) ctx="--context=${current_context}" ;;
 esac
 
 [ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
