@@ -22,7 +22,7 @@ K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $
 echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
 
 multipass exec "$VM_NAME" -- sudo bash -cex "$(cat $YSTACK_HOME/bin/y-ubuntu-swapoff)";
-multipass exec "$VM_NAME" -- sudo bash -cex "$(cat $YSTACK_HOME/bin/y-k3s-install)";
+multipass exec "$VM_NAME" -- sudo INSTALL_K3S_EXEC="$INSTALL_K3S_EXEC" bash -cex "$(cat $YSTACK_HOME/bin/y-k3s-install)";
 
 multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
   | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \
