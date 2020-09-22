@@ -23,7 +23,7 @@ spec:
             memory: 16Mi
           limits:
             cpu: 500m
-            memory: 300Mi
+            memory: 800Mi
         ports:
         - containerPort: 80
           name: registry
