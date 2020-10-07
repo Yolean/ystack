@@ -137,22 +137,6 @@ rules:
   - deployments
   verbs:
   - list
-- apiGroups:
-  - route.openshift.io
-  resources:
-  - routes
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - extensions
-  - apps
-  resources:
-  - ingresses
-  verbs:
-  - get
-  - list
-  - watch
 ---
 aggregationRule:
   clusterRoleSelectors:
@@ -340,9 +324,9 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.9.0
-    dashboard.tekton.dev/release: v0.9.0
-    version: v0.9.0
+    app.kubernetes.io/version: v0.10.0
+    dashboard.tekton.dev/release: v0.10.0
+    version: v0.10.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -366,9 +350,9 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.9.0
-    dashboard.tekton.dev/release: v0.9.0
-    version: v0.9.0
+    app.kubernetes.io/version: v0.10.0
+    dashboard.tekton.dev/release: v0.10.0
+    version: v0.10.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -387,7 +371,7 @@ spec:
         app.kubernetes.io/instance: default
         app.kubernetes.io/name: dashboard
         app.kubernetes.io/part-of: tekton-dashboard
-        app.kubernetes.io/version: v0.9.0
+        app.kubernetes.io/version: v0.10.0
       name: tekton-dashboard
     spec:
       containers:
@@ -409,7 +393,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:0ba2c06bd7d6709bf45570e85152b2de0c659b7b6b1045c083754b293d4dab7f
+        image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:7f6154e8e0bd205caefe9721677456ee43ac4c79901026289794fc652527e142
         livenessProbe:
           httpGet:
             path: /health
