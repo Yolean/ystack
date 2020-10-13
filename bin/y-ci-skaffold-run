@@ -27,4 +27,4 @@ sed -i 's|local:80/|local/|g' $json
 cat $json
 echo ""
 echo "# [y:docker-base skaffold-ci-run] Deploying:"
-skaffold deploy --build-artifacts=$json
+skaffold deploy --build-artifacts=$json $@
