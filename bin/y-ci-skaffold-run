@@ -17,14 +17,14 @@ export SKAFFOLD_INTERACTIVE=false
 
 json=$(mktemp)
 
-echo "# [y:docker-base skaffold-ci-run] Building with local registry workaround"
+echo "# [y-skaffold-ci-run] Building with local registry workaround"
 sed 's|\.local/|.local:80/|g' skaffold.yaml | \
   skaffold --filename=- \
     build --cache-artifacts=false --file-output=$json \
     $@
-echo "# [y:docker-base skaffold-ci-run] Build completed, result:"
+echo "# [y-skaffold-ci-run] Build completed, result:"
 sed -i 's|local:80/|local/|g' $json
 cat $json
 echo ""
-echo "# [y:docker-base skaffold-ci-run] Deploying:"
+echo "# [y-skaffold-ci-run] Deploying:"
 skaffold deploy --build-artifacts=$json $@
