@@ -4,7 +4,7 @@ set -eo pipefail
 
 [ "$1" = "help" ] && echo '
 Runs skaffold build+deploy (i.e. run) with a workaround (append :80)
-for in-cluster skaffold issues with .local non-https registry
+for in-cluster go-containerregistry issues with .local non-https registry
 
 Users of an y-stack inspired registry don not want this part numbers in actual image URLs
 because it should be up to the cluster to set up https or not
@@ -25,5 +25,6 @@ sed 's|\.local/|.local:80/|g' skaffold.yaml | \
 echo "# [y:docker-base skaffold-ci-run] Build completed, result:"
 sed -i 's|local:80/|local/|g' $json
 cat $json
+echo ""
 echo "# [y:docker-base skaffold-ci-run] Deploying:"
 skaffold deploy --build-artifacts=$json
