@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ "$1" = "help" ] && echo '
+Runs skaffold build+deploy (i.e. run) with a workaround (append :80)
+for in-cluster skaffold issues with .local non-https registry
+
+Users of an y-stack inspired registry don not want this part numbers in actual image URLs
+because it should be up to the cluster to set up https or not
+' && exit 0
+
+export SKAFFOLD_NO_PRUNE=true
+export SKAFFOLD_UPDATE_CHECK=false
+export SKAFFOLD_INTERACTIVE=false
+[ ! -z "$BUILDS_REGISTRY" ] || export BUILDS_REGISTRY=builds-registry.ystack.svc.cluster.local:80
+
+json=$(mktemp)
+
+echo "# [y:docker-base skaffold-ci-run] Building with local registry workaround"
+sed 's|\.local/|.local:80/|g' skaffold.yaml | \
+  skaffold --filename=- \
+    build --cache-artifacts=false --file-output=$json \
+    $@
+echo "# [y:docker-base skaffold-ci-run] Build completed, result:"
+sed -i 's|local:80/|local/|g' $json
+cat $json
+echo "# [y:docker-base skaffold-ci-run] Deploying:"
+skaffold deploy --build-artifacts=$json

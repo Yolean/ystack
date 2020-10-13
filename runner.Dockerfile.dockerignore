@@ -7,6 +7,7 @@ bin/*-bin
 
 # libraries
 !lib/
+lib/node_modules
 
 #!converge-generic/
 !minio/
