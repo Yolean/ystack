@@ -3,14 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=1.5.3
+version=1.5.4
 
 bin_name=deno \
   bin_version=v${version} \
   Darwin_url=https://github.com/denoland/deno/releases/download/v${version}/deno-x86_64-apple-darwin.zip \
-  Darwin_sha256=dbacd361a880e938216c5f7ecc27e3b43e36d842efeeac2c11774e9d3b795f3d \
+  Darwin_sha256=b5c67f7c7245441b208c76679977149a1e7ec44f614f8209c60704da41828541 \
   Linux_url=https://github.com/denoland/deno/releases/download/v${version}/deno-x86_64-unknown-linux-gnu.zip \
-  Linux_sha256=2452296818a057db9bf307bd72c5da15883108415c1f7bd4f86153e3bce5cd44 \
+  Linux_sha256=1232e50725aaec62a287d74029b2b75ce7ad7cc835bfc75ddb299e0f1bf3ec0f \
   bin_zip_path=deno \
   $YBIN/y-bin-dependency-download || exit $?
 
