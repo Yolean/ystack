@@ -28,6 +28,7 @@ grep 'current-context: minikube' $KUBECONFIG && {
 # Y-stack opinions, where do we put them?
 SKAFFOLD_NO_PRUNE=true \
 SKAFFOLD_UPDATE_CHECK=false \
+SKAFFOLD_CACHE_ARTIFACTS="$SKAFFOLD_CACHE_ARTIFACTS" \
 SKAFFOLD_INSECURE_REGISTRY="$SKAFFOLD_INSECURE_REGISTRY" \
   \
   $YBIN/y-skaffold-v${version}-bin "$@" || exit $?
