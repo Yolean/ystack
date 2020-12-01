@@ -23,9 +23,11 @@ grep 'current-context: minikube' $KUBECONFIG && {
 }
 
 [ ! -z "$SKAFFOLD_CACHE_ARTIFACTS" ] || docker version > /dev/null 2>&1 || SKAFFOLD_CACHE_ARTIFACTS=false
+[ ! -z "$SKAFFOLD_INSECURE_REGISTRY" ] || SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local'
 
 # Y-stack opinions, where do we put them?
 SKAFFOLD_NO_PRUNE=true \
 SKAFFOLD_UPDATE_CHECK=false \
+SKAFFOLD_INSECURE_REGISTRY="$SKAFFOLD_INSECURE_REGISTRY" \
   \
   $YBIN/y-skaffold-v${version}-bin "$@" || exit $?

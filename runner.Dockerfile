@@ -35,6 +35,7 @@ RUN set -e; \
 
 ENV YSTACK_HOME=/usr/local/src/ystack
 ENV PATH="${PATH}:${YSTACK_HOME}/bin"
+ENV SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local'
 
 COPY bin/y-bin-dependency-download /usr/local/src/ystack/bin/
 
