@@ -3,14 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=0.2.1
+version=0.3.0
 
 bin_name=crane \
   bin_version=v${version} \
   Darwin_url=https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_Darwin_x86_64.tar.gz \
-  Darwin_sha256=01ccb2341782f9e84189e83d5689076e72acf0ec694707588f8c9395b88d3e9f \
+  Darwin_sha256=fb6298925fc2fb5c911bbed2136f4a6959f8a85d341c1cf55bb66bc659b8c652 \
   Linux_url=https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_Linux_x86_64.tar.gz \
-  Linux_sha256=b05a6606dd8376abe6914016903f57fb1ff9f1a2cb53d6cf25e8e361c1051b4d \
+  Linux_sha256=28802a7cd407c5a48d35c470b9efdaa655595ab7f70db722384392a4f4b0377f \
   bin_tgz_path=crane \
   $YBIN/y-bin-dependency-download || exit $?
 
