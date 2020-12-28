@@ -13,6 +13,9 @@ spec:
       annotations:
         "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
     spec:
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
       initContainers:
       - name: update
         image: debian:stretch-slim@sha256:9490c476443a3869e39c2897fa66c91daf5dcbbfca53c976dac7bbdc45775b28
