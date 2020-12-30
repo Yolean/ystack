@@ -3,5 +3,5 @@ generatorOptions:
 secretGenerator:
 - name: blobs-minio
   literals:
-  - accesskey=AKIAIOSFODNN7EXAMPLE
-  - secretkey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  - accesskey=YstackEXAMPLEKEY
+  - secretkey=github.com/Yolean/ystack-EXAMPLE
