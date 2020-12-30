@@ -16,7 +16,7 @@ spec:
       terminationGracePeriodSeconds: 10
       initContainers:
       - name: setup
-        image: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+        image: busybox@sha256:49dae530fd5fee674a6b0d3da89a380fc93746095e7eca0f1b70188a95fd5d71
         volumeMounts:
         - name: build-cache
           mountPath: /var/lib/docker/overlay2
@@ -32,7 +32,7 @@ spec:
           ln -s /var/lib/docker/overlay2/var-lib-docker-image /var/lib/docker/image
       containers:
       - name: dockerd
-        image: docker:19.03.12-dind@sha256:97b189e06e3a9ea76ed51a852b7117a914241dfba09bfeed9779668ef3d106ed
+        image: docker:20.10.1-dind@sha256:b890370b484eb4d72989e632b524bdfb482f939bb5af4a6739445e26ba564368
         securityContext:
           privileged: true
         args:
