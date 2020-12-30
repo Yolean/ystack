@@ -3,7 +3,7 @@
 set -eo pipefail
 YBIN="$(dirname $0)"
 
-version=1.14.0
+version=1.17.3
 
 current_context="$(kubectl config current-context)"
 
@@ -27,9 +27,9 @@ esac
 bin_name=kubefwd \
   bin_version=v${version} \
   Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_amd64.tar.gz \
-  Darwin_sha256=1cb03198526192f21d632d531575ed91f6e7a58b5897bdb5814ed524c5e3d607 \
-  Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_linux_amd64.tar.gz \
-  Linux_sha256=f202a030aeaa6f9c5e0e6b764a0426a309662e81bab33505296c07391fc62b40 \
+  Darwin_sha256=67c1702926064fdcfa0f443f2769286412abd72f324ff1ec479c7fcf7bb7e3a4 \
+  Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Linux_x86_64.tar.gz \
+  Linux_sha256=215b344f001512b582b58f636d03fe5b43cfcc13635fefc6810c7ad3ce67b90a \
   bin_tgz_path=kubefwd \
   $YBIN/y-bin-dependency-download || exit $?
 
