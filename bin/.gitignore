@@ -4,6 +4,7 @@
 buildctl
 container-structure-test
 crane
+gotemplate
 helm
 kubie
 kustomize
@@ -12,6 +13,7 @@ mkcert
 promtool
 rio
 skaffold
+k3d
 kubefwd
 kail
 deno
