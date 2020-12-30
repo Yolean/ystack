@@ -6,6 +6,10 @@ set -eo pipefail
 
 [ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
+[ -z "$YSTACK_HOST" ] && YSTACK_HOST=ystack.local
+[ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
+[ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
+
 COMPOSEFILES="-f $YSTACK_HOME/docker-compose.test.yml -f $YSTACK_HOME/docker-compose.dev-overrides.yml -f $YSTACK_HOME/docker-compose.builds.yml $COMPOSEFILES"
 echo "# docker-compose $COMPOSEFILES"
 
@@ -22,8 +26,11 @@ fi
 # --no-build is a workaround for https://github.com/docker/compose/issues/3729
 docker-compose $COMPOSEFILES up --no-build -d ystack-proxy
 
-docker-compose $COMPOSEFILES exec master1 sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
-  > "$KUBECONFIG.tmp"
+hostreplace="s/127.0.0.1:17143/$YSTACK_HOST:17143/"
+[ -z "$YSTACK_PORTS_IP" ] && hostreplace="s/127.0.0.1:17143/127.0.0.1:17143/"
+docker-compose $COMPOSEFILES exec master1 \
+  sh -c 'until test -f /admin/.kube/kubeconfig.yaml; do sleep 1; done; cat /admin/.kube/kubeconfig.yaml' \
+  | sed $hostreplace | tee "$KUBECONFIG.tmp" | grep server
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 

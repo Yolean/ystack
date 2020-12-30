@@ -20,6 +20,7 @@ services:
     command:
     - server
     - --https-listen-port=17143
+    - --tls-san=ystack.local
     - --node-name=master1
     - --no-deploy=servicelb
     - --kube-apiserver-arg

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ "$1" = "help" ] && echo '
+Tries to bring up a loopback interface so port bindings can be done without conflicts
+' && exit 0
+
+hostname=$1
+
+[ -z "$hostname" ] && echo "First arg must be a hostname" && exit 1
+
+platform="$(uname -s)"
+
+ip=$(cat /etc/hosts | grep $hostname | awk '{ print $1 }')
+[ -z "$ip" ] && >&2 echo "Host '$hostname' not found in /etc/hosts" && exit 1
+
+[ "$2" = "show" ] && echo -n "$ip" && exit 0
+
+num=$(echo -n $ip | cut -d '.' -f 4)
+
+case "$platform" in
+  Darwin)
+    ifconfig lo0 | grep $ip > /dev/null && exit 0
+    echo "Loopback alias for $ip $hostname not found. Will try to create ..."
+    [ $(id -u) -eq 0 ] || exec sudo -E $0 $@
+    ifconfig lo0 alias $ip up
+    ;;
+  Linux)
+    [ -z "$(ip addr show dev lo label lo:$num)" ] && \
+      ip addr add $ip/32 dev lo label lo:$num
+    ;;
+  *)
+    echo "Unsupported platform $platform" && exit 1
+    ;;
+esac
