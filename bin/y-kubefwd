@@ -5,21 +5,10 @@ YBIN="$(dirname $0)"
 
 version=1.17.3
 
-current_context="$(kubectl config current-context)"
-
 ctx=$1
 case $ctx in
-  "--context=${current_context}") shift 1 ;;
-  "--context="*)
-    shift 1
-    contextname="$(echo -n $ctx | cut -d '=' -f 2)"
-    echo "Aborted because kubefwd always uses current-context ('$contextname' != '$current_context')"
-    [ -z "$KUBECONFIG" ] || kubie_f_suggest="-f $KUBECONFIG"
-    echo "Try:  y-kubie ctx $kubie_f_suggest -- $contextname"
-    echo "Then: $(basename $0) $@"
-    exit 1
-    ;;
-  *) ctx="--context=${current_context}" ;;
+  "--context="*) shift 1 ;;
+  *) echo "Initial arg must be --context=" && exit 1 ;;
 esac
 
 [ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
@@ -33,6 +22,9 @@ bin_name=kubefwd \
   bin_tgz_path=kubefwd \
   $YBIN/y-bin-dependency-download || exit $?
 
-[ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $@
+[ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx $@
 
-$YBIN/y-kubefwd-v${version}-bin "$@" || exit $?
+addargs="$ctx"
+[[ "$*" == *-l* ]] || addargs="$addargs -l ystack-kubefwd!=never"
+
+$YBIN/y-kubefwd-v${version}-bin $addargs "$@" || exit $?
