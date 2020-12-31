@@ -1,4 +1,5 @@
 bases:
+- ../../minio/defaultsecret
 - ../generic
 resources:
 - bucket-create-ystack-builds.yaml

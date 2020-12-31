@@ -1,5 +1,3 @@
-generatorOptions:
-  disableNameSuffixHash: true
 secretGenerator:
 - name: minio
   literals:
