@@ -12,7 +12,7 @@ hostname=$1
 
 platform="$(uname -s)"
 
-ip=$(cat /etc/hosts | grep $hostname | awk '{ print $1 }')
+ip=$(cat /etc/hosts | grep -e "\<$hostname\>" | awk '{ print $1 }')
 [ -z "$ip" ] && >&2 echo "Host '$hostname' not found in /etc/hosts" && exit 1
 
 [ "$2" = "show" ] && echo -n "$ip" && exit 0
