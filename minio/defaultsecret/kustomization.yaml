@@ -1,7 +1,7 @@
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
-- name: blobs-minio
+- name: minio
   literals:
   - accesskey=YstackEXAMPLEKEY
   - secretkey=github.com/Yolean/ystack-EXAMPLE
