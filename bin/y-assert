@@ -24,8 +24,9 @@ TTL="janitor/ttl: 23h"
 
 [ -z "$MONITORING_HOST" ] && MONITORING_HOST=http://monitoring.ystack.svc.cluster.local
 
-! curl -f -s --connect-timeout 3 $MONITORING_HOST:9090/ >/dev/null && echo "Failed to access the Prometheus endpoint" && exit 1
-! curl -f -s --connect-timeout 3 $MONITORING_HOST:9093/ >/dev/null && echo "Failed to access the Alertmanager endpoint" && exit 1
+curl_opts="-s --connect-timeout 3 --retry 5 --retry-connrefused"
+! curl -f $curl_opts $MONITORING_HOST:9090/ >/dev/null && echo "Failed to access the Prometheus endpoint" && exit 1
+! curl -f $curl_opts $MONITORING_HOST:9093/ >/dev/null && echo "Failed to access the Alertmanager endpoint" && exit 1
 
 ctx=$1
 case $ctx in
