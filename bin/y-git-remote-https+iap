@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=0.1.1
+
+bin_name=git-remote-https+iap \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/solsson/git-remote-https-iap/releases/download/v${version}/git-remote-https+iap-darwin-amd64-v${version}.tar.gz \
+  Darwin_sha256=435b71466237fc11f3181e76de3bb28d0090a48bcf62292253aa2587013e633d \
+  Linux_url=https://github.com/solsson/git-remote-https-iap/releases/download/v${version}/git-remote-https+iap-linux-amd64-v${version}.tar.gz \
+  Linux_sha256=53dfb775c6bc73c08609924e46ef47787a5d7965edd1a8ffe0ed0e8dee404d94 \
+  bin_tgz_path=git-remote-https+iap \
+  $YBIN/y-bin-dependency-download || exit $?
+
+$YBIN/y-git-remote-https+iap-v${version}-bin "$@" || exit $?
