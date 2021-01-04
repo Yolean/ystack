@@ -1,6 +1,6 @@
-FROM yolean/node:3baccea320a5d1b644e37044fa7445a972a0a9c2@sha256:7c5162114bbd280a59c12e9c5bc9076e82b081b1ba65440b83ef3fb9417ba719 as yolean-node
+FROM yolean/node:76722e95089e2d8a774ef98721dbd212520eae3c@sha256:4ae69b8821a386e843a6ff292cdf1ee9d9c40384c220556b86efb9314fed226d as yolean-node
 
-FROM ubuntu:20.04@sha256:fff16eea1a8ae92867721d90c59a75652ea66d29c05294e6e2f898704bdb8cf1
+FROM ubuntu:20.04@sha256:c95a8e48bf88e9849f3e0f723d9f49fa12c5a00cfc6e60d2bc99d87555295e4c
 
 COPY --from=yolean-node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=yolean-node /usr/local/bin/node /usr/local/bin/
@@ -26,10 +26,10 @@ RUN set -ex; \
 
 RUN set -e; \
   F=$(mktemp); \
-  curl -SLs https://dl.k8s.io/v1.17.14/kubernetes-client-linux-amd64.tar.gz \
+  curl -SLs https://dl.k8s.io/v1.17.16/kubernetes-client-linux-amd64.tar.gz \
     | tee $F \
     | tar xzf - --strip-components=3 -C /usr/local/bin/; \
-  echo "027945e245693c4c0dfd818eb7b4213d21d90b2d0191d9d62c218e150ee1e604ba8b9f329704ef4089327abf3be9fa31672dd637d7518efe80fb03e40fbe6e37 $F" \
+  echo "5b4fee0702ea7952f5eadf0af46ec0b2bc14fbb3d8777fb745e8c9a3296438d36d994c5753bfc33f886909e2ca7bba5277746c32d50f6a62fb6167fd85eb7f01 $F" \
     | sha512sum -c -; \
   rm $F
 

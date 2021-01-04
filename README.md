@@ -47,7 +47,9 @@ For that we use https://github.com/solsson/k8s-ingress-hosts/releases
 
 ## Installation
 
-Add `YSTACK_HOME` env poiting to the root of y-stack, and `$YSTACK_HOME/bin` to path.
+Clone this repo to your Yolean workspace.
+
+Add `YSTACK_HOME` env pointing to the root of y-stack, and `$YSTACK_HOME/bin` to path.
 
 ## Dependencies
 
