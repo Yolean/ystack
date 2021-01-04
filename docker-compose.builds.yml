@@ -2,10 +2,10 @@ version: '2.4'
 services:
 
   master1:
-    image: solsson/ystack-runner:283de245a6e2d166b625ffb61a14491322620789-k3s@sha256:81cca7dca1ff181810fc197cf432159eae3e00954f0bbb870f6af60f68669f00
+    image: solsson/ystack-runner:cc6234b863b09ec9272c598d5a2431f9f11b0317-k3s@sha256:2f49c334a5c75093ead3826bc5a72556007b9631d4f1c4e10d2e719ca00d43ed
 
   ystack-proxy:
-    image: solsson/ystack-runner:283de245a6e2d166b625ffb61a14491322620789-proxy@sha256:b1b752b9570dca95837cf487cd10f84e8be7ccebd8be282cb31371200dc28081
+    image: solsson/ystack-runner:cc6234b863b09ec9272c598d5a2431f9f11b0317-proxy@sha256:8611a7fe8911eab17deef3d2c9a7cdead465786da19c15492c951f5c8d639211
 
   sut:
-    image: solsson/ystack-runner:283de245a6e2d166b625ffb61a14491322620789@sha256:df5f7e8cf643a8099f723e8d2ec17209af9af26dcdf016df8826fd690d9fc557
+    image: solsson/ystack-runner:cc6234b863b09ec9272c598d5a2431f9f11b0317@sha256:ffc2b8ac771af99c9a9dc4215f72285d33bdb318be58d2bb630e4e33266e69d8
