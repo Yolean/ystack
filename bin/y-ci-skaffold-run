@@ -22,9 +22,21 @@ sed 's|\.local/|.local:80/|g' skaffold.yaml | \
   skaffold --filename=- \
     build --cache-artifacts=false --file-output=$json \
     $@
-echo "# [y-skaffold-ci-run] Build completed, result:"
+echo "# [y-skaffold-ci-run] Build completed, $json:"
 sed -i 's|local:80/|local/|g' $json
 cat $json
 echo ""
-echo "# [y-skaffold-ci-run] Deploying:"
-skaffold deploy --build-artifacts=$json $@
+if [ "$Y_CI_DEPLOY" != "false" ]; then
+  echo "# [y-skaffold-ci-run] Deploying:"
+  skaffold deploy --build-artifacts=$json $@
+else
+  echo "# [y-skaffold-ci-run] Deploy disabled"
+fi
+if [ "$Y_CI_PROMOTE" == "true" ]; then
+  ybuilds=$(jq -r '.builds | .[] | .tag' $json)
+  for yb in $ybuilds; do
+    ybp=$(echo $yb | cut -d'@' -f 1 | sed 's/^builds-registry/prod-registry/g')
+    echo "# [y-skaffold-ci-run] Promoting to $ybp"
+    crane cp "$(echo $yb | sed 's|\.local/|.local:80/|g')" "$(echo $ybp | sed 's|\.local/|.local:80/|g')"
+  done
+fi
