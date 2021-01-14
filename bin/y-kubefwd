@@ -15,7 +15,7 @@ esac
 
 bin_name=kubefwd \
   bin_version=v${version} \
-  Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_amd64.tar.gz \
+  Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_x86_64.tar.gz \
   Darwin_sha256=67c1702926064fdcfa0f443f2769286412abd72f324ff1ec479c7fcf7bb7e3a4 \
   Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Linux_x86_64.tar.gz \
   Linux_sha256=215b344f001512b582b58f636d03fe5b43cfcc13635fefc6810c7ad3ce67b90a \
