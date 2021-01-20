@@ -10,6 +10,7 @@ Users of an y-stack inspired registry don not want this part numbers in actual i
 because it should be up to the cluster to set up https or not
 ' && exit 0
 
+# TODO can we remove these envs? They should be owned by the CI environment.
 export SKAFFOLD_NO_PRUNE=true
 export SKAFFOLD_UPDATE_CHECK=false
 export SKAFFOLD_INTERACTIVE=false
