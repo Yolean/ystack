@@ -13,7 +13,7 @@ because it should be up to the cluster to set up https or not
 export SKAFFOLD_NO_PRUNE=true
 export SKAFFOLD_UPDATE_CHECK=false
 export SKAFFOLD_INTERACTIVE=false
-[ ! -z "$BUILDS_REGISTRY" ] || export BUILDS_REGISTRY=builds-registry.ystack.svc.cluster.local:80
+[ ! -z "$BUILDS_REGISTRY" ] || export BUILDS_REGISTRY=builds-registry.ystack.svc.cluster.local
 
 json=$(mktemp)
 
