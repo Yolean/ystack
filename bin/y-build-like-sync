@@ -26,7 +26,8 @@ fi
 IMAGE=$IMAGE
 case "$IMAGE" in
   $BUILDS_REGISTRY/* ) ;;
-  $PUSH_REGISTRY/* ) echo "Unlike y-build this script won't push to non-build registries" && exit 1 ;;
+  $BUILDS_REGISTRY:80/* ) ;;
+  $PUSH_REGISTRY/* ) echo "Unlike y-build this script won't push to non-build registries. Got: $IMAGE" && exit 1 ;;
   * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
