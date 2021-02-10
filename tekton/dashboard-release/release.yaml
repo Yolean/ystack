@@ -231,24 +231,6 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ""
-    resources:
-      - serviceaccounts
-    verbs:
-      - update
-      - patch
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - delete
-  - apiGroups:
       - tekton.dev
     resources:
       - tasks
@@ -323,9 +305,9 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.13.0
-    dashboard.tekton.dev/release: v0.13.0
-    version: v0.13.0
+    app.kubernetes.io/version: v0.14.0
+    dashboard.tekton.dev/release: v0.14.0
+    version: v0.14.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -349,9 +331,9 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.13.0
-    dashboard.tekton.dev/release: v0.13.0
-    version: v0.13.0
+    app.kubernetes.io/version: v0.14.0
+    dashboard.tekton.dev/release: v0.14.0
+    version: v0.14.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -370,7 +352,7 @@ spec:
         app.kubernetes.io/instance: default
         app.kubernetes.io/name: dashboard
         app.kubernetes.io/part-of: tekton-dashboard
-        app.kubernetes.io/version: v0.13.0
+        app.kubernetes.io/version: v0.14.0
       name: tekton-dashboard
     spec:
       containers:
@@ -380,7 +362,6 @@ spec:
             - --pipelines-namespace=tekton-pipelines
             - --triggers-namespace=tekton-pipelines
             - --read-only=false
-            - --csrf-secure-cookie=false
             - --log-level=info
             - --log-format=json
             - --namespace=
@@ -392,7 +373,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:0df1f3d488596190b5d03b5b08af994ab2791daf11ec894cbd0c74c0cdda6a04
+          image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard@sha256:e36ec9efe78b4bb56a4b1c24d8241bee3a2b477aeef20ff864d1edef31953cd8
           livenessProbe:
             httpGet:
               path: /health
