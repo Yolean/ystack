@@ -1,0 +1,18 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+version=0.2.1
+
+bin_name=zap-pretty \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/maoueh/zap-pretty/releases/download/v${version}/zap-pretty_${version}_MacOS_x86_64.tar.gz \
+  Darwin_sha256=5493f30edffc16b29f7d7d66bdc1a176342b23a45be2d1c9c80a91b7c4725b8b \
+  Linux_url=https://github.com/maoueh/zap-pretty/releases/download/v${version}/zap-pretty_${version}_Linux_x86_64.tar.gz \
+  Linux_sha256=34e77a8fd371721babf41dc6eb04363ddfaa74275ec7e082aa945469ce94f57f \
+  bin_tgz_path=zap-pretty \
+  y-bin-dependency-download || exit $?
+
+# TODO can we check for stdin here? zap-pretty blocks with no support for Ctrl+C if there's no input (at least on linux)
+
+y-zap-pretty-v${version}-bin "$@" || exit $?
