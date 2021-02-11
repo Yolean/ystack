@@ -27,8 +27,10 @@ case "$platform" in
     ifconfig lo0 alias $ip up
     ;;
   Linux)
-    [ -z "$(ip addr show dev lo label lo:$num)" ] && \
+    if [ -z "$(ip addr show dev lo label lo:$num)" ]; then
+      echo "Adding missing interface lo:$num ..."
       ip addr add $ip/32 dev lo label lo:$num
+    fi
     ;;
   *)
     echo "Unsupported platform $platform" && exit 1
