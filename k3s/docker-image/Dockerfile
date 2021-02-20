@@ -1,4 +1,4 @@
-FROM rancher/k3s:v1.19.7-k3s1@sha256:89e11481622dad29bbabbc763de1a3875054b1c0a193c6511a766cb022e5b7c7
+FROM rancher/k3s:v1.20.4-rc1-k3s1@sha256:dc51dfd49d064d6e9bff5cd19f1aff3aba964fb80d621880e419654168c4d3f1
 
 COPY k3s/docker-image/registries.yaml /etc/rancher/k3s/registries.yaml
 # The clusterIP should be predefined
