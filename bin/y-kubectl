@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+version=pr96878-kubectl-1.20.4
+
+bin_name=kubectl \
+  bin_version=${version} \
+  Darwin_url=https://github.com/solsson/kubernetes/releases/download/${version}/kubectl-darwin-amd64 \
+  Darwin_sha256=06cf415a44cf6936baefdcf3f5c5a483c7ac62126ec3c4399759bc5e0d05e546 \
+  Linux_url=https://github.com/solsson/kubernetes/releases/download/${version}/kubectl-linux-amd64 \
+  Linux_sha256=c3332bce3cc97a3761604b74bf76a7a14698da89a78e03f4ca84b7e8052944f1 \
+  y-bin-dependency-download || exit $?
+
+y-kubectl-${version}-bin "$@" || exit $?
