@@ -34,19 +34,19 @@ COPY bin/y-kubectl /usr/local/src/ystack/bin/
 RUN y-kubectl version --client=true
 
 COPY bin/y-kustomize /usr/local/src/ystack/bin/
-RUN y-kustomize
+RUN y-kustomize version
 
 COPY bin/y-helm /usr/local/src/ystack/bin/
-RUN y-helm
+RUN y-helm version --client=true
 
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
-RUN y-buildctl
+RUN y-buildctl --version
 
 COPY bin/y-container-structure-test /usr/local/src/ystack/bin/
-RUN y-container-structure-test
+RUN y-container-structure-test version
 
 COPY bin/y-crane /usr/local/src/ystack/bin/
-RUN y-crane
+RUN y-crane version
 
 COPY bin/y-deno /usr/local/src/ystack/bin/
 RUN y-deno -V
