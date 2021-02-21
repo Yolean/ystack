@@ -24,20 +24,14 @@ RUN set -ex; \
   rm -rf /var/lib/apt/lists/*; \
   rm -rf /var/log/dpkg.log /var/log/alternatives.log /var/log/apt /root/.gnupg
 
-RUN set -e; \
-  F=$(mktemp); \
-  curl -SLs https://dl.k8s.io/v1.20.4/kubernetes-client-linux-amd64.tar.gz \
-    | tee $F \
-    | tar xzf - --strip-components=3 -C /usr/local/bin/; \
-  echo "daf1ec0cbd14885170a51d2a09bf652bfaa4d26925c1b4babdc427d2a2903b1a295403320229cde2b415fee65a5af22671afa926f184cf198df7f17a27f19394 $F" \
-    | sha512sum -c -; \
-  rm $F
-
 ENV YSTACK_HOME=/usr/local/src/ystack
 ENV PATH="${PATH}:${YSTACK_HOME}/bin"
 ENV SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local'
 
 COPY bin/y-bin-dependency-download /usr/local/src/ystack/bin/
+
+COPY bin/y-kubectl /usr/local/src/ystack/bin/
+RUN y-kubectl version --client=true
 
 COPY bin/y-kustomize /usr/local/src/ystack/bin/
 RUN y-kustomize
