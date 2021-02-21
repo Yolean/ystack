@@ -2,10 +2,13 @@
 
 # our executables are symlinked to real names
 buildctl
+buildx
 container-structure-test
 crane
+dive
 gotemplate
 helm
+kubectl
 kubie
 kustomize
 minikube
@@ -21,3 +24,4 @@ k8s-ingress-hosts
 istioctl
 logcli
 git-remote-https+iap
+zap-pretty
