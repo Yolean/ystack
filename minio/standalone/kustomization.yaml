@@ -1,5 +1,5 @@
 bases:
 - ../common
-- github.com/Yolean/kubernetes-minio/ystack-scale-1?ref=9a29949ee542117873aee76aeab107d69521a39a
+- github.com/Yolean/kubernetes-minio/ystack-scale-1?ref=a4bdf9eac0148c8745ac1cbd16d0003026b4cf4c
 patchesStrategicMerge:
 - kubefwd-never-hl-service.yaml
