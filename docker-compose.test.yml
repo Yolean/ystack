@@ -71,6 +71,7 @@ services:
       context: .
       # Note that with the current state of https://github.com/docker/docker-py/issues/2230 we must symlink the specific dockerignore to ./.dockerignore
       dockerfile: runner.Dockerfile
+    image: yolean/ystack-runner:${GIT_COMMIT:-latest}
     environment:
     - KUBECONFIG_WAIT=30
     - KEEP_RUNNING=false
