@@ -50,7 +50,7 @@ RUN y-crane version
 
 ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
-RUN y-skaffold
+RUN y-skaffold config set --global collect-metrics false
 
 COPY . /usr/local/src/ystack
 WORKDIR /usr/local/src/ystack
@@ -58,3 +58,5 @@ WORKDIR /usr/local/src/ystack
 RUN echo 'nonroot:x:65532:65534:nonroot:/home/nonroot:/usr/sbin/nologin' >> /etc/passwd && \
   mkdir -p /home/nonroot && touch /home/nonroot/.bash_history && chown -R 65532:65534 /home/nonroot
 USER nonroot:nogroup
+
+RUN y-skaffold config set --global collect-metrics false
