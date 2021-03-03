@@ -48,9 +48,6 @@ RUN y-container-structure-test version
 COPY bin/y-crane /usr/local/src/ystack/bin/
 RUN y-crane version
 
-COPY bin/y-deno /usr/local/src/ystack/bin/
-RUN y-deno -V
-
 ENV SKAFFOLD_UPDATE_CHECK=false
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold
