@@ -1,6 +1,6 @@
 FROM yolean/node:504a22ce0db84d7de594a38dc18a60dc82fa30de@sha256:afa0d518bcbf0c276147e02240ccc69f389848762790456d301f314d2beb3f31 as yolean-node
 
-FROM ubuntu:20.04@sha256:a15789d24a386e7487a407274b80095c329f89b1f830e8ac6a9323aa61803964
+FROM ubuntu:20.04@sha256:3c9c713e0979e9bd6061ed52ac1e9e1f246c9495aa063619d9d695fb8039aa1f
 
 COPY --from=yolean-node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=yolean-node /usr/local/bin/node /usr/local/bin/
