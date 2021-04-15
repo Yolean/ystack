@@ -102,23 +102,30 @@ docker volume rm ystack_admin 2> /dev/null || true
 Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docker-compose.test.yml](./docker-compose.test.yml) that is used for CI with [docker-compose.dev-overrides.yml](./docker-compose.dev-overrides.yml). The k3s [image](./k3s/docker-image/) is the stock k3s image with y-stack's local registry config.
 
 ```
+# Optional: temp kubeconfig to not mess up the default conf
+export KUBECONFIG=/tmp/ystack-test-kubeconfig
 y-cluster-provision-k3s-docker
 ```
 
-For [dev loops](./examples/) and `y-assert` the docker stack replaces `y-kubefwd` (hard to use in CI)
-with container ports.
+For [dev loops](./examples/) and `y-assert` the docker-compose stack has port-forwards that expose ports required for dev loops.
 You need `cat /etc/hosts | grep 127.0.0 | grep cluster.local` to have something like:
 ```
 127.0.0.1	builds-registry.ystack.svc.cluster.local
 127.0.0.1	buildkitd.ystack.svc.cluster.local
 127.0.0.1	monitoring.ystack.svc.cluster.local
 ```
+OR use kubefwd which manages the hosts file automatically
+```
+y-kubefwd
+```
 
-Test using:
+Test that kubefwd (or docker stack port forwarding) works using:
 ```
 curl http://builds-registry.ystack.svc.cluster.local/v2/
 curl http://monitoring.ystack.svc.cluster.local:9090/api/v1/alertmanagers | jq '.data.activeAlertmanagers[0]'
 curl http://monitoring.ystack.svc.cluster.local:9093/api/v2/status
 ```
 
-Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js. Run `y-assert` for CI-like runs until completion.
+Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js.
+
+Run `y-assert` for CI-like runs until completion. But actually [assertions_failed Prometheus graph](http://monitoring:9090/graph?g0.expr=assertions_failed&g0.tab=0&g0.stacked=0&g0.range_input=15m) is more interesting than y-assert during development.
