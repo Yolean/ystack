@@ -134,6 +134,7 @@ Run `y-assert` for CI-like runs until completion. But actually [assertions_faile
 ### Using [docker desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows), WSL2 and [K3D](https://k3d.io/)
 Before you start anything make sure that you have enabled WSL and Ubuntu integration in docker-desktop's settings. See image below:
 ![Alt text](documents/screenshots/settings.png?raw=true "Docker settings")
+
 And that your ubuntu version is the same as the docker version.
 ![Alt text](documents/screenshots/version.png?raw=true "Versions")
 
