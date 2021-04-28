@@ -129,3 +129,15 @@ curl http://monitoring.ystack.svc.cluster.local:9093/api/v2/status
 Start a dev loop for actual asserts using `cd specs; y-skaffold --cache-artifacts=false dev` and start editing specs/*.spec.js.
 
 Run `y-assert` for CI-like runs until completion. But actually [assertions_failed Prometheus graph](http://monitoring:9090/graph?g0.expr=assertions_failed&g0.tab=0&g0.stacked=0&g0.range_input=15m) is more interesting than y-assert during development.
+
+## Local cluster setup on windows
+# Using [docker desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows), WSL2 and [K3D](https://k3d.io/)
+Before you start anything make sure that you have enabled WSL and Ubuntu integration in docker-desktop's settings. See image below:
+![Alt text](documents/screenshots/settings.png?raw=true "Docker settings")
+And that your ubuntu version is the same as the docker version.
+![Alt text](documents/screenshots/version?raw=true "Versions")
+
+Also make sure that you have correctly installed Ystack, see: [Installation](https://github.com/darclander/ystack#installation).
+
+# Getting started
+Start by creating a cluster with K3D, `k3d cluster create demo`. When your cluster is up and running (make you sure you are not lacking memory, weird errors might occur) head to [ystack](https://github.com/Yolean/ystack). The purpose is to run `y-cluster-provision-k3s-docker` if that does not work immediately, run `docker-compose -f docker-compose.builds.yml` and then when you run `y-cluster-provision-k3s-docker` you will receive an error message which says that you have to cleanup and remove-orphans. Run these two commands, might look like this: `docker-compose -f /mnt/d/Documents/Yolean/ystack-master/docker-compose.test.yml -f /mnt/d/Documents/Yolean/ystack-master/docker-compose.dev-overrides.yml -f /mnt/d/Documents/Yolean/ystack-master/docker-compose.builds.yml up cleanup` and `docker-compose -f /mnt/d/Documents/Yolean/ystack-master/docker-compose.test.yml -f /mnt/d/Documents/Yolean/ystack-master/docker-compose.dev-overrides.yml -f /mnt/d/Documents/Yolean/ystack-master/docker-compose.builds.yml down --remove-orphans -v`. Then when running `y-cluster-provision-k3s-docker` your cluster should be up and running after a while.
