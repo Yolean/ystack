@@ -3,21 +3,21 @@ services:
 
   master1:
     ports:
-    - "${YSTACK_PORTS_IP-127.0.0.1}:17143:17143"
-    - "${YSTACK_PORTS_IP-127.0.0.1}:31710-31719:31710-31719"
+    - "17143:17143"
+    - "31710-31719:31710-31719"
     mem_limit: 8589934592
     memswap_limit: 0
 
   ystack-proxy:
     ports:
     # Registry and ingress
-    - "${YSTACK_PORTS_IP-127.0.0.1}:80:80"
-    - "${YSTACK_PORTS_IP-127.0.0.1}:443:443"
+    - "80:80"
+    - "443:443"
     # To support y-build as skaffold build
-    - "${YSTACK_PORTS_IP-127.0.0.1}:8547:8547"
+    - "8547:8547"
     # To support y-assert
-    - "${YSTACK_PORTS_IP-127.0.0.1}:9090:9090"
-    - "${YSTACK_PORTS_IP-127.0.0.1}:9093:9093"
+    - "9090:9090"
+    - "9093:9093"
 
   sut:
     environment:

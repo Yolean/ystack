@@ -5,6 +5,7 @@ YBIN="$(dirname $0)"
 
 [ "$1" = "dev" ] && echo "y-skaffold dev requires -n [namespace] as initial args" && exit 1
 
+
 version=1.21.0
 
 bin_name=skaffold \

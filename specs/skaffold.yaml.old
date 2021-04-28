@@ -12,7 +12,7 @@ build:
     custom:
       buildCommand: >-
         y-build-like-sync
-        builds-registry.ystack.svc.cluster.local/yolean/kubernetes-assert/runtime-nodejs:cadf36680e8ad4725f0a0a8f242c2584a205bdd6-dirty
+        yolean/assert-runtime-nodejs:c0caae4aded2d77c40fd5d8651d107951e795914@sha256:ba61357c9422c76cb92125ba7c48f036c099562a6aa64bf6500c42defb45b23d
     sync:
       manual:
       - src: '**'

@@ -1,3 +1,5 @@
+global.TEST = "hej";
+
 describe("Monitoring", () => {
 
   describe("Ystack's proxy", () => {
@@ -31,3 +33,4 @@ describe("Monitoring", () => {
   });
 
 });
+ 
