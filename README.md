@@ -136,7 +136,9 @@ Before you start anything make sure that you have enabled WSL and Ubuntu integra
 ![Alt text](documents/screenshots/settings.png?raw=true "Docker settings")
 
 And that your ubuntu version is the same as the docker version.
+
 ![Alt text](documents/screenshots/version.png?raw=true "Versions")
+
 
 Also make sure that you have correctly installed Ystack, see: [Installation](https://github.com/darclander/ystack#installation).
 
