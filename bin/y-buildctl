@@ -8,9 +8,9 @@ version=0.8.2
 bin_name=buildctl \
   bin_version=v${version} \
   Darwin_url=https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.darwin-amd64.tar.gz \
-  Darwin_sha256=fff2b836971f7fb82389185bd024664377f6d40f0048ceea1b41775af8831dc1 \
+  Darwin_sha256=f34df8f2e3e060d2d60bb17831dc289352dff276c4fe9da0738dc69f38fd3211 \
   Linux_url=https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.linux-amd64.tar.gz \
-  Linux_sha256=d6d1ebc68806e626f31dd4ea17a406a93dcff14763971cd91b28cbaf3bfffcd4 \
+  Linux_sha256=78b83790b88c6e629386e637d6c813f180c6c1124da685413443b8e92d59dece \
   bin_tgz_path=bin/buildctl \
   y-bin-dependency-download || exit $?
 
