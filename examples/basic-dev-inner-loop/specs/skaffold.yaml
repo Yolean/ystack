@@ -1,0 +1,23 @@
+apiVersion: skaffold/v2beta6
+kind: Config
+metadata:
+  name: basic-dev-inner-loop-specs
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack/basic-dev-inner-loop-specs
+    context: ./
+    custom:
+      buildCommand: >-
+        y-build-like-sync
+        builds-registry.ystack.svc.cluster.local/yoleandev/kubernetes-assert:runtime-nodejs@sha256:d165d340bb71ea6a5f6a7c1344d934554142b961383a9e1df20e6ce49f7ab963
+    sync:
+      manual:
+      - src: '**'
+        dest: /usr/src/specs
+deploy:
+  kustomize: {}
+profiles:
+- name: y-assert
