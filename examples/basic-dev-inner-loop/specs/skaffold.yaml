@@ -10,10 +10,9 @@ build:
   - image: builds-registry.ystack.svc.cluster.local/ystack/basic-dev-inner-loop-specs
     context: ./
     custom:
-      # NOTE when iterating on the runtime image, the image URL below must be updated
       buildCommand: >-
         y-build-like-sync
-        builds-registry.ystack.svc.cluster.local/yoleandev/kubernetes-assert:runtime-nodejs@sha256:d165d340bb71ea6a5f6a7c1344d934554142b961383a9e1df20e6ce49f7ab963
+        builds-registry.ystack.svc.cluster.local/yoleandev/kubernetes-assert:../../../../kubernetes-assert/runtime-nodejs
     sync:
       manual:
       - src: '**'
