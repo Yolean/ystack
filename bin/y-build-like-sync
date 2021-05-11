@@ -47,13 +47,12 @@ case "$RUNTIME_IMAGE" in
     docker push $RUNTIME_IMAGE
     ;;
   $BUILDS_REGISTRY* )
-    y-crane validate --remote=$RUNTIME_IMAGE
     ;;
 esac
 
-# # crane hangs for a long time if it doesn't know that the registry is plain http
-# RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local/|.local:80/|')
-# IMAGE=$(echo $IMAGE | sed 's|.local/|.local:80/|')
+# crane hangs for a long time if it doesn't know that the registry is plain http
+RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local/|.local:80/|')
+IMAGE=$(echo $IMAGE | sed 's|.local/|.local:80/|')
 
 # This is a PoC, let's make a lot of assumptions to simplify
 context=.
