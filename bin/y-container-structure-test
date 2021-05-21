@@ -2,14 +2,14 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-version=1.9.0
+version=1.10.0
 
 bin_name=container-structure-test \
   bin_version=v${version} \
   Darwin_url=https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-darwin-amd64 \
-  Darwin_sha256=32e4841ce1590fd14cda096742c1680c8dccd5bc1a8c5993651f839d5ae9250a \
+  Darwin_sha256=b95f49e419200ec97de2b0225ead9b202ba9b30901eee01cb608c5c07c8ba9a4 \
   Linux_url=https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-linux-amd64 \
-  Linux_sha256=09cb373a9e622a4120577391acb28c6b2aea55f883a4351db8e8de85f0cf8a5b \
+  Linux_sha256=72deeea26c990274725a325cf14acd20b8404251c4fcfc4d34b7527aac6c28bc \
   y-bin-dependency-download || exit $?
 
 y-container-structure-test-v${version}-bin "$@" || exit $?
