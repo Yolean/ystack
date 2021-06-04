@@ -35,9 +35,25 @@ RUNTIME_IMAGE=$1
 [ -z "$RUNTIME_IMAGE" ] && echo "First argument must be a runtime image to append the layer to" \
   && echo "To improve build times use a runtime image in the target repo" && exit 1
 
-# crane hangs for a long time if it doesn't know that the registry is plain http
-RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local/|.local:80/|')
-IMAGE=$(echo $IMAGE | sed 's|.local/|.local:80/|')
+# Experimental support for runtime dev loops
+case "$RUNTIME_IMAGE" in
+  $BUILDS_REGISTRY*-dirty )
+    docker inspect $RUNTIME_IMAGE >/dev/null && docker push $RUNTIME_IMAGE || true
+    ;;
+  $BUILDS_REGISTRY*:../* )
+    RUNTIME_BUILD_CONTEXT=$(echo $RUNTIME_IMAGE | cut -d':' -f 2)
+    RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | cut -d':' -f 1):y-build-like-sync-devloop
+    docker build -t $RUNTIME_IMAGE $RUNTIME_BUILD_CONTEXT
+    docker push $RUNTIME_IMAGE
+    ;;
+  $BUILDS_REGISTRY* )
+    y-crane validate --remote=$RUNTIME_IMAGE
+    ;;
+esac
+
+# # crane hangs for a long time if it doesn't know that the registry is plain http
+# RUNTIME_IMAGE=$(echo $RUNTIME_IMAGE | sed 's|.local/|.local:80/|')
+# IMAGE=$(echo $IMAGE | sed 's|.local/|.local:80/|')
 
 # This is a PoC, let's make a lot of assumptions to simplify
 context=.
