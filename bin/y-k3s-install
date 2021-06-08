@@ -28,7 +28,7 @@ mirrors:
 EOF
 
 INSTALLER_REVISION=75dba57f9b1de3ec0403b148c52c348e1dee2a5e
-export INSTALL_K3S_VERSION=1.18.19+k3s1
+export INSTALL_K3S_VERSION=v1.18.19+k3s1
 curl -sfL https://github.com/k3s-io/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start
