@@ -18,7 +18,7 @@ case "$platform" in
     case "$bin_tgz_path" in
       */*/*) ;;
       */*)
-        set -f
+        set -o noglob
         bin_tgz_path="--wildcards */$(basename $bin_tgz_path)"
         ;;
       *) ;;

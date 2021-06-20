@@ -6,6 +6,7 @@ buildx
 container-structure-test
 crane
 dive
+dgraph*
 gotemplate
 helm
 kubectl
