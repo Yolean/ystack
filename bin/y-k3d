@@ -2,14 +2,14 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-version=4.4.4
+version=4.4.6
 
 bin_name=k3d \
   bin_version=v${version} \
   Darwin_url=https://github.com/rancher/k3d/releases/download/v${version}/k3d-darwin-amd64 \
-  Darwin_sha256=5fc9b68c9cd523ea743a9ca31163330db642d50f4db421ee00f7e1f4a29da552 \
+  Darwin_sha256=e3704d36df7e8d62488fdda355f32895cb5126984e8f9b6f80672ebe87c1b435 \
   Linux_url=https://github.com/rancher/k3d/releases/download/v${version}/k3d-linux-amd64 \
-  Linux_sha256=6d4ac3d4c5b084f445980e427c5d3a75eefd2c39a22d028825c234c6c20d1e46 \
+  Linux_sha256=4e45de05370dbe37d9704bf31735b2fe04c77b4f7a1a965265592b583367ba7f \
   y-bin-dependency-download || exit $?
 
 y-k3d-v${version}-bin "$@" || exit $?
