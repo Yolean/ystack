@@ -1,4 +1,4 @@
-FROM lachlanevenson/k8s-kubectl:v1.20.1@sha256:992dda609553165e1535c731615dd107c9169b8a8d74293bed03344f70824585 as kubectl
+FROM lachlanevenson/k8s-kubectl:v1.21.2@sha256:dae31981f60a8f44ad87e65a677fa7e24ffc100c0916319306f70ef91edbd6fc as kubectl
 
 RUN apk add --no-cache git
 
