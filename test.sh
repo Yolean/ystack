@@ -12,6 +12,7 @@ if [[ ! -z "$GIT_COMMIT" ]]; then
 fi
 
 # What we think Docker Hub is running
+set +e
 BULID_EXIT_CODE_ON_NO_CLUSTER=1 GIT_COMMIT=$GIT_COMMIT docker-compose -f docker-compose.test.yml up --build --exit-code-from sut --scale node=1 sut
 RESULT=$?
 docker-compose -f docker-compose.test.yml down --remove-orphans -v
