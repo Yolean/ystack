@@ -24,6 +24,8 @@ if [ ! -z "$status" ]; then
 fi
 
 # --no-build is a workaround for https://github.com/docker/compose/issues/3729
+docker-compose $COMPOSEFILES up --no-build -d master1
+docker-compose $COMPOSEFILES exec master1 rm /admin/.kube/kubeconfig.yaml
 docker-compose $COMPOSEFILES up --no-build -d ystack-proxy
 
 hostreplace="s/127.0.0.1:17143/$YSTACK_HOST:17143/"
@@ -33,6 +35,7 @@ docker-compose $COMPOSEFILES exec master1 \
   | sed $hostreplace | tee "$KUBECONFIG.tmp" | grep server
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
+KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=local cluster-info
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
