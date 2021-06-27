@@ -17,6 +17,7 @@ services:
     build:
       context: .
       dockerfile: ./k3s/docker-image/Dockerfile
+    image: yolean/ystack-runner:${GIT_COMMIT:-latest}-k3s
     command:
     - server
     - --https-listen-port=17143
@@ -50,6 +51,7 @@ services:
     build:
       context: .
       dockerfile: ./k3s/docker-ystack-proxy/Dockerfile
+    image: yolean/ystack-runner:${GIT_COMMIT:-latest}-proxy
     environment:
     - KUBECONFIG_WAIT=30
     # Scaled to zero by default because we'll want to introduce automated scale to demand
