@@ -31,6 +31,9 @@ RUN y-kustomize version
 COPY bin/y-helm /usr/local/src/ystack/bin/
 RUN y-helm version --client=true
 
+COPY bin/y-yq /usr/local/src/ystack/bin/
+RUN y-yq --version
+
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl --version
 
