@@ -3,14 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=3.6.1
+version=3.6.3
 
 bin_name=helm \
   bin_version=v${version} \
   Darwin_url=version=https://get.helm.sh/helm-v${version}-darwin-amd64.tar.gz \
-  Darwin_sha256=f5e49aac89701162871e576ebd32506060e43a470da1fcb4b8e4118dc3512913 \
+  Darwin_sha256=84a1ff17dd03340652d96e8be5172a921c97825fd278a2113c8233a4e8db5236 \
   Linux_url=https://get.helm.sh/helm-v${version}-linux-amd64.tar.gz \
-  Linux_sha256=c64f2c7b1d00c5328b164cea4bbd5e0752c103193037173c9eadea9d6a57eddb \
+  Linux_sha256=07c100849925623dc1913209cd1a30f0a9b80a5b4d6ff2153c609d11b043e262 \
   bin_tgz_path=darwin-amd64/helm \
   y-bin-dependency-download 1>&2 || exit $?
 
