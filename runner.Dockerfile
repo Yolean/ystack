@@ -1,18 +1,10 @@
-FROM yolean/node:83d4b5a2081b5a7092a244be19c2a080fa713dca@sha256:58193f09ca69b0cc5e11e7d6af4eb41554ddde4092f253c29752e09fd990e605 as yolean-node
+FROM node:16.5.0-buster-slim@sha256:610ade6f0702b7355a045d7df4e53f78fded0060c5e765f2d5267b1a613465e8 as node
 
 FROM ubuntu:20.04@sha256:aba80b77e27148d99c034a987e7da3a287ed455390352663418c0f2ed40417fe
 
-COPY --from=yolean-node /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=yolean-node /usr/local/bin/node /usr/local/bin/
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node /usr/local/bin/node /usr/local/bin/
 RUN cd /usr/local/bin && ln -s ../lib/node_modules/npm/bin/npm-cli.js npm
-
-COPY lib/package* /usr/local/lib/node_modules/@yolean/ystack/
-RUN cd /usr/local/lib/node_modules/@yolean/ystack && npm ci --ignore-scripts
-RUN for B in \
-  tsc ts-node \
-  jest ts-jest \
-  rollup \
-  ; do ln -s -v /usr/local/lib/node_modules/@yolean/ystack/node_modules/.bin/$B /usr/local/bin/$B; done
 
 RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
