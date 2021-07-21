@@ -27,8 +27,8 @@ mirrors:
     - http://prod-registry.ystack.svc.cluster.local
 EOF
 
-INSTALLER_REVISION=5a67e8dc473f8945e8e181f6f0b0dbbc387f6fca
-export INSTALL_K3S_VERSION=v1.18.20+k3s1
+INSTALLER_REVISION=f7a025617057dbf6aefa5a68a84d4aa1328158d4
+export INSTALL_K3S_VERSION=v1.20.9-rc2+k3s1
 curl -sfL https://github.com/k3s-io/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start
