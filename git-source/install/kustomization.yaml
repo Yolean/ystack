@@ -1,11 +1,15 @@
-namespace: ystack
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ystack # install's app_url depends on namespace
+
 resources:
-- git-service.yaml
-- gitea-statefulset-service.yaml
-- gitea-statefulset.yaml
 - gitea-install.yaml
+
 generatorOptions:
  disableNameSuffixHash: true # The git-automation secret is meant to be used by other services, and besides: kustomize wouldn't update the secretKeyRef
+
 secretGenerator:
 - name: git-automation
   literals:
