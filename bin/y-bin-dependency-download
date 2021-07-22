@@ -31,10 +31,13 @@ esac
 
 [ ! -z "$bin_version" ] || bin_version=$sha256
 
-bin_file=$YBIN/y-$bin_name-$bin_version-bin
+bin_uniq=y-$bin_name-$bin_version-bin
+bin_file=$YBIN/$bin_uniq
 bin_link=$YBIN/$bin_name
 
 [ -f $bin_file ] || {
+  [ -z "$YSTACK_BIN_DOWNLOAD_CACHE" ] || bin_cache="$YSTACK_BIN_DOWNLOAD_CACHE/$bin_uniq"
+  [ -z "$bin_cache" ] || [ ! -f "$bin_cache" ] || url="file://$bin_cache"
   echo "Missing $bin_name binary. Downloading a known version from $url ..."
   curl -o $bin_file -L -f $url
   if ! echo "$sha256  $bin_file" | $SHA256SUM -c -; then rm $bin_file && exit 1; fi
@@ -46,6 +49,7 @@ bin_link=$YBIN/$bin_name
     unzip $bin_file
     mv $(basename " $bin_zip_path") $bin_file
   fi
+  [ -z "$bin_cache" ] || [ -f "$bin_cache" ] || cp -v $bin_file $bin_cache
   chmod a+x $bin_file
 }
 
