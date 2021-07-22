@@ -16,20 +16,35 @@ export SKAFFOLD_UPDATE_CHECK=false
 export SKAFFOLD_INTERACTIVE=false
 [ ! -z "$BUILDS_REGISTRY" ] || export BUILDS_REGISTRY=builds-registry.ystack.svc.cluster.local
 
+SKAFFOLD_FILENAME=skaffold.yaml
+SKAFFOLD_ARGS=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --filename*|-f*)
+      SKAFFOLD_FILENAME="${1#*=}"
+      ;;
+    *)
+      SKAFFOLD_ARGS="$SKAFFOLD_ARGS $1"
+      ;;
+  esac
+  shift
+done
+
 json=$(mktemp)
 
 echo "# [y-skaffold-ci-run] Building with local registry workaround"
-sed 's|\.local/|.local:80/|g' skaffold.yaml | \
-  skaffold --filename=- \
+sed 's|\.local/|.local:80/|g' $SKAFFOLD_FILENAME | \
+  skaffold \
     build --cache-artifacts=false --file-output=$json \
-    $@
+    $SKAFFOLD_ARGS \
+    --filename=-
 echo "# [y-skaffold-ci-run] Build completed, $json:"
 sed -i 's|local:80/|local/|g' $json
 cat $json
 echo ""
 if [ "$Y_CI_DEPLOY" != "false" ]; then
   echo "# [y-skaffold-ci-run] Deploying:"
-  skaffold deploy --build-artifacts=$json $@
+  skaffold deploy --build-artifacts=$json $SKAFFOLD_ARGS
 else
   echo "# [y-skaffold-ci-run] Deploy disabled"
 fi
