@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: gitea-install
-  namespace: ystack # app_url depends on namespace
 spec:
   template:
     spec:

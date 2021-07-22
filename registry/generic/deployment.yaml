@@ -2,16 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  labels: &labels
+  labels:
     registry-type: docker-v2
     ystack-builds-registry: http
 spec:
   replicas: 2
   selector:
-    matchLabels: *labels
+    matchLabels:
+      registry-type: docker-v2
+      ystack-builds-registry: http
   template:
     metadata:
-      labels: *labels
+      labels:
+        registry-type: docker-v2
+        ystack-builds-registry: http
     spec:
       terminationGracePeriodSeconds: 10
       containers:

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: gitea
-  labels: &labels
+  labels:
     app: git-source
     type: gitea
 spec:
@@ -11,10 +11,14 @@ spec:
   updateStrategy:
     type: RollingUpdate
   selector:
-    matchLabels: *labels
+    matchLabels:
+      app: git-source
+      type: gitea
   template:
     metadata:
-      labels: *labels
+      labels:
+        app: git-source
+        type: gitea
     spec:
       containers:
       - name: gitea
