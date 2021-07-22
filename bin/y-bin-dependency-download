@@ -38,9 +38,9 @@ bin_link=$YBIN/$bin_name
 [ -f $bin_file ] || {
   [ -z "$YSTACK_BIN_DOWNLOAD_CACHE" ] || bin_cache="$YSTACK_BIN_DOWNLOAD_CACHE/$bin_uniq"
   [ -z "$bin_cache" ] || [ ! -f "$bin_cache" ] || url="file://$bin_cache"
-  echo "Missing $bin_name binary. Downloading a known version from $url ..."
+  echo "Missing $bin_name binary. Downloading a known version from $url ..." 1>&2
   curl -o $bin_file -L -f $url
-  if ! echo "$sha256  $bin_file" | $SHA256SUM -c -; then rm $bin_file && exit 1; fi
+  if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then rm $bin_file && exit 1; fi
   if [ ! -z "$bin_tgz_path" ]; then
     tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
     mv $(basename " $bin_tgz_path") $bin_file
@@ -49,7 +49,7 @@ bin_link=$YBIN/$bin_name
     unzip $bin_file
     mv $(basename " $bin_zip_path") $bin_file
   fi
-  [ -z "$bin_cache" ] || [ -f "$bin_cache" ] || cp -v $bin_file $bin_cache
+  [ -z "$bin_cache" ] || [ -f "$bin_cache" ] || cp -v $bin_file $bin_cache 1>&2
   chmod a+x $bin_file
 }
 
