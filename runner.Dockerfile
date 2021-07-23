@@ -61,6 +61,7 @@ WORKDIR /usr/local/src/ystack
 
 RUN echo 'nonroot:x:65532:65534:nonroot:/home/nonroot:/usr/sbin/nologin' >> /etc/passwd && \
   mkdir -p /home/nonroot && touch /home/nonroot/.bash_history && chown -R 65532:65534 /home/nonroot && \
+  chown nonroot /usr/local/src/ystack/bin /usr/local/lib/node_modules && \
   ln -s /home/nonroot/.skaffold /root/.skaffold
 USER nonroot:nogroup
 
