@@ -44,7 +44,7 @@ cat $json
 echo ""
 if [ "$Y_CI_DEPLOY" != "false" ]; then
   echo "# [y-skaffold-ci-run] Deploying:"
-  skaffold deploy --build-artifacts=$json $SKAFFOLD_ARGS
+  skaffold deploy --build-artifacts=$json --filename=$SKAFFOLD_FILENAME $SKAFFOLD_ARGS
 else
   echo "# [y-skaffold-ci-run] Deploy disabled"
 fi
