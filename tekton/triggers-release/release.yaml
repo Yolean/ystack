@@ -1260,6 +1260,9 @@ spec:
               value: tekton.dev/triggers
             - name: METRICS_PROMETHEUS_PORT
               value: "9000"
+          ports:
+          - name: metrics
+            containerPort: 9000
           securityContext:
             allowPrivilegeEscalation: false
             # User 65532 is the distroless nonroot user ID
@@ -1377,7 +1380,7 @@ spec:
               value: tekton.dev/triggers
           ports:
             - name: metrics
-              containerPort: 9000
+              containerPort: 9090
             - name: profiling
               containerPort: 8008
             - name: https-webhook
