@@ -1,0 +1,24 @@
+{
+  "name": "y-npm-plain-workdir-no-monorepo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "test": "node ./test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "yallist": "4.0.0"
+  },
+  "devDependencies": {
+    "lru-cache": "6.0.0"
+  },
+  "optionalDependencies": {
+    "semver": "7.3.5"
+  },
+  "peerDependencies": {
+    "semver-compare": "1.0.0"
+  }
+}
