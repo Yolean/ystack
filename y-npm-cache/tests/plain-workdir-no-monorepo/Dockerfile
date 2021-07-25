@@ -4,6 +4,7 @@
 #y-npm#
 #y-npm# COPY package*.json ./
 #y-npm# RUN npm install --ignore-scripts
+FROM /y-npm/
 
 COPY . ./
 
