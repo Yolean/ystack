@@ -2,14 +2,14 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-version=0.11.1
+version=0.15.1
 
 bin_name=kubie \
   bin_version=v${version} \
   Darwin_url=https://github.com/sbstp/kubie/releases/download/v${version}/kubie-darwin-amd64 \
-  Darwin_sha256=9422d48f376bc5ea2b9842daba36a20e3b5812a9f8389ad161fc0aaab69177c3 \
+  Darwin_sha256=c27c82bc574719d2ca2cd51bee059dbb4aea85609870c24c5aa5439e33b60d9c \
   Linux_url=https://github.com/sbstp/kubie/releases/download/v${version}/kubie-linux-amd64 \
-  Linux_sha256=5e494193fd8153699e6012d55f7af7c4b0852bf84eeb627fc4a845a4c739a623 \
+  Linux_sha256=6018e07cf39b469bc8d2ca354c0fee04c79e5d5db515b4de24bba419ddb72f53 \
   y-bin-dependency-download || exit $?
 
 command -v fzf > /dev/null || echo "Note that kubie recommends having fzf installed"
