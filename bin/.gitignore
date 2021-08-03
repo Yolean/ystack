@@ -25,5 +25,6 @@ k8s-ingress-hosts
 istioctl
 logcli
 git-remote-https+iap
+vault
 yq
 zap-pretty
