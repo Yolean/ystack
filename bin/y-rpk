@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=21.7.6
+
+bin_name=rpk \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-darwin-amd64.zip \
+  Darwin_sha256=b187ec78d9a9df82688cda054d64aa88f6b2f702d8c938707cd76b50963ef412 \
+  Linux_url=https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-linux-amd64.zip \
+  Linux_sha256=633a2c8a5cc934ccdd233b074ab6908060e3036a1d2a0016a2398bf1b4817e7c \
+  bin_zip_path=rpk \
+  $YBIN/y-bin-dependency-download || exit $?
+
+$YBIN/y-rpk-v${version}-bin "$@" || exit $?

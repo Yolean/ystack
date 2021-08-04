@@ -28,4 +28,5 @@ git-remote-https+iap
 vault
 yq
 esbuild
+rpk
 zap-pretty
