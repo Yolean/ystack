@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=0.12.17
+
+bin_name=esbuild \
+  bin_version=v${version} \
+  Darwin_url=https://registry.npmjs.org/esbuild-darwin-64/-/esbuild-darwin-64-${version}.tgz \
+  Darwin_sha256=d44b31fe820447e99ae1d238fe6171a5ffc865e3d16949d44fe83941563a96d4 \
+  Linux_url=https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${version}.tgz \
+  Linux_sha256=da3e226e4e0915872d98bee69ffbff5059634b3427c19f27f67f5d834a699337 \
+  bin_tgz_path=package/bin/esbuild \
+  y-bin-dependency-download 1>&2 || exit $?
+
+y-esbuild-v${version}-bin "$@" || exit $?

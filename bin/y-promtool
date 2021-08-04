@@ -11,7 +11,7 @@ bin_name=promtool \
   Darwin_sha256=3941b102a06ebae9bcfa52d07b84825543f529c1e308f2bd66c6ad55cd4d25a4 \
   Linux_url=https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.linux-amd64.tar.gz \
   Linux_sha256=91dd91e13f30fe520e01175ca1027dd09a458d4421a584ba557ba88b38803f27 \
-  bin_tgz_path=prometheus-2.18.1.darwin-amd64/promtool \
+  bin_tgz_path=prometheus-${version}.darwin-amd64/promtool \
   y-bin-dependency-download 1>&2 || exit $?
 
 y-promtool-v${version}-bin "$@" || exit $?

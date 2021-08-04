@@ -27,4 +27,5 @@ logcli
 git-remote-https+iap
 vault
 yq
+esbuild
 zap-pretty
