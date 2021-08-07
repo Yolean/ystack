@@ -25,6 +25,7 @@ k8s-ingress-hosts
 istioctl
 logcli
 git-remote-https+iap
+golangci-lint
 vault
 yq
 esbuild

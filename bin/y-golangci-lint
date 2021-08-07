@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=1.41.1
+
+bin_name=golangci-lint \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/golangci/golangci-lint/releases/download/v${version}/golangci-lint-${version}-darwin-amd64.tar.gz \
+  Darwin_sha256=904a2100b073f67cfc0d9bee48aa75fcf170e3027ca475b1f050af4acc19fcad \
+  Linux_url=https://github.com/golangci/golangci-lint/releases/download/v${version}/golangci-lint-${version}-linux-amd64.tar.gz \
+  Linux_sha256=23e1078ab00a750afcde7e7eb5aab8e908ef18bee5486eeaa2d52ee57d178580 \
+  bin_tgz_path=prometheus-${version}.darwin-amd64/golangci-lint \
+  y-bin-dependency-download 1>&2 || exit $?
+
+y-golangci-lint-v${version}-bin "$@" || exit $?
