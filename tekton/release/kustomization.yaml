@@ -12,7 +12,7 @@ patchesJson6902:
   # Note: the args list may change at Tekton upgrade; verify that the debug-nonroot image comes after the -shell-image arg
   patch: |-
     - op: replace
-      path: /spec/template/spec/containers/0/args/17
+      path: /spec/template/spec/containers/0/args/15
       value: gcr.io/distroless/base:debug-nonroot@sha256:8f330306c95420a801c399e449518b7be79db7e8916075a6a4cb1be91550200d
 
 # To override config add config maps like:
