@@ -22,6 +22,7 @@ bin_name=kubefwd \
   bin_tgz_path=kubefwd \
   $YBIN/y-bin-dependency-download || exit $?
 
+kubectl $ctx cluster-info >/dev/null
 [ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx $@
 
 addargs="$ctx"
