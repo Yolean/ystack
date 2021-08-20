@@ -46,8 +46,9 @@ bin_link=$YBIN/$bin_name
     mv $(basename " $bin_tgz_path") $bin_file
   fi
   if [ ! -z "$bin_zip_path" ]; then
-    unzip $bin_file
-    mv $(basename " $bin_zip_path") $bin_file
+    tmp=$(mktemp -d)
+    (cd $tmp; unzip $bin_file)
+    mv "$tmp/$(basename $bin_zip_path)" $bin_file
   fi
   [ -z "$bin_cache" ] || [ -f "$bin_cache" ] || cp -v $bin_file $bin_cache 1>&2
   chmod a+x $bin_file
