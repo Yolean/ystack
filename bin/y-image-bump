@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ "$1" = "help" ] && echo '
+Replaces image URLs with other image URLs, for git ref tags.
+Skips ref changes that do not affect image sha, i.e. cached or deterministic builds.
+' && exit 0
+
+IMAGE=$1
+[ -z "$IMAGE" ] && echo "First arg must be a an image like yolean/node-kafka" && exit 1
+
+TAG=$2
+[ -z "$TAG" ] && echo "Second arg must be a tag, like a git ref" && exit 1
+
+SRC=$3
+[ -z "$SRC" ] && echo "Third arg must be a path like . or /my/hack.js" && exit 1
+
+[ -z "$INCLUDE" ] && INCLUDE='--include=*.yaml'
+
+[ -z "$REGISTRY" ] && REGISTRY="docker.io"
+
+case $IMAGE in
+  *.*/*/*)
+    IMAGE_URL="$IMAGE:$TAG"
+    REGISTRY=$(echo $IMAGE | cut -d'/' -f 1)
+    ;;
+  */*)
+    IMAGE_URL="$REGISTRY/$IMAGE:$TAG"
+    ;;
+  *)
+    echo "image must have format [host?]parent/image" && exit 1
+    ;;
+esac
+
+[ ! -e "$SRC" ] && echo "Path $SRC not found" && exit 1
+
+DIGEST=$(y-crane digest $IMAGE_URL)
+echo "Got $DIGEST for $IMAGE_URL"
+
+tmp=$(mktemp)
+
+function imagebump {
+  FILE=$1
+  [ -z "$FILE" ] && echo "bump requires a file path" && exit 1
+  sed "s|\b\($IMAGE:\)\([0123456789abcdef]\{40\}\)\(@sha256:[0123456789abcdef]\{64\}\)\?\b|\1$TAG@$DIGEST|" $FILE > $tmp
+  diff=$(diff -u --horizon-lines=0 $FILE $tmp || true)
+  if [ -z "$diff" ]; then
+    echo "No diff for $FILE"
+    return
+  fi
+  shas=$(echo "$diff" | sed 's|^[-\+].*\(@sha256:[0123456789abcdef]\{64\}\).*$|\1|;t;d')
+  if [ $(echo "$shas" | sort | uniq | wc -l) -eq 1 ]; then
+    echo "Skipped $FILE; only one distinct @sha256 in diff"
+    echo "$diff"
+  else
+    cp $tmp $FILE
+    echo "Bumped $FILE"
+  fi
+}
+
+[ -f "$SRC" ] && bump $SRC && exit 0
+
+for F in $(grep -lr $INCLUDE "$IMAGE" "$SRC"); do
+  imagebump $F
+done
