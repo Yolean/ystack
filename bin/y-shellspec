@@ -5,7 +5,7 @@ YBIN="$(dirname $0)"
 
 version=0.28.1
 dist_sha256=350d3de04ba61505c54eda31a3c2ee912700f1758b1a80a284bc08fd8b6c5992
-bin=y-shellspec-v${version}
+bin=y-shellspec-v${version}-bin
 
 [ -f $YBIN/$bin ] && exec $YBIN/$bin $@ && exit $?
 
