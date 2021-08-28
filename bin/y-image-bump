@@ -2,10 +2,13 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-[ "$1" = "help" ] && echo '
+[ -z "$BUMP_INCLUDE" ] && BUMP_INCLUDE='--include=*.yaml'
+
+[ "$1" = "help" ] && echo "
 Replaces image URLs with other image URLs, for git ref tags.
 Skips ref changes that do not affect image sha, i.e. cached or deterministic builds.
-' && exit 0
+BUMP_INCLUDE='$BUMP_INCLUDE'
+" && exit 0
 
 IMAGE=$1
 [ -z "$IMAGE" ] && echo "First arg must be a an image like yolean/node-kafka" && exit 1
@@ -15,8 +18,6 @@ TAG=$2
 
 SRC=$3
 [ -z "$SRC" ] && echo "Third arg must be a path like . or /my/hack.js" && exit 1
-
-[ -z "$INCLUDE" ] && INCLUDE='--include=*.yaml'
 
 [ -z "$REGISTRY" ] && REGISTRY="docker.io"
 
@@ -40,9 +41,14 @@ echo "Got $DIGEST for $IMAGE_URL"
 
 tmp=$(mktemp)
 
-function imagebump {
+function imagebump_kustomize {
   FILE=$1
-  [ -z "$FILE" ] && echo "bump requires a file path" && exit 1
+  # newName is currently ignored, if we add support it must take preference over .name
+  yq -i eval ".images.[] |= select(.name == \"*$IMAGE\" and .newTag != \"*$DIGEST\") |= .newTag = \"$TAG@$DIGEST\"" $FILE
+}
+
+function imagebump_text {
+  FILE=$1
   sed "s|\b\($IMAGE:\)\([0123456789abcdef]\{40\}\)\(@sha256:[0123456789abcdef]\{64\}\)\?\b|\1$TAG@$DIGEST|" $FILE > $tmp
   diff=$(diff -u --horizon-lines=0 $FILE $tmp || true)
   if [ -z "$diff" ]; then
@@ -59,8 +65,18 @@ function imagebump {
   fi
 }
 
-[ -f "$SRC" ] && bump $SRC && exit 0
 
-for F in $(grep -lr $INCLUDE "$IMAGE" "$SRC"); do
+function imagebump {
+  FILE=$1
+  [ -z "$FILE" ] && echo "bump requires a file path" && exit 1
+  case $FILE in
+    */kustomization.yaml) imagebump_kustomize $FILE ;;
+    *) imagebump_text $FILE ;;
+  esac
+}
+
+[ -f "$SRC" ] && imagebump $SRC && exit 0
+
+for F in $(grep -lr $BUMP_INCLUDE "$IMAGE" "$SRC"); do
   imagebump $F
 done
