@@ -1,0 +1,7 @@
+# when the sha256 is identical we should not change the URL
+# if there are no other replaced URLs in the file
+image00: yolean/toil:0000000000000000000000000000000000000000@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d
+and:
+  further:
+    down:
+      x: yolean/toil:1000000000000000000000000000000000000000@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d

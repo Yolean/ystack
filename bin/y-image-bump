@@ -4,7 +4,7 @@ set -eo pipefail
 
 [ -z "$BUMP_INCLUDE" ] && BUMP_INCLUDE='--include=*.yaml'
 
-[ "$1" = "help" ] && echo "
+[ "$1" = "help" ] && echo "adsf
 Replaces image URLs with other image URLs, for git ref tags.
 Skips ref changes that do not affect image sha, i.e. cached or deterministic builds.
 BUMP_INCLUDE='$BUMP_INCLUDE'
@@ -58,13 +58,11 @@ function imagebump_text {
   shas=$(echo "$diff" | sed 's|^[-\+].*\(@sha256:[0123456789abcdef]\{64\}\).*$|\1|;t;d')
   if [ $(echo "$shas" | sort | uniq | wc -l) -eq 1 ]; then
     echo "Skipped $FILE; only one distinct @sha256 in diff"
-    echo "$diff"
   else
     cp $tmp $FILE
     echo "Bumped $FILE"
   fi
 }
-
 
 function imagebump {
   FILE=$1
