@@ -41,4 +41,30 @@ Describe 'y-image-bump'
     When run command diff -s -u ./spec/image-bump-example/preserve-sha256.yaml $tmp/preserve-sha256.yaml
     The output should include "are identical"
   End
+
+  It 'updates the images section of a Kustomize yaml, and here the format of existing tags is ignored'
+    When run command diff -u ./spec/image-bump-example/kustomize/kustomization.yaml $tmp/kustomize/kustomization.yaml
+    The status should eq 1
+    The output should include '
+ images:
+   - name: yolean/toil
+-    newTag: latest@sha256:0000000000000000000000000000000000000000000000000000000000000000
++    newTag: e0c572a0643fb7bfee9eb9775870cc412911319c@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d
+   - name: yolean/toil
+-    newTag: a000000000000000000000000000000000000000
++    newTag: e0c572a0643fb7bfee9eb9775870cc412911319c@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d
+   - name: yolean/toil
+-    newTag: 0000000000000000000000000000000000000000@sha256:0000000000000000000000000000000000000000000000000000000000000000
++    newTag: e0c572a0643fb7bfee9eb9775870cc412911319c@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d
+   - name: docker.io/yolean/toil
+     newName: builds-registry.ystack.svc.cluster.local/yolean/toil
+-    newTag: 0000000000000000000000000000000000000000@sha256:0000000000000000000000000000000000000000000000000000000000000000
++    newTag: e0c572a0643fb7bfee9eb9775870cc412911319c@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d
+   # for now we ignore if newName might not match the image arg
+   - name: yolean/toil
+     newName: yolean/not-toil
+-    newTag: 0000000000000000000000000000000000000000@sha256:0000000000000000000000000000000000000000000000000000000000000000
++    newTag: e0c572a0643fb7bfee9eb9775870cc412911319c@sha256:700eaa5dcdf8ef01a43150f4d9aa970590f326c3834b7035a56d955a6705f32d'
+  End
+
 End
