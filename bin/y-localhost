@@ -23,7 +23,7 @@ case "$platform" in
   Darwin)
     ifconfig lo0 | grep $ip > /dev/null && exit 0
     echo "Loopback alias for $ip $hostname not found. Will try to create ..."
-    [ $(id -u) -eq 0 ] || exec sudo -E $0 $@
+    [ $(id -u) -eq 0 ] || exec sudo -E $0 "$@"
     ifconfig lo0 alias $ip up
     ;;
   Linux)

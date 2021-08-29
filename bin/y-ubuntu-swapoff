@@ -2,7 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-[ $(id -u) -eq 0 ] || exec sudo $0 $@
+[ $(id -u) -eq 0 ] || exec sudo $0 "$@"
 
 swapoff -a
 # requires reboot, according to https://askubuntu.com/questions/259739/kswapd0-is-taking-a-lot-of-cpu
