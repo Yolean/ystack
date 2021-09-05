@@ -2,14 +2,14 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-version=1.21.3
+version=1.21.4
 
 bin_name=kubectl \
   bin_version=${version} \
   Darwin_url=https://dl.k8s.io/v${version}/kubernetes-client-darwin-amd64.tar.gz \
-  Darwin_sha256=9fccbb346f15b9a5f001853415dd144b354859d05f74c442be88d1fe32a0d045 \
+  Darwin_sha256=86bdb099f7d36acb1ff56a4d93d41728b7371255d6d1b11f1c8085490d1f30ec \
   Linux_url=https://dl.k8s.io/v${version}/kubernetes-client-linux-amd64.tar.gz \
-  Linux_sha256=5eac9c111eb8f64831485cb406f06a040f0f90920a3969f2c3617d0d50683297 \
+  Linux_sha256=13162f413ff9b8fe0a6a2cf378245421fcef3e2856875829541577a2e46babd6 \
   bin_tgz_path=kubernetes/client/bin/kubectl \
   y-bin-dependency-download || exit $?
 
