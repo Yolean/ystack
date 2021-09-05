@@ -5,14 +5,14 @@ YBIN="$(dirname $0)"
 
 [ "$1" = "dev" ] && echo "y-skaffold dev requires -n [namespace] as initial args" && exit 1
 
-version=1.27.0
+version=1.31.0
 
 bin_name=skaffold \
   bin_version=v${version} \
   Darwin_url=https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-darwin-amd64 \
-  Darwin_sha256=cc774b8fa8ef2e66106939015cd999bd690567137784a232969426d9e2980687 \
+  Darwin_sha256=f9ab07764367ea2ee275d53535037169902399a8de87ad76a78a35a4ced988a8 \
   Linux_url=https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-linux-amd64 \
-  Linux_sha256=74c31af3d1e7706f2ca282dba268d8d2358463c6ae8e5fa22ffca36c10a0974c \
+  Linux_sha256=748bf3628ccdfb7ace310772b57fffd8a299bd880f288dc2148aa251bb6ad041 \
   y-bin-dependency-download || exit $?
 
 # https://skaffold.dev/docs/concepts/#local-development
