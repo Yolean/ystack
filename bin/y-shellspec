@@ -1,0 +1,22 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=0.28.1
+dist_sha256=350d3de04ba61505c54eda31a3c2ee912700f1758b1a80a284bc08fd8b6c5992
+bin=y-shellspec-v${version}-bin
+
+[ -f $YBIN/$bin ] && exec $YBIN/$bin "$@" && exit $?
+
+[ -e $YBIN/$bin-dist ] && echo "Dist exists without bin symlink, please remove: $YBIN/$bin-dist*" && exit 1
+
+tmp=$(mktemp)
+curl -o $tmp -L -f https://github.com/shellspec/shellspec/releases/download/${version}/shellspec-dist.tar.gz -s
+if ! echo "$dist_sha256  $tmp" | sha256sum -c - 1>/dev/null; then rm $bin_file && exit 1; fi
+
+mkdir $YBIN/$bin-dist
+(cd $YBIN/$bin-dist; tar xzf $tmp --strip-components=1)
+(cd $YBIN; ln -s $bin-dist/shellspec $bin; [ -L shellspec ] && rm shellspec; ln -s $bin-dist/shellspec shellspec)
+
+exec $YBIN/$bin "$@" && exit $?

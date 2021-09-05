@@ -5,6 +5,9 @@ YBIN="$(dirname $0)"
 
 SHA256SUM="sha256sum"
 
+[ -n "$bin_tar_path" ] || bin_tar_path=$bin_tgz_path
+[ -n "$bin_tar_compression" ] || bin_tar_compression=z
+
 platform="$(uname -s)"
 case "$platform" in
   Darwin )
@@ -15,11 +18,11 @@ case "$platform" in
   Linux )
     url=$Linux_url
     sha256=$Linux_sha256
-    case "$bin_tgz_path" in
+    case "$bin_tar_path" in
       */*/*) ;;
       */*)
         set -o noglob
-        bin_tgz_path="--wildcards */$(basename $bin_tgz_path)"
+        bin_tar_path="--wildcards */$(basename $bin_tar_path)"
         ;;
       *) ;;
     esac
@@ -41,9 +44,9 @@ bin_link=$YBIN/$bin_name
   echo "Missing $bin_name binary. Downloading a known version from $url ..." 1>&2
   curl -o $bin_file -L -f $url
   if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then rm $bin_file && exit 1; fi
-  if [ ! -z "$bin_tgz_path" ]; then
-    tar -xvzf $bin_file --strip-components=$(echo $bin_tgz_path | awk -F'/' '{print NF-1}') $bin_tgz_path
-    mv $(basename " $bin_tgz_path") $bin_file
+  if [ ! -z "$bin_tar_path" ]; then
+    tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_path
+    mv $(basename " $bin_tar_path") $bin_file
   fi
   if [ ! -z "$bin_zip_path" ]; then
     tmp=$(mktemp -d)

@@ -6,7 +6,7 @@ set -e
 
 SLEEP=1
 RETRY=0
-until kubectl wait $@; do
+until kubectl wait "$@"; do
   [ $RETRY -lt $WAITRETRIES ] || exit 1
   echo "waitretry after $SLEEP seconds ..."
   sleep $SLEEP

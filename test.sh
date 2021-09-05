@@ -11,6 +11,19 @@ if [[ ! -z "$GIT_COMMIT" ]]; then
   fi
 fi
 
+# CI
+
+# we should raise the bar here as soon as possible
+DEFAULT_SHELLCHECK_LEVEL=error
+[ -n "$SHELLCHECK_LEVEL" ] || SHELLCHECK_LEVEL=$DEFAULT_SHELLCHECK_LEVEL
+echo "Running lint for level \"$SHELLCHECK_LEVEL\" ..."
+y-shellcheck --severity=$SHELLCHECK_LEVEL $(git ls-tree -r HEAD --name-only -- ./bin/ | xargs awk '
+  /^#!.*sh/{print FILENAME}
+  {nextfile}')
+
+echo "Running bin specs ..."
+(cd bin && y-shellspec)
+
 # What we think Docker Hub is running
 set +e
 BULID_EXIT_CODE_ON_NO_CLUSTER=1 GIT_COMMIT=$GIT_COMMIT docker-compose -f docker-compose.test.yml up --build --exit-code-from sut --scale node=1 sut

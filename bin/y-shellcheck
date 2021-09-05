@@ -1,0 +1,18 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=0.7.2
+
+bin_name=shellcheck \
+  bin_version=v${version} \
+  Darwin_url=https://github.com/koalaman/shellcheck/releases/download/v0.7.2/shellcheck-v0.7.2.darwin.x86_64.tar.xz \
+  Darwin_sha256=bafd3eaa4857b675adb96697238c6f66f24957ad33de15537dd16cce011bed5e \
+  Linux_url=https://github.com/koalaman/shellcheck/releases/download/v0.7.2/shellcheck-v0.7.2.linux.x86_64.tar.xz \
+  Linux_sha256=70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188 \
+  bin_tar_compression=J \
+  bin_tar_path=shellcheck-v${version}/shellcheck \
+  y-bin-dependency-download 1>&2 || exit $?
+
+y-shellcheck-v${version}-bin "$@" || exit $?

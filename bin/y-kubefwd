@@ -23,7 +23,7 @@ bin_name=kubefwd \
   $YBIN/y-bin-dependency-download || exit $?
 
 [ $(id -u) -eq 0 ] || kubectl $ctx cluster-info >/dev/null
-[ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx $@
+[ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx "$@"
 
 addargs="$ctx"
 [[ "$*" == *-l* ]] || addargs="$addargs -l ystack-kubefwd!=never"
