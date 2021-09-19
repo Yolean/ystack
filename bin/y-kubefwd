@@ -3,7 +3,7 @@
 set -eo pipefail
 YBIN="$(dirname $0)"
 
-version=1.17.3
+version=1.21.0
 
 ctx=$1
 case $ctx in
@@ -16,9 +16,9 @@ esac
 bin_name=kubefwd \
   bin_version=v${version} \
   Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_x86_64.tar.gz \
-  Darwin_sha256=67c1702926064fdcfa0f443f2769286412abd72f324ff1ec479c7fcf7bb7e3a4 \
+  Darwin_sha256=b3190e82ff1a411b470782f51e990f609d4facb034195041588d28af71f7a031 \
   Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Linux_x86_64.tar.gz \
-  Linux_sha256=215b344f001512b582b58f636d03fe5b43cfcc13635fefc6810c7ad3ce67b90a \
+  Linux_sha256=6277f6d79c98af7fefad5a5524c5867c55588392aef699d63e0706640e265948 \
   bin_tgz_path=kubefwd \
   $YBIN/y-bin-dependency-download || exit $?
 
