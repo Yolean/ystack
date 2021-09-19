@@ -18,7 +18,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM node:16.9.0-buster-slim@sha256:fca208cb6a90179412cc78ac590a81c3b802b2d3a66b202e31586a9b702e101c \
+FROM node:16.9.1-buster-slim@sha256:af6f241029c4d63107c6ccbbd030c44d331786d724bd9c2e615edf46deab58e2 \
   as node
 
 FROM base as bin
