@@ -13,7 +13,7 @@ patchesJson6902:
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/args/15
-      value: gcr.io/distroless/base:debug-nonroot@sha256:8f330306c95420a801c399e449518b7be79db7e8916075a6a4cb1be91550200d
+      value: gcr.io/distroless/base:debug-nonroot@sha256:868b149a21379205ef3ec237cf8a0c2f30468405829b5fef0b29cc724fe7f34c
 
 # To override config add config maps like:
 # configMapGenerator:
