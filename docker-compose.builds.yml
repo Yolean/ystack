@@ -2,10 +2,10 @@ version: '2.4'
 services:
 
   master1:
-    image: yolean/ystack-runner:6e0024f0386b9aeff890f5d507178b684cc80aaa-k3s@sha256:7a3860b0e2a4cb9c3483da4b3cac15d8dcb616a1402a93538c2d52d6838b92a5
+    image: yolean/ystack-runner:db6ac4cdd57bc84dcb8a62afec55e6b86188a333-k3s@sha256:0905e53d3e513c0b5abca094d6fcc473691e1a4cc1a4f354e050ee5befac11e9
 
   ystack-proxy:
-    image: yolean/ystack-runner:6e0024f0386b9aeff890f5d507178b684cc80aaa-proxy@sha256:0605ae3043782e52d2cb3e968bc15533b84087ca83c9eedbc636cc72c50da45f
+    image: yolean/ystack-runner:db6ac4cdd57bc84dcb8a62afec55e6b86188a333-proxy@sha256:9db4fa9fe79c39aaa79ffe9ce1360c9b923af03591c754256df5cf1bd143b50b
 
   sut:
-    image: yolean/ystack-runner:6e0024f0386b9aeff890f5d507178b684cc80aaa@sha256:06770d55312fff7e79475e30b9f866f144a27b6786fe0aae83dd3b49136249eb
+    image: yolean/ystack-runner:db6ac4cdd57bc84dcb8a62afec55e6b86188a333@sha256:acc842f8687756563f7206ca4031013d8cb70b393c3875427675229f99ef7b72
