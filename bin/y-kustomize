@@ -2,16 +2,16 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-# with tag from version in ./y-kubectl
-# https://github.com/kubernetes/kubernetes/blob/v1.21.2/staging/src/k8s.io/kubectl/go.mod#L47
-version=4.1.2
+# TODO with tag from version in ./y-kubectl
+# https://github.com/kubernetes/kubernetes/blob/v1.23.0-alpha.3/staging/src/k8s.io/kubectl/go.mod#L44
+version=4.4.0
 
 bin_name=kustomize \
   bin_version=v${version} \
   Darwin_url=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_darwin_amd64.tar.gz \
-  Darwin_sha256=08bf3888391a526d247aead55b6bd940574bba238d9d32aa40c0adb4998f812e \
+  Darwin_sha256=f0e55366239464546f9870489cee50764d87ebdd07f7402cf2622e5e8dc77ac1 \
   Linux_url=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_linux_amd64.tar.gz \
-  Linux_sha256=4efb7d0dadba7fab5191c680fcb342c2b6f252f230019cf9cffd5e4b0cad1d12 \
+  Linux_sha256=bf3a0d7409d9ce6a4a393ba61289047b4cb875a36ece1ec94b36924a9ccbaa0f \
   bin_tgz_path=kustomize \
   y-bin-dependency-download || exit $?
 
