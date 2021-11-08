@@ -1,0 +1,32 @@
+#!/usr/bin/env y-bin-download
+
+# NOTE yq must be first in the file because this script depends on it
+yq:
+  version: 4.14.1
+  sha256:
+    darwin_amd64: fa5ebd853506a1d0c9b9b97f5ee13183f0262da141936dc266f820f6c99e5902
+    darwin_arm64: 9db77866ea2368a74b498e4f799178f14659f3671d8cf2bb687392baa898566e
+    linux_amd64: 28e9623452c5da978ec3630c64d838a94f7a6bdd219da0db6f6cb042b5e06d07
+  templates:
+    download: https://github.com/mikefarah/yq/releases/download/v{{ .version }}/yq_{{ .os }}_{{ .arch }}
+    # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v{{ .version }}/checksums_hashes_order
+    # sha256: https://github.com/mikefarah/yq/releases/download/v{{ .version }}/checksums
+
+helm:
+  version: 3.7.1
+  sha256:
+    darwin_amd64: 3a9efe337c61a61b3e160da919ac7af8cded8945b75706e401f3655a89d53ef5
+    darwin_arm64: 733fa6731b396514071b4dbc66614bd3be8e1f079f86594ab449649441bf18f1
+    linux_amd64: 6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4
+  archive: tgz
+  templates:
+    download: https://get.helm.sh/helm-v{{ .version }}-{{ .os }}-{{ .arch }}.tar.gz
+    sha256: https://get.helm.sh/helm-v{{ .version }}-{{ .os }}-{{ .arch }}.tar.gz.sha256sum
+
+k3d:
+  version: 5.0.3
+  sha256:
+
+  templates:
+    download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-
+    sha256: https://github.com/rancher/k3d/releases/download/v5.0.3/sha256sum.txt
