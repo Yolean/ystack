@@ -444,8 +444,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
-    version: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
+    version: "v0.17.1"
 spec:
   group: triggers.tekton.dev
   scope: Cluster
@@ -500,8 +500,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
-    version: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
+    version: "v0.17.1"
 spec:
   group: triggers.tekton.dev
   scope: Cluster
@@ -570,8 +570,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
-    version: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
+    version: "v0.17.1"
 spec:
   group: triggers.tekton.dev
   scope: Namespaced
@@ -676,8 +676,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
-    version: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
+    version: "v0.17.1"
 spec:
   group: triggers.tekton.dev
   scope: Namespaced
@@ -748,8 +748,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
-    version: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
+    version: "v0.17.1"
 spec:
   group: triggers.tekton.dev
   scope: Namespaced
@@ -822,8 +822,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
-    version: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
+    version: "v0.17.1"
 spec:
   group: triggers.tekton.dev
   scope: Namespaced
@@ -898,7 +898,7 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
 # The data is populated at install time.
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -909,7 +909,7 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
 webhooks:
   - admissionReviewVersions:
       - v1beta1
@@ -930,7 +930,7 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
 webhooks:
   - admissionReviewVersions:
       - v1beta1
@@ -951,7 +951,7 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
 webhooks:
   - admissionReviewVersions:
       - v1beta1
@@ -1154,7 +1154,7 @@ data:
   # this ConfigMap such that even if we don't have access to
   # other resources in the namespace we still can have access to
   # this ConfigMap.
-  version: "v0.17.0"
+  version: "v0.17.1"
 
 ---
 # Copyright 2019 Tekton Authors LLC
@@ -1290,11 +1290,11 @@ metadata:
     app.kubernetes.io/name: controller
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.17.0"
+    app.kubernetes.io/version: "v0.17.1"
     app.kubernetes.io/part-of: tekton-triggers
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
     app: tekton-triggers-controller
-    version: "v0.17.0"
+    version: "v0.17.1"
   name: tekton-triggers-controller
   namespace: tekton-pipelines
 spec:
@@ -1333,10 +1333,10 @@ metadata:
     app.kubernetes.io/name: controller
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.17.0"
+    app.kubernetes.io/version: "v0.17.1"
     app.kubernetes.io/part-of: tekton-triggers
     # tekton.dev/release value replaced with inputs.params.versionTag in triggers/tekton/publish.yaml
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
 spec:
   replicas: 1
   selector:
@@ -1351,18 +1351,18 @@ spec:
         app.kubernetes.io/name: controller
         app.kubernetes.io/component: controller
         app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "v0.17.0"
+        app.kubernetes.io/version: "v0.17.1"
         app.kubernetes.io/part-of: tekton-triggers
         app: tekton-triggers-controller
-        triggers.tekton.dev/release: "v0.17.0"
+        triggers.tekton.dev/release: "v0.17.1"
         # version value replaced with inputs.params.versionTag in triggers/tekton/publish.yaml
-        version: "v0.17.0"
+        version: "v0.17.1"
     spec:
       serviceAccountName: tekton-triggers-controller
       containers:
         - name: tekton-triggers-controller
-          image: "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/controller:v0.17.0@sha256:6c78e98d1f737e5acfb63bc6049d36151a4e377943b7b98a48330adbcbbd4c34"
-          args: ["-logtostderr", "-stderrthreshold", "INFO", "-el-image", "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/eventlistenersink:v0.17.0@sha256:317e4e93daa1c3776eab0822f53fc2cafd86ad9c62f6f8f5a03417515bf32d5a", "-el-port", "8080", "-el-security-context=true", "-el-readtimeout", "5", "-el-writetimeout", "40", "-el-idletimeout", "120", "-el-timeouthandler", "30", "-period-seconds", "10", "-failure-threshold", "1"]
+          image: "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/controller:v0.17.1@sha256:6b270599fde41dd1eb0f00aa4889bfd0c3529886a2357c568673efb9838a404d"
+          args: ["-logtostderr", "-stderrthreshold", "INFO", "-el-image", "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/eventlistenersink:v0.17.1@sha256:2d298f88e9b53072ed665acbd946ff203f2b3f24b71e2014ca9416d8271d8d77", "-el-port", "8080", "-el-security-context=true", "-el-readtimeout", "5", "-el-writetimeout", "40", "-el-idletimeout", "120", "-el-timeouthandler", "30", "-period-seconds", "10", "-failure-threshold", "1"]
           env:
             - name: SYSTEM_NAMESPACE
               valueFrom:
@@ -1407,11 +1407,11 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.17.0"
+    app.kubernetes.io/version: "v0.17.1"
     app.kubernetes.io/part-of: tekton-triggers
     app: tekton-triggers-webhook
-    version: "v0.17.0"
-    triggers.tekton.dev/release: "v0.17.0"
+    version: "v0.17.1"
+    triggers.tekton.dev/release: "v0.17.1"
 spec:
   ports:
     - name: https-webhook
@@ -1447,10 +1447,10 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.17.0"
+    app.kubernetes.io/version: "v0.17.1"
     app.kubernetes.io/part-of: tekton-triggers
     # tekton.dev/release value replaced with inputs.params.versionTag in triggers/tekton/publish.yaml
-    triggers.tekton.dev/release: "v0.17.0"
+    triggers.tekton.dev/release: "v0.17.1"
 spec:
   replicas: 1
   selector:
@@ -1465,19 +1465,19 @@ spec:
         app.kubernetes.io/name: webhook
         app.kubernetes.io/component: webhook
         app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "v0.17.0"
+        app.kubernetes.io/version: "v0.17.1"
         app.kubernetes.io/part-of: tekton-triggers
         app: tekton-triggers-webhook
-        triggers.tekton.dev/release: "v0.17.0"
+        triggers.tekton.dev/release: "v0.17.1"
         # version value replaced with inputs.params.versionTag in triggers/tekton/publish.yaml
-        version: "v0.17.0"
+        version: "v0.17.1"
     spec:
       serviceAccountName: tekton-triggers-webhook
       containers:
         - name: webhook
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/webhook:v0.17.0@sha256:30020693f4f0c6fc05989568b25b22841cd660caa44322a0b2b499d66a8250b6"
+          image: "gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/webhook:v0.17.1@sha256:6e33eb65f35c238675a92e295d26965bebcb8b9a5dcaf622211f72e77377e16f"
           env:
             - name: SYSTEM_NAMESPACE
               valueFrom:
