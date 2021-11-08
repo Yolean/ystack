@@ -3,7 +3,7 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=0.9.1
+version=0.9.2
 
 bin_tgz_path=buildctl
 platform="$(uname -s)"
@@ -16,9 +16,9 @@ esac
 bin_name=buildctl \
   bin_version=v${version} \
   Darwin_url=https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.darwin-amd64.tar.gz \
-  Darwin_sha256=488148cb50b25595436ce6ef535bbf98ba1d0eb5eeb53c5cf94aea88a811a308 \
+  Darwin_sha256=b5c20bc6a4ff553a2829249e08938ebb54dd1c986bb082f2b8fc234102a813f8 \
   Linux_url=https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.linux-amd64.tar.gz \
-  Linux_sha256=f5c82431fb9e672e1f900b5623433fb4d477e80e16ca4c836d42594312e927a2 \
+  Linux_sha256=931d8bb6b461a396c54ed2ce4fa48a2d5eafeb6985a97823e39e549bc89bec27 \
   bin_tgz_path=$bin_tgz_path \
   y-bin-dependency-download || exit $?
 
