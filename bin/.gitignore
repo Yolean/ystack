@@ -30,6 +30,7 @@ golangci-lint
 vault
 yq
 esbuild
+oauth2l
 rpk
 remote-iap
 shellcheck
