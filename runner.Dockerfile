@@ -53,6 +53,8 @@ FROM base
 
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/bin/node /usr/local/bin/
+RUN set -e; \
+  npm config set ignore-scripts true
 
 COPY --from=bin /usr/local/src/ystack/bin /usr/local/src/ystack/bin
 
@@ -65,4 +67,6 @@ RUN echo 'nonroot:x:65532:65534:nonroot:/home/nonroot:/usr/sbin/nologin' >> /etc
   ln -s /home/nonroot/.skaffold /root/.skaffold
 USER nonroot:nogroup
 
-RUN y-skaffold config set --global collect-metrics false
+RUN set -e; \
+  y-skaffold config set --global collect-metrics false;
+  npm config set ignore-scripts true
