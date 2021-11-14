@@ -25,6 +25,7 @@ install() {
   version=$2
   url=$3
   sha256=$4
+  echo "TODO install $name $version $url $sha256"
 }
 
 gotemplate() {
@@ -49,28 +50,32 @@ arch() {
   esac
 }
 
-binyaml() {
-  yaml=$1
-  name=$2
-  [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml">2; return 1; }
-  awk "/^$name:/{f=1;next} /^[a-z0-9_-]+/{f=0} f" $yaml | \
-    grep -v '#'
-}
-
-update() {
-  echo "a"
-}
-
 names() {
   yaml=$1
   [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml"; return 1; }
   cat $yaml | grep -v '^$' | grep -v '#' | grep -v '^ ' | cut -d: -f1
 }
 
+# should extract yaml into something that's safe to eval
+to_eval() {
+  yaml=$1
+  name=$2
+  [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml">2; return 1; }
+  awk "/^$name:/{f=1;next} /^[a-z0-9_-]+/{f=0} f" $yaml | \
+    sed 's| *version: *|version=|' | \
+    sed 's| *download: *\(.*\)|url="\1"|' | \
+    sed "s| *$(os)_$(arch): *|sha256=|" | \
+    grep -E '^[[:alnum:]]+='
+}
+
 run() {
   yaml=$1
   name=$2
-  echo "TODO run $yaml $name"
+  os=$(os)
+  arch=$(arch)
+  xarch=$(xarch)
+  eval $(to_eval $yaml $name)
+  install "$name" "$version" "$url" "$sha256"
 }
 
 # https://github.com/shellspec/shellspec#testing-shell-functions
@@ -83,8 +88,8 @@ if [ $# -eq 1 ]; then
     run $yaml $name
   done
 else
-  while [ $# -gt 0 ]; do
-    run $yaml $1
+  while [ $# -gt 1 ]; do
+    run $yaml $2
     shift
   done
 fi

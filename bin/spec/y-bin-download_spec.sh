@@ -1,4 +1,7 @@
 
+
+echo "NOTE these tests are unmaintained, were used for early development"
+
 Describe 'y-bin-download'
 
   Include 'y-bin-download'

@@ -1,5 +1,10 @@
 #!/usr/bin/env y-bin-download
 
+# This yaml format has special requirements as it must be parsed on vanilla osx and linux:
+# - version must be the first key per binary name
+# - comments must be separate lines, not after values
+
+
 # NOTE yq must be first in the file because this script depends on it
 yq:
   version: 4.14.1
@@ -8,9 +13,9 @@ yq:
     darwin_arm64: 9db77866ea2368a74b498e4f799178f14659f3671d8cf2bb687392baa898566e
     linux_amd64: 28e9623452c5da978ec3630c64d838a94f7a6bdd219da0db6f6cb042b5e06d07
   templates:
-    download: https://github.com/mikefarah/yq/releases/download/v{{ .version }}/yq_{{ .os }}_{{ .arch }}
-    # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v{{ .version }}/checksums_hashes_order
-    # sha256: https://github.com/mikefarah/yq/releases/download/v{{ .version }}/checksums
+    download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
+    # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
+    # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
 
 helm:
   version: 3.7.1
@@ -20,8 +25,8 @@ helm:
     linux_amd64: 6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4
   archive: tgz
   templates:
-    download: https://get.helm.sh/helm-v{{ .version }}-{{ .os }}-{{ .arch }}.tar.gz
-    sha256: https://get.helm.sh/helm-v{{ .version }}-{{ .os }}-{{ .arch }}.tar.gz.sha256sum
+    download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
+    sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
 
 k3d:
   version: 5.0.3
