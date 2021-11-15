@@ -27,7 +27,15 @@ install() {
   sha256=$4
   archiveformat=$5
   archivepath=$6
-  echo "TODO install $name $version $url $sha256 $archiveformat $archivepath"
+  # the legacy format, reused until phased out, note the mandatory v prefix to version
+  bin_name=$name \
+    bin_version=v${version} \
+    Darwin_url=$url \
+    Darwin_sha256=$sha256 \
+    Linux_url=$url \
+    Linux_sha256=$sha256 \
+    bin_${archiveformat}_path=$archivepath \
+    y-bin-dependency-download 1>&2 || exit $?
 }
 
 gotemplate() {
