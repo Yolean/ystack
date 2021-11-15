@@ -57,17 +57,6 @@ helm:
     download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
 
-mkcert:
-  version: 1.4.3
-  templates:
-    # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
-    #download: https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v${version}-${os}-${arch}
-    download: https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v${version}-${os}-amd64
-  sha256:
-    darwin_amd64: 0b5bd40ea69ec34c567707249938bcd0502d2c3efc0137143a076a2b80d5e882
-    darwin_arm64: 0b5bd40ea69ec34c567707249938bcd0502d2c3efc0137143a076a2b80d5e882
-    linux_amd64: c2b0746528588d2a5dabe7c4394a848909da07e23ca3f2393375e9baa3931649
-
 k3d:
   version: 5.0.3
   sha256:
