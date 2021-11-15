@@ -25,8 +25,12 @@ install() {
   version=$2
   url=$3
   sha256=$4
-  archiveformat=$5
+  archivetool=$5
   archivepath=$6
+  # translate to legacy format's variable env names
+  archivecompression=z
+  [ "$archivetool" != "tar" ] || bin_tar_path=$archivepath
+  [ "$archivetool" != "zip" ] || bin_zip_path=$archivepath
   # the legacy format, reused until phased out, note the mandatory v prefix to version
   bin_name=$name \
     bin_version=v${version} \
@@ -34,8 +38,11 @@ install() {
     Darwin_sha256=$sha256 \
     Linux_url=$url \
     Linux_sha256=$sha256 \
-    bin_${archiveformat}_path=$archivepath \
+    bin_zip_path=$bin_zip_path \
+    bin_tar_path=$bin_tar_path \
+    bin_tar_compression=$archivecompression \
     y-bin-dependency-download 1>&2 || exit $?
+  echo $version
 }
 
 gotemplate() {
@@ -73,7 +80,7 @@ to_eval() {
   [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml">2; return 1; }
   awk "/^$name:/{f=1;next} /^[a-z0-9_-]+/{f=0} f" $yaml | \
     sed 's| *version: *|version=|' | \
-    sed 's| *format: *|archiveformat=|' | \
+    sed 's| *tool: *|archivetool=|' | \
     sed 's| *path: *|archivepath=|' | \
     sed 's| *download: *\(.*\)|url="\1"|' | \
     sed "s| *$(os)_$(arch): *|sha256=|" | \
@@ -87,7 +94,7 @@ run() {
   arch=$(arch)
   xarch=$(xarch)
   eval $(to_eval $yaml $name)
-  install "$name" "$version" "$url" "$sha256" "$archiveformat" "$archivepath"
+  install "$name" "$version" "$url" "$sha256" "$archivetool" "$archivepath"
 }
 
 # https://github.com/shellspec/shellspec#testing-shell-functions

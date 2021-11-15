@@ -17,6 +17,18 @@ yq:
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
     # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
 
+kubectl:
+  version: 1.22.3
+  template:
+    download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
+  sha256:
+    linux_amd64: 36a24dcdc7a8eef1db37798b5c0c6425430fa4bc978f2dcb24418b06bc88c596
+    darwin_amd64: fb531f7d9e7a0ebdf31819f96fd749b872e8f7f52eec49981491831fe1231822
+    darwin_arm64: 99ba5dd383635ec3287cedb3eb740b6746f61fbd47f40da94ce1d523d45b764c
+  archive:
+    tool: tar
+    path: kubernetes/client/bin/kubectl
+
 helm:
   version: 3.7.1
   sha256:
@@ -24,7 +36,7 @@ helm:
     darwin_arm64: 733fa6731b396514071b4dbc66614bd3be8e1f079f86594ab449649441bf18f1
     linux_amd64: 6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4
   archive:
-    format: tgz
+    tool: tar
     path: ${os}-${arch}/helm
   templates:
     download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
