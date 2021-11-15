@@ -29,6 +29,21 @@ kubectl:
     tool: tar
     path: kubernetes/client/bin/kubectl
 
+kustomize:
+  # TODO with tag from version in ./y-kubectl
+  # https://github.com/kubernetes/kubernetes/blob/v1.23.0-alpha.4/staging/src/k8s.io/kubectl/go.mod#L44
+  version: 4.4.1
+  template:
+    download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
+    sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${verison}/checksums.txt
+  sha256:
+    linux_amd64: 2d5927efec40ba32a121c49f6df9955b8b8a296ef1dec4515a46fc84df158798
+    darwin_amd64: 1b0eba143cd684f98341d58100c17a2dfb9658375302fe38d725752ea92012ac
+    darwin_arm64: 689d873b30dc052a51e737eaf20a416e1a72a6d8f85e5d9c4969515fa2ad578c
+  archive:
+    tool: tar
+    path: kustomize
+
 helm:
   version: 3.7.1
   sha256:
@@ -41,6 +56,17 @@ helm:
   templates:
     download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
+
+mkcert:
+  version: 1.4.3
+  templates:
+    # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
+    #download: https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v${version}-${os}-${arch}
+    download: https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v${version}-${os}-amd64
+  sha256:
+    darwin_amd64: 0b5bd40ea69ec34c567707249938bcd0502d2c3efc0137143a076a2b80d5e882
+    darwin_arm64: 0b5bd40ea69ec34c567707249938bcd0502d2c3efc0137143a076a2b80d5e882
+    linux_amd64: c2b0746528588d2a5dabe7c4394a848909da07e23ca3f2393375e9baa3931649
 
 k3d:
   version: 5.0.3

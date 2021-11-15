@@ -1,18 +1,8 @@
 #!/bin/sh
 [ -z "$DEBUG" ] || set -x
 set -e
+YBIN="$(dirname $0)"
 
-# TODO with tag from version in ./y-kubectl
-# https://github.com/kubernetes/kubernetes/blob/v1.23.0-alpha.3/staging/src/k8s.io/kubectl/go.mod#L44
-version=4.4.0
-
-bin_name=kustomize \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_darwin_amd64.tar.gz \
-  Darwin_sha256=f0e55366239464546f9870489cee50764d87ebdd07f7402cf2622e5e8dc77ac1 \
-  Linux_url=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_linux_amd64.tar.gz \
-  Linux_sha256=bf3a0d7409d9ce6a4a393ba61289047b4cb875a36ece1ec94b36924a9ccbaa0f \
-  bin_tgz_path=kustomize \
-  y-bin-dependency-download || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml kustomize)
 
 y-kustomize-v${version}-bin "$@" || exit $?
