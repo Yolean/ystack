@@ -69,9 +69,11 @@ helm:
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
 
 k3d:
-  version: 5.0.3
-  sha256:
-
+  version: 5.1.0
   templates:
-    download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-
-    sha256: https://github.com/rancher/k3d/releases/download/v5.0.3/sha256sum.txt
+    download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-${os}-${arch}
+    sha256: https://github.com/rancher/k3d/releases/download/v${version}sha256sum.txt
+  sha256:
+    darwin_amd64: 30f4f7d50b83a22743576348bbe261d78c395a56cc2772325a55c2e494287f5e
+    darwin_arm64: 34e5a3ab72dc09c1d1683bf8fcac77e1652391ee86673af42d8e3a4dc185bd29
+    linux_amd64: e04cfb3cc04de17c9d4272d0b5506ee5ca1070e36e07519fbe6c00153b993195
