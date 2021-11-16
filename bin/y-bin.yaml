@@ -17,6 +17,17 @@ yq:
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
     # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
 
+jq:
+  version: 1.6
+  template:
+    # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
+    #download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-${arch}
+    download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-amd64
+  sha256:
+    darwin_arm64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
+    darwin_amd64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
+    linux_amd64: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
+
 kubectl:
   version: 1.22.3
   template:

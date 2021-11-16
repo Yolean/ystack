@@ -56,6 +56,14 @@ os() {
   uname -s | tr '[:upper:]' '[:lower:]'
 }
 
+osx() {
+  os=$(os)
+  case $os in
+    darwin) echo 'osx' ;;
+    *) echo "$os" ;;
+  esac
+}
+
 xarch() {
   uname -m
 }
@@ -93,6 +101,7 @@ run() {
   os=$(os)
   arch=$(arch)
   xarch=$(xarch)
+  osx=$(osx)
   eval $(to_eval $yaml $name)
   install "$name" "$version" "$url" "$sha256" "$archivetool" "$archivepath"
 }
