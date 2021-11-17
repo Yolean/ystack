@@ -3,8 +3,6 @@
 set -eo pipefail
 YBIN="$(dirname $0)"
 
-version=1.21.0
-
 ctx=$1
 case $ctx in
   "--context="*) shift 1 ;;
@@ -13,14 +11,7 @@ esac
 
 [ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
 
-bin_name=kubefwd \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Darwin_x86_64.tar.gz \
-  Darwin_sha256=b3190e82ff1a411b470782f51e990f609d4facb034195041588d28af71f7a031 \
-  Linux_url=https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_Linux_x86_64.tar.gz \
-  Linux_sha256=6277f6d79c98af7fefad5a5524c5867c55588392aef699d63e0706640e265948 \
-  bin_tgz_path=kubefwd \
-  $YBIN/y-bin-dependency-download || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml kubefwd)
 
 [ $(id -u) -eq 0 ] || kubectl $ctx cluster-info >/dev/null
 [ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx "$@"

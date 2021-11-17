@@ -77,3 +77,15 @@ k3d:
     darwin_amd64: 30f4f7d50b83a22743576348bbe261d78c395a56cc2772325a55c2e494287f5e
     darwin_arm64: 34e5a3ab72dc09c1d1683bf8fcac77e1652391ee86673af42d8e3a4dc185bd29
     linux_amd64: e04cfb3cc04de17c9d4272d0b5506ee5ca1070e36e07519fbe6c00153b993195
+
+kubefwd:
+  version: 1.22.0
+  templates:
+    download: https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_${Os}_${xarch}.tar.gz
+  sha256:
+    darwin_amd64: 69e30718737cffd61979d2baf4bea01555299826e49016bc0b82987d7a8708c4
+    darwin_arm64: 48ff8e49842a4fb3ee042b4a1f8c8c9fca66f2d68322d702e8c671f0dd20f4ab
+    linux_amd64: 7bcd135021a2fbf6d5da7b2aff0a27e8eb2edeb39814daf3ab1cc9dff68388f7
+  archive:
+    tool: tar
+    path: kubefwd

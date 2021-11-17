@@ -64,6 +64,10 @@ osx() {
   esac
 }
 
+Os() {
+  uname -s
+}
+
 xarch() {
   uname -m
 }
@@ -102,6 +106,7 @@ run() {
   arch=$(arch)
   xarch=$(xarch)
   osx=$(osx)
+  Os=$(Os)
   eval $(to_eval $yaml $name)
   install "$name" "$version" "$url" "$sha256" "$archivetool" "$archivepath"
 }
