@@ -89,3 +89,16 @@ kubefwd:
   archive:
     tool: tar
     path: kubefwd
+
+buildctl:
+  version: 0.9.3
+  templates:
+    download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
+  sha256:
+    darwin_amd64: 0f5e72298682529a35c16256b192b56faeac2b4cc5786998fa55eebe9335e677
+    darwin_arm64: 29bd7b9972c8aae240192de8d16ffea38876e4e67000d00a11706e036cb295d9
+    linux_amd64: f60461abdf2aee8444a4cb0607e4766da3bd503859320819ea8c43fe4a02576c
+  archive:
+    tool: tar
+    #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
+    path: bin/buildctl

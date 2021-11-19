@@ -28,6 +28,7 @@ logcli
 git-remote-https+iap
 golangci-lint
 vault
+jq
 yq
 esbuild
 oauth2l
