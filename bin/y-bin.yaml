@@ -115,3 +115,14 @@ crane:
   archive:
     tool: tar
     path: crane
+
+container-structure-test:
+  version: 1.11.0
+  templates:
+    # arm64 binary not yet available
+    download: https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-${os}-amd64
+    sha256: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/container-structure-test-${os}-amd64.sha256
+  sha256:
+    darwin_amd64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
+    darwin_arm64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
+    linux_amd64: 1524da5fd5a0fc88c4c9257a3de05a45f135df07e6a684380dd5f659b9ce189b

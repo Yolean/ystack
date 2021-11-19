@@ -1,15 +1,8 @@
 #!/bin/sh
 [ -z "$DEBUG" ] || set -x
 set -e
+YBIN="$(dirname $0)"
 
-version=1.10.0
-
-bin_name=container-structure-test \
-  bin_version=v${version} \
-  Darwin_url=https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-darwin-amd64 \
-  Darwin_sha256=b95f49e419200ec97de2b0225ead9b202ba9b30901eee01cb608c5c07c8ba9a4 \
-  Linux_url=https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-linux-amd64 \
-  Linux_sha256=72deeea26c990274725a325cf14acd20b8404251c4fcfc4d34b7527aac6c28bc \
-  y-bin-dependency-download || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml container-structure-test)
 
 y-container-structure-test-v${version}-bin "$@" || exit $?
