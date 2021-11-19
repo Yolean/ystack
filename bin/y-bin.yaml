@@ -102,3 +102,16 @@ buildctl:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
     path: bin/buildctl
+
+crane:
+  version: 0.7.0
+  templates:
+    download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
+    sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
+  sha256:
+    darwin_amd64: 833f828bf08e3dddcaf5276ec27f7c6d029b20128a86c221bbe0d5c2d34daaa2
+    darwin_arm64: 487edf306f9bcf0447238d66d1e4a079a52594967412b125c9778c8f6caaf14e
+    linux_amd64: 14092fd3c5d6566f8bd53875dc7cbdc187d9e93f28dab1c677d1ee5959cb703c
+  archive:
+    tool: tar
+    path: crane
