@@ -1,4 +1,4 @@
-FROM ubuntu:20.04@sha256:a0d9e826ab87bd665cfc640598a871b748b4b70a01a4f3d174d4fb02adad07a9 \
+FROM ubuntu:20.04@sha256:626ffe58f6e7566e00254b638eb7e0f3b11d4da9675088f4781a50ae288f3322 \
   as base
 
 RUN set -ex; \
@@ -23,7 +23,10 @@ FROM node:16.13.0-buster-slim@sha256:9ec1ff69c844f2de3a6a2180cd49ca75797d9f2a0fc
 
 FROM base as bin
 
-COPY bin/y-bin-dependency-download /usr/local/src/ystack/bin/
+COPY bin/y-bin.yaml \
+  bin/y-bin-download \
+  bin/y-bin-dependency-download \
+  /usr/local/src/ystack/bin/
 
 COPY bin/y-kubectl /usr/local/src/ystack/bin/
 RUN y-kubectl version --client=true
