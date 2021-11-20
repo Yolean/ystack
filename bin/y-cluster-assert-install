@@ -2,7 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -e
 
-OPERATOR_VERSION=62bfc820e410e06443b01f7f48812790cb67c9ce
+OPERATOR_VERSION=987d70d3f1332cdf5b7c62bbffacf680b01c29ef
 KUBERNETES_ASSERT_VERSION=d342b7ce26184c2915242ecfba80d16d9ad407c5
 
 ctx=$1
@@ -14,7 +14,7 @@ esac
 # If we're to make this script idempotent we must make sure that re-applying the operator's bundle isn't painfully slow
 kubectl $ctx create namespace monitoring
 
-kubectl $ctx -n default apply -f https://github.com/prometheus-operator/prometheus-operator/raw/$OPERATOR_VERSION/bundle.yaml
+kubectl $ctx -n default create -f https://github.com/prometheus-operator/prometheus-operator/raw/$OPERATOR_VERSION/bundle.yaml
 
 kubectl-waitretry $ctx -n default --for=condition=Ready pod -l app.kubernetes.io/name=prometheus-operator
 
