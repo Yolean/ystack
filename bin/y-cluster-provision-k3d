@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
+
+[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+
+[ -z "$YSTACK_HOST" ] && YSTACK_HOST=ystack.local
+[ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
+[ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
+[ -z "$VM_RESOURCES" ] && VM_RESOURCES="--servers-memory=8G"
+
+y-k3d cluster create ystack \
+  --no-lb \
+  --agents=0 \
+  $VM_RESOURCES
+
+# Could interfere with some k3d functionality. For example skaffold's k3d detection will probably not work.
+kubectl config rename-context k3d-ystack $CONTEXTNAME
+
+y-cluster-assert-install --context=$CONTEXTNAME
+
+# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile, and in y-cluster-provision-multipass
+for base in \
+    00-ystack-namespace \
+    10-minio \
+    20-builds-registry \
+    21-prod-registry \
+    30-y-assert-support \
+    40-buildkit; do \
+  basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying $basepath ..."
+  kubectl --context=$CONTEXTNAME apply -k $basepath
+done
