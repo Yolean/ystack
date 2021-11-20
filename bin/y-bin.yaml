@@ -126,3 +126,25 @@ container-structure-test:
     darwin_amd64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
     darwin_arm64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
     linux_amd64: 1524da5fd5a0fc88c4c9257a3de05a45f135df07e6a684380dd5f659b9ce189b
+
+kubie:
+  version: 0.15.1
+  template:
+    download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-darwin-amd64
+  sha256:
+    darwin_amd64: c27c82bc574719d2ca2cd51bee059dbb4aea85609870c24c5aa5439e33b60d9c
+    darwin_arm64: 158e1fe85ad3e2b7e33f0dafdb5e55671651f33c527123bcf53f7ade1af02c38
+    linux_amd64: 6018e07cf39b469bc8d2ca354c0fee04c79e5d5db515b4de24bba419ddb72f53
+
+fzf:
+  version: 0.28.0
+  template:
+    download: https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-darwin_${arch}.zip
+    sha256: https://github.com/junegunn/fzf/releases/download/${version}/fzf_${version}_checksums.txt
+  sha256:
+    darwin_amd64: 21f9feddfa773ce092dec02acb033cfd88a71b531c93e046d32f187ee6ccc31a
+    darwin_arm64: 78c5b032801c0cbc04b1a667f01a57789fac8e3701a697001efff056e45d981b
+    linux_amd64: For_fzf_on_linux_use_a_package_manager
+  archive:
+    tool: zip
+    path: fzf

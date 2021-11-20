@@ -12,6 +12,7 @@ gotemplate
 helm
 kubectl
 kubie
+fzf
 kustomize
 minikube
 mkcert
