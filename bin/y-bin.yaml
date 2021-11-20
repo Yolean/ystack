@@ -55,6 +55,16 @@ kustomize:
     tool: tar
     path: kustomize
 
+skaffold:
+  version: 1.35.0
+  template:
+    download: https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-${os}-${arch}
+    sha256: https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-${os}-${arch}.sha256
+  sha256:
+    darwin_amd64: 47b7d68f258f2cdcb8453b7d2ccaf46c76fc525a0f4bb48f24d9cf5f573a8b71
+    darwin_arm64: d145ff15e0e3428b3ddc1c01e3ec4928a78fb6ac07fec8eb6a6f7a13dc43a05e
+    linux_amd64: ab8c4b62cc20f61f97f6df83631b655433067c1a166cb39c1246cd20b56e3a35
+
 helm:
   version: 3.7.1
   sha256:
