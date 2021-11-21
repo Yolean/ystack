@@ -8,6 +8,19 @@ Y-stack is a micro-PaaS(?) with the following goals:
  - Make Kubernetes patterns like sidecars and operators an intergral part of design
  - Support event-driven microservices patterns
 
+## Installation
+
+Use `git clone https://github.com/Yolean/ystack`
+
+Add the following to env:
+
+```
+export YSTACK_HOME=/Users/me/Yolean/ystack
+export PATH=$PATH:$YSTACK_HOME/bin
+```
+
+Note that ystach should be after system path entries because it contains fallback impls for MacOS such as `basepath` and `sha256sum`.
+
 ## Why
 
 Y-stack is higly opinionated:
