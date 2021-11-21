@@ -12,6 +12,7 @@ set -eo pipefail
 [ -z "$VM_RESOURCES" ] && VM_RESOURCES="--servers-memory=8G"
 
 y-k3d cluster create ystack \
+  --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
   --no-lb \
   --agents=0 \
   $VM_RESOURCES
@@ -33,3 +34,8 @@ for base in \
   echo "# Applying $basepath ..."
   kubectl --context=$CONTEXTNAME apply -k $basepath
 done
+
+BUILDS_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
+docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"

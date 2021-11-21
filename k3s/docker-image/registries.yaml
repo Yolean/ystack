@@ -1,3 +1,4 @@
+# TODO delete the :80 hosts to make sure we don't use such image URLs after https://github.com/Yolean/ystack/commit/c976177a61a84d47244e9951ff04d58d6a04df0c
 mirrors:
   "builds-registry.ystack.svc.cluster.local":
     endpoint:

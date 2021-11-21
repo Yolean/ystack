@@ -21,12 +21,12 @@ y-shellcheck --severity=$SHELLCHECK_LEVEL $(git ls-tree -r HEAD --name-only -- .
   /^#!.*sh/{print FILENAME}
   {nextfile}')
 
-echo "Running bin specs ..."
-(cd bin && y-shellspec)
+# echo "Running bin specs ..."
+# (cd bin && y-shellspec)
 
 # What we think Docker Hub is running
 set +e
-BULID_EXIT_CODE_ON_NO_CLUSTER=1 GIT_COMMIT=$GIT_COMMIT docker-compose -f docker-compose.test.yml up --build --exit-code-from sut --scale node=1 sut
+BULID_EXIT_CODE_ON_NO_CLUSTER=1 GIT_COMMIT=$GIT_COMMIT docker-compose -f docker-compose.test.yml up --build --exit-code-from sut sut
 RESULT=$?
 docker-compose -f docker-compose.test.yml down --remove-orphans -v
 
