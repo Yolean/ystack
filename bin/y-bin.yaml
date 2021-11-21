@@ -88,6 +88,20 @@ k3d:
     darwin_arm64: 34e5a3ab72dc09c1d1683bf8fcac77e1652391ee86673af42d8e3a4dc185bd29
     linux_amd64: e04cfb3cc04de17c9d4272d0b5506ee5ca1070e36e07519fbe6c00153b993195
 
+lima:
+  version: 0.7.3
+  templates:
+    download: https://github.com/lima-vm/lima/releases/download/v${version}/lima-${version}-${Os}-${xarch}.tar.gz
+    sha256: https://github.com/lima-vm/lima/releases/download/v${version}/SHA256SUMS
+  sha256:
+    darwin_amd64: e27575d2f5e9f870b5d6344c59ea5f8e845e7afa8dcc34d5c289b920c8953bde
+    darwin_arm64: bb697571182cf65af6ccf22117dda2146fecc786e16c8a74965152cb1c6f74fa
+    linux_amd64: 74c842bce9d344a0821d68aa32ec97df90d0061b5e23a74a61ebe4cc88077676
+  archive:
+    tool: tar
+    path: ./
+  chmod: -
+
 kubefwd:
   version: 1.22.0
   templates:
