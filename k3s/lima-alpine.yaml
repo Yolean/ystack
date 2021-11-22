@@ -1,0 +1,64 @@
+# https://github.com/lima-vm/lima/blob/master/examples/alpine.yaml
+
+images:
+- location: https://github.com/solsson/alpine-lima/releases/download/v0.2.1-ci/alpine-lima-ci-3.13.5-aarch64.iso
+  arch: aarch64
+  digest: sha512:172205217f9efc8d7dc6da24245eab4ff42f3e8e8ae60ab1f4ced74586cb8b1d96f98b69dd4a3a102864872cfb1b3772be068f24a6b44e3e0cea2fbb8941482a
+- location: https://github.com/solsson/alpine-lima/releases/download/v0.2.1-ci/alpine-lima-ci-3.13.5-x86_64.iso
+  arch: x86_64
+  digest: sha512:db150d9ea44ab6629d98269587fcc4c5a7ca6bdf84436e3ace91c9ac5a2a912f819a9a9cd244355ba55dc5d4c9384d47cd768e3a7871d0ce537595cbf1e0c696
+
+cpus: 4
+memory: "8GiB"
+disk: "20GiB"
+
+env:
+  INSTALL_K3S_VERSION: v1.22.4-rc1+k3s1
+  INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
+  K3S_NODE_NAME: ystack-master
+
+mounts:
+- location: "~"
+  writable: false
+- location: "/tmp/lima"
+  writable: true
+
+portForwards:
+- guestPort: 80
+  hostIP: "127.0.0.1"
+- guestPort: 443
+  hostIP: "127.0.0.1"
+- guestPort: 6443
+  hostIP: "127.0.0.1"
+# - guestPort: 10250
+#   hostIP: "127.0.0.1"
+# - guestPort: 17143
+#   hostIP: "127.0.0.1"
+# - guestPortRange: [31710, 31719]
+#   hostIP: "127.0.0.1"
+
+# k3s comes with containerd, disable here
+containerd:
+  system: false
+  user: false
+
+# https://github.com/lima-vm/lima/issues/255
+
+# provision:
+# - mode: system
+#   script: |
+#     #!/bin/sh
+#     sudo apk add curl
+#     curl -sfL https://get.k3s.io | sh -
+# probes:
+# - script: |
+#     #!/bin/bash
+#     set -eux -o pipefail
+#     if ! timeout 30s bash -c "until test -f /etc/rancher/k3s/k3s.yaml; do sleep 3; done"; then
+#             echo >&2 "k3s is not running yet"
+#             exit 1
+#     fi
+#   hint: |
+#     The k3s kubeconfig file has not yet been created.
+#     Run "limactl shell k3s sudo journalctl -u k3s" to check the log.
+#     If that is still empty, check the bottom of the log at "/var/log/cloud-init-output.log".
