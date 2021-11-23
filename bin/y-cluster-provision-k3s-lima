@@ -28,6 +28,11 @@ limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sle
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
+until KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME  -n kube-system get pods 2>/dev/null; do
+  echo "Waiting for the cluster respond ..."
+  sleep 1
+done
+
 # TODO fix node-exporter pod failing on: Error: failed to generate container "..." spec: path "/" is mounted on "/" but it is not a shared or slave mount
 # KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
 

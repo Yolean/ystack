@@ -1,12 +1,12 @@
 # https://github.com/lima-vm/lima/blob/master/examples/alpine.yaml
 
 images:
-- location: https://github.com/solsson/alpine-lima/releases/download/test-v20211123t0823/alpine-lima-y-3.13.5-aarch64.iso
+- location: https://github.com/solsson/alpine-lima/releases/download/test-v20211123t1606/alpine-lima-y-3.14.3-aarch64.iso
   arch: aarch64
-  digest: sha512:12fda7f3fef4d36152cfabc5ed5eac14f66f66f3f6b169be0200304e474106c3786806e95a73eb39ff2206bccd5115c73462fec0ad56f876959113b548623010
-- location: https://github.com/solsson/alpine-lima/releases/download/test-v20211123t0823/alpine-lima-y-3.13.5-x86_64.iso
+  digest: sha512:327445bac5c066b301aa4371e6b26ac98f08c4fab6ae51557cd8c543196e685c79c0c40d6467ff464cd6b1617e709cf211fa696fcc744de03aebbb1e41e44b69
+- location: https://github.com/solsson/alpine-lima/releases/download/test-v20211123t1606/alpine-lima-y-3.14.3-x86_64.iso
   arch: x86_64
-  digest: sha512:b0e6923ca99c06165381f5626179dd4baa8ea8e95615e8a0a553e311b1b1a3ec6a88832c5f5759d2698231ef02f8b5c78f2a7f6e60b3f4d5425d282f7926b8ba
+  digest: sha512:a8bf7009b9b58d89608eac8f885c0f53de08a9eb1f93c06a24da8db7470b1d34a0a3a18cb0ab208e15f7c70c194eb30d0fc95e8af997c115836a05a3a472bd30
 
 cpus: 4
 memory: "8GiB"
