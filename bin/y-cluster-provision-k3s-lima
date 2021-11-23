@@ -12,7 +12,7 @@ K3S_INSTALLER_REVISION=d93c82f9585ed9e0ff7ebe95b1506f4587fffc1c
 mkdir -p /tmp/lima/ystack/rancher/k3s
 curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh > /tmp/lima/ystack/install.sh
 
-limactl start --tty=false $YSTACK_HOME/k3s/lima-alpine.yaml
+limactl start --tty=false $YSTACK_HOME/k3s/ystack.yaml
 cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
 
 #limactl shell ystack sudo apk add curl
@@ -23,7 +23,8 @@ limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sle
 
 # https://github.com/containerd/nerdctl/blob/master/docs/multi-platform.md
 # https://github.com/containerd/nerdctl/pull/448
-limactl shell ystack sudo nerdctl run --privileged --rm tonistiigi/binfmt --install all
+# But we do LIMA_INSTALL_BINFMT_MISC=true in https://github.com/solsson/alpine-lima/blob/ystack-test/edition/ystack
+#limactl shell ystack sudo nerdctl run --privileged --rm tonistiigi/binfmt --install all
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
