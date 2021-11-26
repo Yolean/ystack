@@ -9,6 +9,8 @@ set -eo pipefail
 # Not reusing y-k3s-install, avoid breaking multipass provision
 K3S_INSTALLER_REVISION=d93c82f9585ed9e0ff7ebe95b1506f4587fffc1c
 
+QEMU_VERSION=$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 | rev)
+
 mkdir -p /tmp/lima/ystack/rancher/k3s
 curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh > /tmp/lima/ystack/install.sh
 
@@ -27,11 +29,24 @@ limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sle
 #limactl shell ystack sudo nerdctl run --privileged --rm tonistiigi/binfmt --install all
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
+k() {
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME $@
+}
 
-until KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME  -n kube-system get pods 2>/dev/null; do
-  echo "Waiting for the cluster respond ..."
+until k -n kube-system get pods 2>/dev/null; do
+  echo "==> Waiting for the cluster respond ..."
   sleep 1
 done
+
+until k -n kube-system get serviceaccount default 2>/dev/null; do
+  echo "==> Waiting for the default service account to exist ..."
+  sleep 1
+done
+
+echo "==> Testing amd64 compatibility ..."
+k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
+while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
+k delete --wait=false pod amd64test
 
 # TODO fix node-exporter pod failing on: Error: failed to generate container "..." spec: path "/" is mounted on "/" but it is not a shared or slave mount
 # KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
@@ -47,9 +62,9 @@ for base in \
     40-buildkit; do \
   basepath="$YSTACK_HOME/k3s/$base/"
   echo "# Applying $basepath ..."
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME apply -k $basepath
+  k apply -k $basepath
 done
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/node-update-hosts/
+k -n ystack apply -k $YSTACK_HOME/registry/node-update-hosts/
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
