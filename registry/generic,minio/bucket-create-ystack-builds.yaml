@@ -30,6 +30,7 @@ spec:
         - sh
         - -ce
         - |
+          sleep 10
           mc config host add ystack $MINIO_HOST $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
           mc stat ystack/$BUCKET_NAME || {
             mc mb --region="$MINIO_REGION" ystack/$BUCKET_NAME
