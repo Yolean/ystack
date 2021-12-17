@@ -7,10 +7,10 @@ spec:
     spec:
       containers:
       - name: docker
-        image: solsson/build-contract:tekton0.10@sha256:0702df18355ba64238ab78cb38d171e8462e2e642da41b028e2009efb5a9476e
+        image: yolean/build-contract:248e39b759d40bfc71bab5036623364a8f57e90d
         env:
         - name: DOCKER_HOST
-          value: tcp://dockerd.ystack.svc.cluster.local:2376
+          value: tcp://dockerd:2376
         command:
         - /bin/sh
         - -cex
@@ -43,7 +43,7 @@ spec:
               - http://server/
           EOF
           cat << EOF > server.Dockerfile
-          FROM nginx:1.17.3-alpine
+          FROM nginx:1.21.4-alpine
           RUN echo "My server built at $(date)" > /usr/share/nginx/html/index.html
           EOF
           cat << EOF > client.Dockerfile
