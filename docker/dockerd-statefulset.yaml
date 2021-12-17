@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: dockerd
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/dockerd: unconfined
+        container.seccomp.security.alpha.kubernetes.io/dockerd: unconfined
     spec:
       terminationGracePeriodSeconds: 25
       securityContext:
@@ -22,6 +25,10 @@ spec:
       - name: setup
         image: docker:dind-rootless
         volumeMounts:
+        - name: etc-docker-config
+          mountPath: /home/rootless/docker-config
+        - name: etc-docker
+          mountPath: /home/rootless/.config/docker
         - name: build-cache
           mountPath: /var/lib/docker/overlay2
         - name: var-lib-docker
@@ -34,11 +41,15 @@ spec:
           # but we want a single volume mount that preserves build cache only
           [ -d /var/lib/docker/overlay2/var-lib-docker-image ] || mkdir /var/lib/docker/overlay2/var-lib-docker-image
           ln -s /var/lib/docker/overlay2/var-lib-docker-image /var/lib/docker/image
+          cp /home/rootless/docker-config/* /home/rootless/.config/docker/
       containers:
       - name: dockerd
         image: docker:dind-rootless
         securityContext:
           privileged: true
+        env:
+        - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
+          value: "-p 0.0.0.0:2376:2376/tcp"
         args:
         - dockerd
         ports:
@@ -46,16 +57,17 @@ spec:
           name: docker-tcp
         volumeMounts:
         - name: etc-docker
-          mountPath: /home/rootless/.config/docker/daemon.json
-          subPath: daemon.json
+          mountPath: /home/rootless/.config/docker
         - name: build-cache
           mountPath: /var/lib/docker/overlay2
         - name: var-lib-docker
           mountPath: /var/lib/docker
       volumes:
-      - name: etc-docker
+      - name: etc-docker-config
         configMap:
           name: etc-docker
+      - name: etc-docker
+        emptyDir: {}
       - name: var-lib-docker
         emptyDir: {}
   volumeClaimTemplates:
