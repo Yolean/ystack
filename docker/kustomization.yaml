@@ -4,7 +4,7 @@ kind: Kustomization
 images:
 - name: docker:dind
   newName: docker
-  newTag: 20.10.11-dind@sha256:1ff5e500e2d42048923c1243ad26691c83c65406a33086f56e02e4fb2d43ecd8
+  newTag: 20.10.12-dind
 
 resources:
 - dockerd-service.yaml
