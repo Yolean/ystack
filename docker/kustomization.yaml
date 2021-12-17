@@ -5,6 +5,9 @@ images:
 - name: docker:dind
   newName: docker
   newTag: 20.10.12-dind
+- name: docker:dind-rootless
+  newName: docker
+  newTag: 20.10.12-dind-rootless
 
 resources:
 - dockerd-service.yaml

@@ -14,9 +14,13 @@ spec:
         app: dockerd
     spec:
       terminationGracePeriodSeconds: 25
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       initContainers:
       - name: setup
-        image: busybox@sha256:15e927f78df2cc772b70713543d6b651e3cd8370abf86b2ea4644a9fba21107f
+        image: docker:dind-rootless
         volumeMounts:
         - name: build-cache
           mountPath: /var/lib/docker/overlay2
@@ -32,7 +36,7 @@ spec:
           ln -s /var/lib/docker/overlay2/var-lib-docker-image /var/lib/docker/image
       containers:
       - name: dockerd
-        image: docker:dind
+        image: docker:dind-rootless
         securityContext:
           privileged: true
         args:
@@ -42,7 +46,7 @@ spec:
           name: docker-tcp
         volumeMounts:
         - name: etc-docker
-          mountPath: /etc/docker/daemon.json
+          mountPath: /home/rootless/.config/docker/daemon.json
           subPath: daemon.json
         - name: build-cache
           mountPath: /var/lib/docker/overlay2
