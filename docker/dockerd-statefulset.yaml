@@ -32,9 +32,11 @@ spec:
         - name: build-cache
           # only works for ubuntu-flavored kernel, see https://docs.docker.com/engine/security/rootless/#known-limitations
           # on for example k3d you get vfs
-          mountPath: /var/lib/docker/overlay2
+          #mountPath: /var/lib/docker/overlay2
+          mountPath: /home/rootless/.local/share/docker/overlay2
         - name: var-lib-docker
-          mountPath: /var/lib/docker
+          #mountPath: /var/lib/docker
+          mountPath: /home/rootless/.local/share/docker
         command:
         - /bin/sh
         - -cex
@@ -63,9 +65,11 @@ spec:
         - name: etc-docker
           mountPath: /home/rootless/.config/docker
         - name: build-cache
-          mountPath: /var/lib/docker/overlay2
+          #mountPath: /var/lib/docker/overlay2
+          mountPath: /home/rootless/.local/share/docker/overlay2
         - name: var-lib-docker
-          mountPath: /var/lib/docker
+          #mountPath: /var/lib/docker
+          mountPath: /home/rootless/.local/share/docker
       volumes:
       - name: etc-docker-config
         configMap:
