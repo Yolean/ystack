@@ -71,6 +71,10 @@ spec:
         - dockerd
         - -s
         - $(STORAGE_DRIVER)
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/kill","1"]
         ports:
         - containerPort: 2376
           name: docker-tcp
