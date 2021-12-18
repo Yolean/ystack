@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app: dockerd
+        storage-driver: overlay2
       annotations:
         container.apparmor.security.beta.kubernetes.io/dockerd: unconfined
         container.seccomp.security.alpha.kubernetes.io/dockerd: unconfined
@@ -38,15 +39,19 @@ spec:
         env:
         - name: SHARE
           value: /home/rootless/.local/share/docker
+        - name: STORAGE_DRIVER
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['storage-driver']
         command:
         - /bin/sh
         - -cex
         - |
           # https://github.com/docker/docker-ce/blob/ce5b02683e83ec9aa89927a9ce5d276787cc8823/components/engine/daemon/graphdriver/overlay2/overlay.go#L148
           # but we want a single volume mount that preserves build cache only
-          [ -d $SHARE/overlay2/var-lib-docker-image ] || mkdir $SHARE/overlay2/var-lib-docker-image
-          [ -e $SHARE/image ] || ln -s $SHARE/overlay2/var-lib-docker-image $SHARE/image
-          chown 1000 /home/rootless/.local/share/docker /home/rootless/.local/share/docker/overlay2 /home/rootless/.local/share/docker/image
+          [ -d $SHARE/$STORAGE_DRIVER/var-lib-docker-image ] || mkdir $SHARE/$STORAGE_DRIVER/var-lib-docker-image
+          [ -e $SHARE/image ] || ln -s $SHARE/$STORAGE_DRIVER/var-lib-docker-image $SHARE/image
+          chown 1000 /home/rootless/.local/share/docker /home/rootless/.local/share/docker/$STORAGE_DRIVER /home/rootless/.local/share/docker/image
           cp /home/rootless/docker-config/* /home/rootless/.config/docker/
       containers:
       - name: dockerd
@@ -58,10 +63,14 @@ spec:
         env:
         - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
           value: "-p 0.0.0.0:2376:2376/tcp"
+        - name: STORAGE_DRIVER
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['storage-driver']
         args:
         - dockerd
         - -s
-        - overlay2
+        - $(STORAGE_DRIVER)
         ports:
         - containerPort: 2376
           name: docker-tcp
