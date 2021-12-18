@@ -18,12 +18,12 @@ spec:
     spec:
       terminationGracePeriodSeconds: 25
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
       initContainers:
       - name: setup
-        image: docker:dind-rootless
+        image: busybox:1
+        securityContext:
+          runAsUser: 0
         volumeMounts:
         - name: etc-docker-config
           mountPath: /home/rootless/docker-config
@@ -45,13 +45,17 @@ spec:
           # but we want a single volume mount that preserves build cache only
           #SHARE=/var/lib/docker
           SHARE=/home/rootless/.local/share/docker
+          ls -l $SHARE
           [ -d $SHARE/overlay2/var-lib-docker-image ] || mkdir $SHARE/overlay2/var-lib-docker-image
-          ln -s $SHARE/overlay2/var-lib-docker-image $SHARE/image
+          [ -e $SHARE/image ] || ln -s $SHARE/overlay2/var-lib-docker-image $SHARE/image
+          chown 1000 /home/rootless/.local/share/docker /home/rootless/.local/share/docker/overlay2 /home/rootless/.local/share/docker/image
           cp /home/rootless/docker-config/* /home/rootless/.config/docker/
       containers:
       - name: dockerd
         image: docker:dind-rootless
         securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
           privileged: true
         env:
         - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
