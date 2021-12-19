@@ -100,6 +100,16 @@ kubefwd:
     tool: tar
     path: kubefwd
 
+kpt:
+  version: 1.0.0-beta.9
+  templates:
+    download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
+    sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
+  sha256:
+    darwin_amd64: f5a87f834ea2f05cd4d38a45c79c0ebc3a1e6dc2552d5f1b1586c2e49263e8c7
+    darwin_arm64: 498718084e9546d686463b6d4ecc7ce4d4afa39ac59627e5a56424b6d09a0925
+    linux_amd64: cff0ea7b87ee3d0f4b9b174eaddea7a3b977f81c1a5f7dfa6f5bb00325664f58
+
 buildctl:
   version: 0.9.3
   templates:
