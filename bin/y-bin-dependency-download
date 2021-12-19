@@ -43,7 +43,7 @@ bin_link=$YBIN/$bin_name
   [ -z "$bin_cache" ] || [ ! -f "$bin_cache" ] || url="file://$bin_cache"
   echo "Missing $bin_name binary. Downloading a known version from $url ..." 1>&2
   curl -o $bin_file -L -f $url
-  if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then rm $bin_file && exit 1; fi
+  if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then $SHA256SUM $bin_file && rm $bin_file && exit 1; fi
   if [ ! -z "$bin_tar_path" ]; then
     tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_path
     mv $(basename " $bin_tar_path") $bin_file
