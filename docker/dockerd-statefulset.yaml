@@ -74,7 +74,12 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/kill","1"]
+              command:
+              - /bin/sh
+              - -c
+              - |
+                kill 1
+                sleep 10
         ports:
         - containerPort: 2376
           name: docker-tcp
