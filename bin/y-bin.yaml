@@ -150,7 +150,7 @@ container-structure-test:
 kubie:
   version: 0.15.1
   template:
-    download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-darwin-amd64
+    download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-${os}-${arch}
   sha256:
     darwin_amd64: c27c82bc574719d2ca2cd51bee059dbb4aea85609870c24c5aa5439e33b60d9c
     darwin_arm64: 158e1fe85ad3e2b7e33f0dafdb5e55671651f33c527123bcf53f7ade1af02c38
@@ -159,7 +159,7 @@ kubie:
 fzf:
   version: 0.28.0
   template:
-    download: https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-darwin_${arch}.zip
+    download: https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-${os}_${arch}.zip
     sha256: https://github.com/junegunn/fzf/releases/download/${version}/fzf_${version}_checksums.txt
   sha256:
     darwin_amd64: 21f9feddfa773ce092dec02acb033cfd88a71b531c93e046d32f187ee6ccc31a
@@ -168,3 +168,16 @@ fzf:
   archive:
     tool: zip
     path: fzf
+
+oauth2l:
+  version: 1.2.2
+  template:
+    download: https://github.com/solsson/oauth2l/releases/download/v${version}/${os}_${arch}.tgz
+    sha256: https://github.com/solsson/oauth2l/releases/download/v${version}/sha256sum.txt
+  sha256:
+    darwin_amd64: fdd77f8fbcb27cd19d808675db80963279b7bbb9d80267405f5909250a5ea246
+    darwin_arm64: 1e134219665af5229b43cd294f95f79d1601048fbde46d666fd23e4e876f82d9
+    linux_amd64: 0803872f2afb447fee4767fca6af9aa1eb96506895d4d7713d2fbe780202016c
+  archive:
+    tool: tar
+    path: ${os}_${arch}/oauth2l
