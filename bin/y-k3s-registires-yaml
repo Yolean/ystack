@@ -23,3 +23,19 @@ EOF
       $YSTACK_PROD_REGISTRY_REWRITE
 EOF
 }
+
+case $YSTACK_PROD_REGISTRY in
+  *-docker.pkg.dev)
+    cat <<EOF
+configs:
+  "prod-registry.ystack.svc.cluster.local":
+    auth:
+      username: oauth2accesstoken
+      password: "$(gcloud auth print-access-token)"
+  "*-docker.pkg.dev":
+    auth:
+      username: oauth2accesstoken
+      password: "$(gcloud auth print-access-token)"
+EOF
+    ;;
+esac
