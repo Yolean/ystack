@@ -152,8 +152,8 @@ container-structure-test:
   version: 1.11.0
   templates:
     # arm64 binary not yet available
-    download: https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-${os}-amd64
-    sha256: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/container-structure-test-${os}-amd64.sha256
+    download: https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-${os}-${arch}
+    sha256: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/container-structure-test-${os}-${arch}.sha256
   sha256:
     darwin_amd64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
     darwin_arm64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f

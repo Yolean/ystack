@@ -69,13 +69,18 @@ Os() {
 }
 
 xarch() {
-  uname -m
+  x=$(uname -m)
+  case $x in
+    aarch64) echo 'arm64' ;;
+    *) echo $x ;;
+  esac
 }
 
 arch() {
-  case $(xarch) in
+  x=$(xarch)
+  case $x in
     x86_64) echo 'amd64' ;;
-    *) echo 'arm64' ;;
+    *) echo $x ;;
   esac
 }
 

@@ -1,4 +1,4 @@
-FROM ubuntu:20.04@sha256:b5a61709a9a44284d88fb12e5c48db0409cfad5b69d4ff8224077c57302df9cf \
+FROM --platform=$TARGETPLATFORM ubuntu:20.04@sha256:b5a61709a9a44284d88fb12e5c48db0409cfad5b69d4ff8224077c57302df9cf \
   as base
 
 RUN set -ex; \
@@ -18,7 +18,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM node:16.13.1-bullseye-slim@sha256:b0a27877c45f2d31d54a6197bcca1bbd1e307a557b1f655c8fbe80170567ca3e \
+FROM --platform=$TARGETPLATFORM node:16.13.1-bullseye-slim@sha256:b0a27877c45f2d31d54a6197bcca1bbd1e307a557b1f655c8fbe80170567ca3e \
   as node
 
 FROM base as bin
@@ -51,6 +51,8 @@ RUN y-yq --version
 
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold config set --global collect-metrics false
+
+RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml kpt
 
 FROM base
 

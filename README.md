@@ -110,6 +110,19 @@ docker volume rm ystack_admin 2> /dev/null || true
 ./test.sh
 ```
 
+## Multi-arch runner build (beta)
+
+```
+YSTACK_GIT_COMMIT=$(git rev-parse --verify HEAD 2>/dev/null || echo '')
+if [[ ! -z "$YSTACK_GIT_COMMIT" ]]; then
+  GIT_STATUS=$(git status --untracked-files=no --porcelain=v2)
+  if [[ ! -z "$GIT_STATUS" ]]; then
+    YSTACK_GIT_COMMIT="$YSTACK_GIT_COMMIT-dirty"
+  fi
+fi
+docker buildx build --progress=plain --platform=linux/amd64,linux/arm64 -t yolean/ystack-runner:$YSTACK_GIT_COMMIT -f runner.Dockerfile .
+```
+
 ## Development
 
 Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docker-compose.test.yml](./docker-compose.test.yml) that is used for CI with [docker-compose.dev-overrides.yml](./docker-compose.dev-overrides.yml). The k3s [image](./k3s/docker-image/) is the stock k3s image with y-stack's local registry config.
