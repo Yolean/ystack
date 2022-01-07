@@ -29,13 +29,13 @@ jq:
     linux_amd64: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
 
 kubectl:
-  version: 1.21.7
+  version: 1.22.5
   template:
     download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
   sha256:
-    linux_amd64: a55f740b6124f0b9d4612a7917a6f19e7f6181f10923cde728bcd798d8b8c32b
-    darwin_amd64: dd0dc1d1f8c1879b53c5b2e356241f874cc13dc6accbe52ba135be4109c34ebc
-    darwin_arm64: afd2e493962b2c3b21aa66a2b64e703936efc1ccd702bf8181d1a9d5dae745cc
+    darwin_amd64: f9f26e0276b06a05f2f0eae0555a32ebcbc90058e4355fed64309e0203b93628
+    darwin_arm64: 352bcd36c523adb763591339e6aebd02fde8453a0f6a8f334a03e2fad48e4a1f
+    linux_amd64: 1db656ce1628ec290c21beab01891902b5638deab238b59fcf248a34030758f8
   archive:
     tool: tar
     path: kubernetes/client/bin/kubectl

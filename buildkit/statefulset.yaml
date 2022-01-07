@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: buildkitd
-        image: moby/buildkit
+        image: moby/buildkit:rootless
         args:
         - --addr
         - unix:///run/user/1000/buildkit/buildkitd.sock

@@ -4,9 +4,3 @@
 [registry."prod-registry.ystack.svc.cluster.local"]
   mirrors = ["prod-registry.ystack.svc.cluster.local"]
   http = true
-[registry."builds-registry.ystack.svc.cluster.local:80"]
-  mirrors = ["builds-registry.ystack.svc.cluster.local"]
-  http = true
-[registry."prod-registry.ystack.svc.cluster.local:80"]
-  mirrors = ["prod-registry.ystack.svc.cluster.local"]
-  http = true
