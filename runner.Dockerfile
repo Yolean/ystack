@@ -1,4 +1,4 @@
-FROM ubuntu:20.04@sha256:a0d9e826ab87bd665cfc640598a871b748b4b70a01a4f3d174d4fb02adad07a9 \
+FROM ubuntu:20.04@sha256:b5a61709a9a44284d88fb12e5c48db0409cfad5b69d4ff8224077c57302df9cf \
   as base
 
 RUN set -ex; \
@@ -18,7 +18,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM node:16.13.0-buster-slim@sha256:9ec1ff69c844f2de3a6a2180cd49ca75797d9f2a0fc52bb33c8a672fd0fe7e18 \
+FROM node:16.13.1-buster-slim@sha256:230c2b1d462d7dcb61cb7141b16b19aba1844a3679ee5d99e2d94a327cad85ea \
   as node
 
 FROM base as bin
