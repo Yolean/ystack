@@ -7,11 +7,12 @@
 
 # NOTE yq must be first in the file because this script depends on it
 yq:
-  version: 4.14.1
+  version: 4.16.2
   sha256:
-    darwin_amd64: fa5ebd853506a1d0c9b9b97f5ee13183f0262da141936dc266f820f6c99e5902
-    darwin_arm64: 9db77866ea2368a74b498e4f799178f14659f3671d8cf2bb687392baa898566e
-    linux_amd64: 28e9623452c5da978ec3630c64d838a94f7a6bdd219da0db6f6cb042b5e06d07
+    darwin_amd64: b3fdcc1c5e78ed57c17ea313cbef9517399a91cb0dc7526ecd70d5088f220104
+    darwin_arm64: 18cf1bb7c0afd8d4d2d2de277b0f71fc6234f481b147f5ce06464e2ab863a7c5
+    linux_amd64: 5c911c4da418ae64af5527b7ee36e77effb85de20c2ce732ed14c7f72743084d
+    linux_arm64: 719b9f573c4428921d5616c4482164606e1708d837fcb67ac601373e37abf70e
   templates:
     download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
@@ -27,6 +28,7 @@ jq:
     darwin_arm64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
     darwin_amd64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
     linux_amd64: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
+    linux_arm64: For_jq_arm64_linux_use_a_package_manager
 
 kubectl:
   version: 1.22.5
@@ -36,6 +38,7 @@ kubectl:
     darwin_amd64: f9f26e0276b06a05f2f0eae0555a32ebcbc90058e4355fed64309e0203b93628
     darwin_arm64: 352bcd36c523adb763591339e6aebd02fde8453a0f6a8f334a03e2fad48e4a1f
     linux_amd64: 1db656ce1628ec290c21beab01891902b5638deab238b59fcf248a34030758f8
+    linux_arm64: 7dbc0cbd924d8863c1f3d5f9fa92c7587c83e3f3a90de68bf9d8847ff080be6e
   archive:
     tool: tar
     path: kubernetes/client/bin/kubectl
@@ -51,26 +54,30 @@ kustomize:
     linux_amd64: 2d5927efec40ba32a121c49f6df9955b8b8a296ef1dec4515a46fc84df158798
     darwin_amd64: 1b0eba143cd684f98341d58100c17a2dfb9658375302fe38d725752ea92012ac
     darwin_arm64: 689d873b30dc052a51e737eaf20a416e1a72a6d8f85e5d9c4969515fa2ad578c
+    linux_arm64: 8e54066784ca38e451035dad5de985bfdbdcf55838603576ab58d880883550b5
   archive:
     tool: tar
     path: kustomize
 
 skaffold:
-  version: 1.35.0
+  version: 1.35.1
   template:
     download: https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-${os}-${arch}
     sha256: https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: 47b7d68f258f2cdcb8453b7d2ccaf46c76fc525a0f4bb48f24d9cf5f573a8b71
-    darwin_arm64: d145ff15e0e3428b3ddc1c01e3ec4928a78fb6ac07fec8eb6a6f7a13dc43a05e
-    linux_amd64: ab8c4b62cc20f61f97f6df83631b655433067c1a166cb39c1246cd20b56e3a35
+    # https://github.com/GoogleContainerTools/skaffold/issues/6991
+    darwin_amd64: 178084bf0405f4be2dfde3a97d59273206f08110dba30592951165260e7c4b84
+    darwin_arm64: ee26c4334bc787633aec6d4cbd8386d95a8cc6e34e2ef7cd37805ba98b28310d
+    linux_amd64: bae964dbd1b97263e1994f98b7a0ecbcc4ed0d1b556dc098421b26d1d8f5c746
+    linux_arm64: b71cf4dd824047ec1fb888e6d5e10e0eeedbaf9fca7a1b12c1a68e784eac45a9
 
 helm:
-  version: 3.7.1
+  version: 3.7.2
   sha256:
-    darwin_amd64: 3a9efe337c61a61b3e160da919ac7af8cded8945b75706e401f3655a89d53ef5
-    darwin_arm64: 733fa6731b396514071b4dbc66614bd3be8e1f079f86594ab449649441bf18f1
-    linux_amd64: 6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4
+    darwin_amd64: 5a0738afb1e194853aab00258453be8624e0a1d34fcc3c779989ac8dbcd59436
+    darwin_arm64: 260d4b8bffcebc6562ea344dfe88efe252cf9511dd6da3cccebf783773d42aec
+    linux_amd64: 4ae30e48966aba5f807a4e140dad6736ee1a392940101e4d79ffb4ee86200a9e
+    linux_arm64: b0214eabbb64791f563bd222d17150ce39bf4e2f5de49f49fdb456ce9ae8162f
   archive:
     tool: tar
     path: ${os}-${arch}/helm
@@ -87,6 +94,7 @@ k3d:
     darwin_amd64: 40ac312bc762611de80daff24cb66d79aaaf17bf90e5e8d61caf90e63b57542d
     darwin_arm64: d0149ecb9b3fb831d617a0a880d8235722a70b9131f45f1389235e586050f8f9
     linux_amd64: 7ddb900e6e50120b65d61568f6af007a82331bf83918608a6a7be8910792faef
+    linux_arm64: ccf1dafc1eddfef083375377a52ef0ca269a41c5bc4f0f4d7e11a7c56da08833
 
 kubefwd:
   version: 1.22.0
@@ -96,19 +104,21 @@ kubefwd:
     darwin_amd64: 69e30718737cffd61979d2baf4bea01555299826e49016bc0b82987d7a8708c4
     darwin_arm64: 48ff8e49842a4fb3ee042b4a1f8c8c9fca66f2d68322d702e8c671f0dd20f4ab
     linux_amd64: 7bcd135021a2fbf6d5da7b2aff0a27e8eb2edeb39814daf3ab1cc9dff68388f7
+    linux_arm64: 23e3e3cd719a3cb90c8a9639bbff2aff7fb141af958c6680cbe81443fde35b2a
   archive:
     tool: tar
     path: kubefwd
 
 kpt:
-  version: 1.0.0-beta.9
+  version: 1.0.0-beta.10
   templates:
     download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
     sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: f5a87f834ea2f05cd4d38a45c79c0ebc3a1e6dc2552d5f1b1586c2e49263e8c7
-    darwin_arm64: 498718084e9546d686463b6d4ecc7ce4d4afa39ac59627e5a56424b6d09a0925
-    linux_amd64: cff0ea7b87ee3d0f4b9b174eaddea7a3b977f81c1a5f7dfa6f5bb00325664f58
+    darwin_amd64: a2ab0a4db0341988712174ee0f41c046e6160269b8c9374c1488b736e5ed7eea
+    darwin_arm64: 401bf59a9ec78bfa906566282420a5c1ab8856d738c2606712ce018d266b1513
+    linux_amd64: 32bc3a8d736d21526212ae2b78f8036de5fdec49278b8de1cad824f9f7433fdd
+    linux_arm64: f069f6073ef0eef9d12378d17072507c24c657cd86765963bffed64cead4cdc2
 
 buildctl:
   version: 0.9.3
@@ -118,6 +128,7 @@ buildctl:
     darwin_amd64: 0f5e72298682529a35c16256b192b56faeac2b4cc5786998fa55eebe9335e677
     darwin_arm64: 29bd7b9972c8aae240192de8d16ffea38876e4e67000d00a11706e036cb295d9
     linux_amd64: f60461abdf2aee8444a4cb0607e4766da3bd503859320819ea8c43fe4a02576c
+    linux_arm64: 3ee57ac33f8ff6ab1d187e25a217f8f2358826b14d707fd8fe0df6f536613aaf
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
@@ -132,6 +143,7 @@ crane:
     darwin_amd64: afbfe58339ff7aea5733a1e4fa12bca023de7fab812769ca2945593fb8feda80
     darwin_arm64: 531ebadd28b6367b9cce8b29ee36bc13a357002cc10cbe5e1cf5bf4100b5abac
     linux_amd64: e3f2116d2bdda1c2f2247ee2f13259d41986560d0a06a16831e37096d8ecec0e
+    linux_arm64: 7fe926ab7029a4545210e996e6c6b4855d6fe4302d2ac34262d740d1b3f51bab
   archive:
     tool: tar
     path: crane
@@ -146,6 +158,7 @@ container-structure-test:
     darwin_amd64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
     darwin_arm64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
     linux_amd64: 1524da5fd5a0fc88c4c9257a3de05a45f135df07e6a684380dd5f659b9ce189b
+    linux_arm64: b376ff80134d2d609c591b98d65d653a514755b4861185fd93159af7062ec65d
 
 kubie:
   version: 0.16.0
@@ -155,6 +168,7 @@ kubie:
     darwin_amd64: 0528276eb3bdbff5cccaac2cd31f5be7a03173f374610a52d6f39b1f5d2cb17a
     darwin_arm64: 4e886d30d80441b3f4b97a6946901c8ea578b1c336c2c35bf88c26c8d63ce022
     linux_amd64: c089a98f54ebf4a4a015590cad41d884c1e17c0cf6cd9b305d34a0453a516f80
+    linux_arm64: f6b30620d0a0d04e0b8638c012484dcd93299bc5a096ebad94cfce767668e014
 
 fzf:
   version: 0.28.0
@@ -165,6 +179,7 @@ fzf:
     darwin_amd64: 21f9feddfa773ce092dec02acb033cfd88a71b531c93e046d32f187ee6ccc31a
     darwin_arm64: 78c5b032801c0cbc04b1a667f01a57789fac8e3701a697001efff056e45d981b
     linux_amd64: For_fzf_on_linux_use_a_package_manager
+    linux_arm64: For_fzf_on_linux_use_a_package_manager
   archive:
     tool: zip
     path: fzf
@@ -178,6 +193,7 @@ oauth2l:
     darwin_amd64: fdd77f8fbcb27cd19d808675db80963279b7bbb9d80267405f5909250a5ea246
     darwin_arm64: 1e134219665af5229b43cd294f95f79d1601048fbde46d666fd23e4e876f82d9
     linux_amd64: 0803872f2afb447fee4767fca6af9aa1eb96506895d4d7713d2fbe780202016c
+    linux_arm64: d1f3e456b314ed4a40dc432b84f9d2ea7d30eea0e04a9f975a8069e66c9ff699
   archive:
     tool: tar
     path: ${os}_${arch}/oauth2l
