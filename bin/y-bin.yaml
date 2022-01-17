@@ -210,3 +210,17 @@ rpk:
   archive:
     tool: zip
     path: rpk
+
+promtool:
+  version: 2.32.1
+  template:
+    download: https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.${os}-${arch}.tar.gz
+    sha256: https://github.com/prometheus/prometheus/releases/download/v${version}/sha256sums.txt
+  sha256:
+    darwin_amd64: 7fb849fa03cad447a28592d205adb9e5a0ad4d8026118344bff77146563cd7cb
+    darwin_arm64: eeeeffc93654204ac3752ec4d5a3a7b73e85d63c5160a5272fbd90593ebbe27c
+    linux_amd64: f08e96d73330a9ee7e6922a9f5b72ea188988a083bbfa9932359339fcf504a74
+    linux_arm64: 2d185a8ed46161babeaaac8ce00ef1efdeccf3ef4ed234cd181eac6cad1ae4b2
+  archive:
+    tool: tar
+    path: prometheus-${version}.${os}-${arch}/promtool

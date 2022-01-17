@@ -3,15 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=2.28.1
-
-bin_name=promtool \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.darwin-amd64.tar.gz \
-  Darwin_sha256=3941b102a06ebae9bcfa52d07b84825543f529c1e308f2bd66c6ad55cd4d25a4 \
-  Linux_url=https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.linux-amd64.tar.gz \
-  Linux_sha256=91dd91e13f30fe520e01175ca1027dd09a458d4421a584ba557ba88b38803f27 \
-  bin_tgz_path=prometheus-${version}.darwin-amd64/promtool \
-  y-bin-dependency-download 1>&2 || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml promtool)
 
 y-promtool-v${version}-bin "$@" || exit $?
