@@ -224,3 +224,17 @@ promtool:
   archive:
     tool: tar
     path: prometheus-${version}.${os}-${arch}/promtool
+
+git-remote-https+iap:
+  version: 0.2.0-dev1
+  template:
+    download: https://github.com/solsson/remote-iap/releases/download/v${version}/git-remote-https+iap-${os}-${arch}-v${version}.tar.gz
+    sha256: https://github.com/solsson/remote-iap/releases/download/v${version}/git-remote-https+iap-${os}-${arch}-v${version}.tar.gz.sha256
+  sha256:
+    darwin_amd64: 46cb6dfa6143fc63008eaee89a8c89c3339bf33d3d904bf096738d56e688aa94
+    darwin_arm64: 2fb851bd2b674be57b9efb98539ddafa1a793cb52111e05c8eae2325225bbe1b
+    linux_amd64: 1a0abe652f15db009ba3fefbde717150b54332df9f257fb6667865a85cf9d53e
+    linux_arm64: a0b273fafe0c652dc0f486e96b4bf980f245948ba0311610760d0020bc9568fb
+  archive:
+    tool: tar
+    path: git-remote-https+iap
