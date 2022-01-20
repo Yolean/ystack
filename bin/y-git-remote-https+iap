@@ -3,14 +3,14 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=0.2.0-dev1
+version=0.2.0-dev2
 
 bin_name=git-remote-https+iap \
   bin_version=v${version} \
   Darwin_url=https://github.com/solsson/git-remote-https-iap/releases/download/v${version}/git-remote-https+iap-darwin-amd64-v${version}.tar.gz \
-  Darwin_sha256=46cb6dfa6143fc63008eaee89a8c89c3339bf33d3d904bf096738d56e688aa94 \
+  Darwin_sha256=04ee4394d306d1180c02f0269b4cadccbc3eea531b82129b12abcf93a0b22d80 \
   Linux_url=https://github.com/solsson/git-remote-https-iap/releases/download/v${version}/git-remote-https+iap-linux-amd64-v${version}.tar.gz \
-  Linux_sha256=1a0abe652f15db009ba3fefbde717150b54332df9f257fb6667865a85cf9d53e \
+  Linux_sha256=04ee4394d306d1180c02f0269b4cadccbc3eea531b82129b12abcf93a0b22d80 \
   bin_tgz_path=git-remote-https+iap \
   $YBIN/y-bin-dependency-download || exit $?
 
