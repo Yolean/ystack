@@ -18,7 +18,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM --platform=$TARGETPLATFORM node:16.13.1-bullseye-slim@sha256:b0a27877c45f2d31d54a6197bcca1bbd1e307a557b1f655c8fbe80170567ca3e \
+FROM --platform=$TARGETPLATFORM node:16.13.2-bullseye-slim@sha256:73042b9839ee1340b3d1778a3b828599dccf0628c6c2104a188ab0679c13c773 \
   as node
 
 FROM base as bin
