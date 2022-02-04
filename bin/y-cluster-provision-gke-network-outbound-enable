@@ -8,7 +8,7 @@ NETWORK="$1"
 REGION="$2"
 [ -z "$REGION" ] && echo "Second argument must be a gcloud region name" && exit 1
 
-PROJECT="$(gcloud config get-value project)"
+[ -n "$PROJECT" ] || PROJECT="$(gcloud config get-value project)"
 
 echo "### What this script will try to do is ..."
 echo "Use the currently configured project: $PROJECT"
@@ -22,15 +22,15 @@ case $yn in
 esac
 
 # https://cloud.google.com/nat/docs/gke-example#step_6_create_a_nat_configuration_using
-gcloud compute routers create nat-router \
+gcloud --project=$PROJECT compute routers create nat-router \
     --network $NETWORK \
     --region $REGION
-gcloud compute routers nats create nat-config \
+gcloud --project=$PROJECT  compute routers nats create nat-config \
     --router-region $REGION \
     --router nat-router \
     --nat-all-subnet-ip-ranges \
     --auto-allocate-nat-external-ips
 
 echo "To clean up:"
-echo gcloud compute routers nats delete --router-region $REGION --router nat-router nat-config
-echo gcloud compute routers delete nat-router --region $REGION
+echo gcloud --project=$PROJECT compute routers nats delete --router-region $REGION --router nat-router nat-config
+echo gcloud --project=$PROJECT compute routers delete nat-router --region $REGION
