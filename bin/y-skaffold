@@ -10,9 +10,9 @@ version=1.34.0
 bin_name=skaffold \
   bin_version=v${version} \
   Darwin_url=https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-darwin-amd64 \
-  Darwin_sha256=d05067373ad3a4594de089675606c2fa974da916d6fa47c1a141c5819d7592ca \
+  Darwin_sha256=37977cbafdd98966a938bace1cdd47338caae8f9572f33dd0d53b2c7231c3092 \
   Linux_url=https://github.com/GoogleContainerTools/skaffold/releases/download/v${version}/skaffold-linux-amd64 \
-  Linux_sha256=8a10e0ba16016a058a35996659b72911e3693e64b5f376976fb69ae25662d47f \
+  Linux_sha256=14e5545d5d9b69e3eff1fbfacaf5a9f5e8f33ceca4392bceb81eb27c69966c1a \
   y-bin-dependency-download || exit $?
 
 # https://skaffold.dev/docs/concepts/#local-development
