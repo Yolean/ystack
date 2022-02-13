@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM ubuntu:20.04@sha256:b5a61709a9a44284d88fb12e5c48db0409cfad5b69d4ff8224077c57302df9cf \
+FROM --platform=$TARGETPLATFORM ubuntu:20.04@sha256:669e010b58baf5beb2836b253c1fd5768333f0d1dbcb834f7c07a4dc93f474be \
   as base
 
 RUN set -ex; \
@@ -18,7 +18,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM --platform=$TARGETPLATFORM node:16.13.2-bullseye-slim@sha256:73042b9839ee1340b3d1778a3b828599dccf0628c6c2104a188ab0679c13c773 \
+FROM --platform=$TARGETPLATFORM node:16.14.0-bullseye-slim@sha256:22841c8578ef743f8e517ae194bdd6688537364b4c929f61a140b37578365d6c \
   as node
 
 FROM base as bin
