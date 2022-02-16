@@ -120,7 +120,7 @@ if [[ ! -z "$YSTACK_GIT_COMMIT" ]]; then
     YSTACK_GIT_COMMIT="$YSTACK_GIT_COMMIT-dirty"
   fi
 fi
-docker buildx build --progress=plain --platform=linux/amd64,linux/arm64 -t yolean/ystack-runner:$YSTACK_GIT_COMMIT -f runner.Dockerfile .
+docker buildx build --progress=plain --platform=linux/amd64,linux/arm64/v8 -t yolean/ystack-runner:$YSTACK_GIT_COMMIT -f runner.Dockerfile .
 ```
 
 ## Development
