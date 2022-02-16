@@ -46,15 +46,15 @@ kubectl:
 kustomize:
   # TODO with tag from version in ./y-kubectl
   # https://github.com/kubernetes/kubernetes/blob/v1.23.0-alpha.4/staging/src/k8s.io/kubectl/go.mod#L44
-  version: 4.4.1
+  version: 4.5.2
   template:
     download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
     sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${verison}/checksums.txt
   sha256:
-    linux_amd64: 2d5927efec40ba32a121c49f6df9955b8b8a296ef1dec4515a46fc84df158798
-    darwin_amd64: 1b0eba143cd684f98341d58100c17a2dfb9658375302fe38d725752ea92012ac
-    darwin_arm64: 689d873b30dc052a51e737eaf20a416e1a72a6d8f85e5d9c4969515fa2ad578c
-    linux_arm64: 8e54066784ca38e451035dad5de985bfdbdcf55838603576ab58d880883550b5
+    linux_amd64: c4215332da8da16ddeb88e218d8dceb76c85b366a5c58d012bc5ece904bf2fd0
+    darwin_amd64: 4b7dac92c8f2dd383651276c78d9e6d28031f50f3711cd987347a08edf0c8335
+    darwin_arm64: 4ee7ef099b8f59d65cb393d9c1b8fa49a392529dbefcd469359cc51094dad517
+    linux_arm64: 7924d2c1c41976859558c7a1b8009c0d8cc63ebce242b8d4314d332236966481
   archive:
     tool: tar
     path: kustomize
@@ -86,15 +86,15 @@ helm:
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
 
 k3d:
-  version: 5.2.2
+  version: 5.3.0
   templates:
     download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-${os}-${arch}
     sha256: https://github.com/rancher/k3d/releases/download/v${version}/sha256sum.txt
   sha256:
-    darwin_amd64: 40ac312bc762611de80daff24cb66d79aaaf17bf90e5e8d61caf90e63b57542d
-    darwin_arm64: d0149ecb9b3fb831d617a0a880d8235722a70b9131f45f1389235e586050f8f9
-    linux_amd64: 7ddb900e6e50120b65d61568f6af007a82331bf83918608a6a7be8910792faef
-    linux_arm64: ccf1dafc1eddfef083375377a52ef0ca269a41c5bc4f0f4d7e11a7c56da08833
+    darwin_amd64: 6b5c8ed3eb2a3f44a655d1cf3e85cae19a2d973940ae820d3c42e389ba758298
+    darwin_arm64: eaf5c99e7c19e64885901fdabc063c8ec1a5be2201280d3b25319ad60ade67ef
+    linux_amd64: b609bf296acb0f0fa5c79f2ff4bdd5901b385833cf469ac503468989e64eb01c
+    linux_arm64: efdeb3ebba60155e21099324012338b076591ec3802a5628d16c66622194ac38
 
 kubefwd:
   version: 1.22.0
@@ -110,15 +110,15 @@ kubefwd:
     path: kubefwd
 
 kpt:
-  version: 1.0.0-beta.10
+  version: 1.0.0-beta.13
   templates:
     download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
     sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: a2ab0a4db0341988712174ee0f41c046e6160269b8c9374c1488b736e5ed7eea
-    darwin_arm64: 401bf59a9ec78bfa906566282420a5c1ab8856d738c2606712ce018d266b1513
-    linux_amd64: 32bc3a8d736d21526212ae2b78f8036de5fdec49278b8de1cad824f9f7433fdd
-    linux_arm64: f069f6073ef0eef9d12378d17072507c24c657cd86765963bffed64cead4cdc2
+    darwin_amd64: 5787c672d69803d3bbfeeb271bd7fce710ad88375b91ef4ba0729ff37933bb93
+    darwin_arm64: 63e8e0ede740d30161519fde51215e83e03cefa6f603777b098ed21da32666a1
+    linux_amd64: 12b8251ea70fc0fe221778eae84f22f05ad31955ebffa8661307d388a703acdf
+    linux_arm64: 09b6a8a854c8a2c2e507ec5fee08b0ebdcc361525e6914a1a4e74998caf07b71
 
 buildctl:
   version: 0.9.3
