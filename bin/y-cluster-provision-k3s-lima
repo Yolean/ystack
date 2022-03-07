@@ -7,7 +7,7 @@ set -eo pipefail
 [ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
 # Not reusing y-k3s-install, avoid breaking multipass provision
-K3S_INSTALLER_REVISION=d93c82f9585ed9e0ff7ebe95b1506f4587fffc1c
+K3S_INSTALLER_REVISION=43b1cb48200d8f6af85c16ed944d68fcc96b6506
 
 QEMU_VERSION=$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 | rev)
 
