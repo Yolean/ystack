@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ -n "$YSTACK_PROD_REGISTRY" ] || {
+  YSTACK_PROD_REGISTRY=http://prod-registry.ystack.svc.cluster.local
+}
+
+cat <<EOF
+mirrors:
+  "builds-registry.ystack.svc.cluster.local":
+    endpoint:
+    - http://builds-registry.ystack.svc.cluster.local
+  "prod-registry.ystack.svc.cluster.local":
+    endpoint:
+    - $YSTACK_PROD_REGISTRY
+EOF
+
+[ -z "$YSTACK_PROD_REGISTRY_REWRITE" ] || {
+  # https://github.com/rancher/rke2/issues/741#issuecomment-824252661
+  cat <<EOF
+    rewrite:
+      $YSTACK_PROD_REGISTRY_REWRITE
+EOF
+}
+
+case $YSTACK_PROD_REGISTRY in
+  *-docker.pkg.dev)
+    cat <<EOF
+configs:
+  "prod-registry.ystack.svc.cluster.local":
+    auth:
+      username: oauth2accesstoken
+      password: "$(gcloud auth print-access-token)"
+  "*-docker.pkg.dev":
+    auth:
+      username: oauth2accesstoken
+      password: "$(gcloud auth print-access-token)"
+EOF
+    ;;
+esac
