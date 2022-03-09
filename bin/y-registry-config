@@ -61,7 +61,7 @@ EOF
     }
     cat <<EOF
 configs:
-  "*-docker.pkg.dev":
+  "$YSTACK_PROD_REGISTRY":
     auth:
       username: "$YSTACK_PROD_REGISTRY_AUTH_USER"
       password: "$YSTACK_PROD_REGISTRY_AUTH_TOKEN"
