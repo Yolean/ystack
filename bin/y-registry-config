@@ -2,19 +2,28 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-[ -n "$YSTACK_PROD_REGISTRY" ] || {
-  YSTACK_PROD_REGISTRY=http://prod-registry.ystack.svc.cluster.local
-}
+[ -n "$YSTACK_PROD_REGISTRY" ] || YSTACK_PROD_REGISTRY=prod-registry.ystack.svc.cluster.local
 
 [ "$1" = "help" ] && echo '
 Examples:
 # default ystack k3s config, typically requiring node tweaks using daemonsets found at registry/node-update-*
-y-k3s-registires-yaml
+y-registry-config k3s-yaml
 # Artifact Registry where you rewrite image URLs before applying
-YSTACK_PROD_REGISTRY=https://europe-west3-docker.pkg.dev y-k3s-registires-yaml
+YSTACK_PROD_REGISTRY=europe-west3-docker.pkg.dev y-registry-config k3s-yaml
 # Artifact Registry experimental transparent rewrite, note how URLs depends on GCP region, project and registry names
-YSTACK_PROD_REGISTRY=https://europe-west3-docker.pkg.dev YSTACK_PROD_REGISTRY_REWRITE='"^myorg/(.*)": "my-gcp-proj/my-artifact-registry/myorg/$1"' y-k3s-registires-yaml
+YSTACK_PROD_REGISTRY=europe-west3-docker.pkg.dev YSTACK_PROD_REGISTRY_REWRITE='"^myorg/(.*)": "my-gcp-proj/my-artifact-registry/myorg/$1"' y-registry-config k3s-yaml
+# Overrides default protocol per registry glob
+YSTACK_PROD_REGISTRY_INSECURE=false y-registry-config k3s-yaml
+# Checks image access using crane (without rewrite)
+YSTACK_PROD_REGISTRY=europe-west3-docker.pkg.dev
+# Verifies auth and prints config
+YSTACK_PROD_REGISTRY=europe-west3-docker.pkg.dev YSTACK_PROD_REGISTRY_TEST_IMAGE=europe-west3-docker.pkg.dev/my-gcp-proj/my-artifact-registry/myimage y-registry-config k3s-yaml
 ' && exit 0
+
+[ "$1" != "k3s-yaml" ] && echo "The only supported subcommand is k3s-yaml" && exit 1
+
+YSTACK_PROD_REGISTRY_PROTOCOL="https"
+[ "$YSTACK_PROD_REGISTRY" != prod-registry.ystack.svc.cluster.local ] || [ "$YSTACK_PROD_REGISTRY_INSECURE" = "false" ] || YSTACK_PROD_REGISTRY_PROTOCOL="http"
 
 cat <<EOF
 mirrors:
@@ -23,7 +32,7 @@ mirrors:
     - http://builds-registry.ystack.svc.cluster.local
   "prod-registry.ystack.svc.cluster.local":
     endpoint:
-    - $YSTACK_PROD_REGISTRY
+    - $YSTACK_PROD_REGISTRY_PROTOCOL://$YSTACK_PROD_REGISTRY
 EOF
 
 [ -z "$YSTACK_PROD_REGISTRY_REWRITE" ] || {
@@ -36,19 +45,15 @@ EOF
 
 case $YSTACK_PROD_REGISTRY in
   prod-registry.ystack.svc.cluster.local)
-    cat <<EOF
-  "prod-registry.ystack.svc.cluster.local":
-    endpoint:
-    - $YSTACK_PROD_REGISTRY
-EOF
-    [ -z "$YSTACK_PROD_REGISTRY_REWRITE" ] || {
-    cat <<EOF
-    rewrite:
-      $YSTACK_PROD_REGISTRY_REWRITE
-EOF
-    }
     ;;
   *-docker.pkg.dev)
+    [ -n "$YSTACK_PROD_REGISTRY_AUTH_USER" ]  || YSTACK_PROD_REGISTRY_AUTH_USER="oauth2accesstoken"
+    [ -n "$YSTACK_PROD_REGISTRY_AUTH_TOKEN" ] || YSTACK_PROD_REGISTRY_AUTH_TOKEN="$(gcloud auth print-access-token)"
+    [ -z "$YSTACK_PROD_REGISTRY_TEST_IMAGE" ] || {
+      [ -z "$DEBUG" ] || >&2 echo "==> Testing access to $YSTACK_PROD_REGISTRY_TEST_IMAGE"
+      y-crane auth login $YSTACK_PROD_REGISTRY --username "$YSTACK_PROD_REGISTRY_AUTH_USER" --password "$YSTACK_PROD_REGISTRY_AUTH_TOKEN"
+      y-crane digest "$YSTACK_PROD_REGISTRY_TEST_IMAGE" >/dev/null
+    }
     [ -n "$YSTACK_PROD_REGISTRY_REWRITE" ] || {
     cat <<EOF
     # Note: Artifact Registry pull as mirror will probably fail without a rewrite directive
@@ -58,8 +63,8 @@ EOF
 configs:
   "*-docker.pkg.dev":
     auth:
-      username: oauth2accesstoken
-      password: "$(gcloud auth print-access-token)"
+      username: "$YSTACK_PROD_REGISTRY_AUTH_USER"
+      password: "$YSTACK_PROD_REGISTRY_AUTH_TOKEN"
 EOF
     ;;
 esac
