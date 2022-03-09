@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[ -z "$DEBUG" ] || set -x
+[ -z "$DEBUGDEBUG" ] || set -x
 set -e
 #set -eo pipefail
 
