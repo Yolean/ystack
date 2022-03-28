@@ -19,9 +19,15 @@ multipass launch -n "$VM_NAME" $VM_RESOURCES
 # https://medium.com/@mattiaperi/kubernetes-cluster-with-k3s-and-multipass-7532361affa3
 K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $2}')"
 
-echo "# VM_NAME=\"$VM_NAME\" found. The rest of this script runs inside the VM."
+YSTACK_PROD_REGISTRY=$YSTACK_PROD_REGISTRY YSTACK_PROD_REGISTRY_REWRITE=$YSTACK_PROD_REGISTRY_REWRITE y-registry-config k3s-yaml \
+  | multipass transfer - "$VM_NAME:/tmp/registries.yaml"
 
-multipass exec "$VM_NAME" -- sudo bash -cex "$(cat $YSTACK_HOME/bin/y-ubuntu-swapoff)";
+multipass exec "$VM_NAME" -- sudo bash -cex "
+  $(cat $YSTACK_HOME/bin/y-ubuntu-swapoff)
+  mkdir -p /etc/rancher/k3s
+  mv /tmp/registries.yaml /etc/rancher/k3s/
+";
+
 multipass exec "$VM_NAME" -- sudo INSTALL_K3S_EXEC="$INSTALL_K3S_EXEC" bash -cex "$(cat $YSTACK_HOME/bin/y-k3s-install)";
 
 multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
