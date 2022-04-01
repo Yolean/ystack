@@ -7,3 +7,8 @@ resources:
 - git-service.yaml
 - gitea-statefulset-service.yaml
 - gitea-statefulset.yaml
+
+images:
+- name: gitea/gitea
+  newName: docker.io/gitea/gitea
+  newTag: 1.16.5@sha256:862ac2762dd67f8953678a4c3476ec373ac9f581d7dea8b78a30c51a305e5e80
