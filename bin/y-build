@@ -69,6 +69,9 @@ REGISTRY_CACHE_DEFAULT=$(echo $IMAGE | sed "s|[^/]*|$BUILDS_REGISTRY/ystack-buil
 [ "$IMPORT_CACHE" = "false" ] && IMPORT_CACHE=""
 [ "$EXPORT_CACHE" = "false" ] && EXPORT_CACHE=""
 
+OPT_PLATFORM=""
+[ -z "$PLATFORMS" ] || OPT_PLATFORM="--opt platform=$PLATFORMS"
+
 echo "Build command:"
 set -x
 y-buildctl \
@@ -77,6 +80,7 @@ y-buildctl \
     --frontend dockerfile.v0 \
     --local context="$BUILD_CONTEXT" \
     --local dockerfile="$BUILD_CONTEXT_DOCKERFILE" \
+    $OPT_PLATFORM \
     --opt build-arg:build_tag=$BUILD_TAG \
     --opt build-arg:git_commit=$GIT_COMMIT \
     $IMPORT_CACHE \
