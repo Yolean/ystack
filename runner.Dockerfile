@@ -5,7 +5,7 @@ RUN set -ex; \
   (cd /usr/local/bin; ln -s ../lib/node_modules/npm/bin/npm-cli.js npm); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq unzip findutils'; \
+  runDeps='ca-certificates curl git jq unzip findutils patch'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
