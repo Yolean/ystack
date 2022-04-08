@@ -3,15 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=1.2.2
-
-bin_name=oauth2l \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/solsson/oauth2l/releases/download/v${version}/darwin_amd64.tgz \
-  Darwin_sha256=fdd77f8fbcb27cd19d808675db80963279b7bbb9d80267405f5909250a5ea246 \
-  Linux_url=https://github.com/solsson/oauth2l/releases/download/v${version}/linux_amd64.tgz \
-  Linux_sha256=0803872f2afb447fee4767fca6af9aa1eb96506895d4d7713d2fbe780202016c \
-  bin_tgz_path=darwin-amd64/oauth2l \
-  $YBIN/y-bin-dependency-download || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml oauth2l)
 
 $YBIN/y-oauth2l-v${version}-bin "$@" || exit $?

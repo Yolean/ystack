@@ -1,19 +1,12 @@
 #!/bin/sh
 [ -z "$DEBUG" ] || set -x
 set -e
+YBIN="$(dirname $0)"
 
-version=0.15.1
+version=$(y-bin-download $YBIN/y-bin.yaml kubie)
 
-bin_name=kubie \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/sbstp/kubie/releases/download/v${version}/kubie-darwin-amd64 \
-  Darwin_sha256=c27c82bc574719d2ca2cd51bee059dbb4aea85609870c24c5aa5439e33b60d9c \
-  Linux_url=https://github.com/sbstp/kubie/releases/download/v${version}/kubie-linux-amd64 \
-  Linux_sha256=6018e07cf39b469bc8d2ca354c0fee04c79e5d5db515b4de24bba419ddb72f53 \
-  y-bin-dependency-download || exit $?
+command -v fzf > /dev/null || echo "Note that kubie recommends having fzf installed. Try: y-bin-download $YBIN/y-bin.yaml fzf"
 
-command -v fzf > /dev/null || echo "Note that kubie recommends having fzf installed"
-
-[ "$1" = "completion" ] && curl -sLS https://github.com/sbstp/kubie/raw/3ebbf728cc52a57dfd9913da120d47a44e783702/completion/kubie.bash && exit 0
+# [ "$1" = "completion" ] && curl -sLS https://github.com/sbstp/kubie/raw/3ebbf728cc52a57dfd9913da120d47a44e783702/completion/kubie.bash && exit 0
 
 y-kubie-v${version}-bin "$@" || exit $?

@@ -2,9 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 images:
-- name: moby/buildkit
+- name: moby/buildkit:rootless
   newName: docker.io/moby/buildkit
-  newTag: v0.9.3-rootless@sha256:d877f877f7411804fefaf90071464913130f8d34fe5797ac2f7164ddf816d27c
+  newTag: v0.10.1-rootless@sha256:6be280737e068d09ed9bc4b43b8690c80ce54e97dd70f4535111d52d5004b13a
 
 resources:
 - service.yaml

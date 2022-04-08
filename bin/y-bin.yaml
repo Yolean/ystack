@@ -1,0 +1,252 @@
+#!/usr/bin/env y-bin-download
+
+# This yaml format has special requirements as it must be parsed on vanilla osx and linux:
+# - version must be the first key per binary name
+# - comments must be separate lines, not after values
+
+
+# NOTE yq must be first in the file because this script depends on it
+yq:
+  version: 4.20.1
+  sha256:
+    darwin_amd64: 42bce2b651ea566630b142430a428c4933ae1e5e9b6b15b908e0cf322e34a613
+    darwin_arm64: 74d0fae8037beca8cdb000042e7bcb474d061b7b0f79832a7cf08d64eaad142f
+    linux_amd64: e184377f276ed3dd838c6d59e5d88f7df2328ceccd7385248431a8d8bff66b50
+    linux_arm64: 06446c51305d8e1e22a034a1c4c13a0fdf7ff9a1f5ba70622424de2c818ccccb
+  templates:
+    download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
+    # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
+    # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
+
+jq:
+  version: 1.6
+  template:
+    # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
+    #download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-${arch}
+    download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-amd64
+  sha256:
+    darwin_arm64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
+    darwin_amd64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
+    linux_amd64: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
+    linux_arm64: For_jq_arm64_linux_use_a_package_manager
+
+kubectl:
+  version: 1.22.6
+  template:
+    download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
+  sha256:
+    darwin_amd64: de3d5707334d82176f7c2d39397728531e7840223293e92cac7205a18cf0424e
+    darwin_arm64: 01d951a5ec90d635e13be597cf1787f90a0bf8cb753c923901b4503346af0ee6
+    linux_amd64: ea29a430ed5c32eb13972427a92ce562eba7ad70d62dea7080efb43868bdcf14
+    linux_arm64: bbaf5776b670e4a21ddc060f3b07d569c089bd45f6078c25473dc068b0b92261
+  archive:
+    tool: tar
+    path: kubernetes/client/bin/kubectl
+
+kustomize:
+  # TODO with tag from version in ./y-kubectl
+  # https://github.com/kubernetes/kubernetes/blob/v1.24.0-beta.0/staging/src/k8s.io/kubectl/go.mod#L45
+  version: 4.5.4
+  template:
+    download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
+    sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${verison}/checksums.txt
+  sha256:
+    darwin_amd64: 8dfd2648948eac4b1bd996e0c87f6fe3f451db54e265cf42cbadb94b0c56f553
+    darwin_arm64: 54cfbf2e18e1a344469f892715c037c58301852822afe16085435d57cc13abee
+    linux_amd64: 1159c5c17c964257123b10e7d8864e9fe7f9a580d4124a388e746e4003added3
+    linux_arm64: 094417546ab9b44ece44f3b31f3170080d0682519144301d5b6be080276a1f34
+  archive:
+    tool: tar
+    path: kustomize
+
+skaffold:
+  version: 1.37.1
+  template:
+    download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
+    sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
+  sha256:
+    darwin_amd64: b7c9244924edf5615375a5ed61ec4dc3510b97be578e8ac505118219de8dadc1
+    darwin_arm64: c6563e0a8e16cb372a6d73a6b06b1d24801e156ad65c128346b4dbf98b62cbf9
+    linux_amd64: d45858e4b539188468724a703173f88dd9b7ba199a5ae326aa13ff136045b945
+    linux_arm64: aff259f2336d1090cd34c129fb0f894ace50ed34abd4fd262f4fe6ded585bc88
+
+helm:
+  version: 3.7.2
+  sha256:
+    darwin_amd64: 5a0738afb1e194853aab00258453be8624e0a1d34fcc3c779989ac8dbcd59436
+    darwin_arm64: 260d4b8bffcebc6562ea344dfe88efe252cf9511dd6da3cccebf783773d42aec
+    linux_amd64: 4ae30e48966aba5f807a4e140dad6736ee1a392940101e4d79ffb4ee86200a9e
+    linux_arm64: b0214eabbb64791f563bd222d17150ce39bf4e2f5de49f49fdb456ce9ae8162f
+  archive:
+    tool: tar
+    path: ${os}-${arch}/helm
+  templates:
+    download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
+    sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
+
+k3d:
+  version: 5.3.0
+  templates:
+    download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-${os}-${arch}
+    sha256: https://github.com/rancher/k3d/releases/download/v${version}/sha256sum.txt
+  sha256:
+    darwin_amd64: 6b5c8ed3eb2a3f44a655d1cf3e85cae19a2d973940ae820d3c42e389ba758298
+    darwin_arm64: eaf5c99e7c19e64885901fdabc063c8ec1a5be2201280d3b25319ad60ade67ef
+    linux_amd64: b609bf296acb0f0fa5c79f2ff4bdd5901b385833cf469ac503468989e64eb01c
+    linux_arm64: efdeb3ebba60155e21099324012338b076591ec3802a5628d16c66622194ac38
+
+kubefwd:
+  version: 1.22.0
+  templates:
+    download: https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_${Os}_${xarch}.tar.gz
+  sha256:
+    darwin_amd64: 69e30718737cffd61979d2baf4bea01555299826e49016bc0b82987d7a8708c4
+    darwin_arm64: 48ff8e49842a4fb3ee042b4a1f8c8c9fca66f2d68322d702e8c671f0dd20f4ab
+    linux_amd64: 7bcd135021a2fbf6d5da7b2aff0a27e8eb2edeb39814daf3ab1cc9dff68388f7
+    linux_arm64: 23e3e3cd719a3cb90c8a9639bbff2aff7fb141af958c6680cbe81443fde35b2a
+  archive:
+    tool: tar
+    path: kubefwd
+
+kpt:
+  version: 1.0.0-beta.13
+  templates:
+    download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
+    sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
+  sha256:
+    darwin_amd64: 5787c672d69803d3bbfeeb271bd7fce710ad88375b91ef4ba0729ff37933bb93
+    darwin_arm64: 63e8e0ede740d30161519fde51215e83e03cefa6f603777b098ed21da32666a1
+    linux_amd64: 12b8251ea70fc0fe221778eae84f22f05ad31955ebffa8661307d388a703acdf
+    linux_arm64: 09b6a8a854c8a2c2e507ec5fee08b0ebdcc361525e6914a1a4e74998caf07b71
+
+buildctl:
+  version: 0.10.1
+  templates:
+    download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
+  sha256:
+    darwin_amd64: 19fe16ea13605295d21b9a6d4d206bebfb7cc0bd4463ed75eeaee178ff443fe7
+    darwin_arm64: ce9ad65be7956cd372711cc7e000fb1d6de4294fd767c7a04c795bd2356063a7
+    linux_amd64: 14d1e0cd76167dae24232bb336384e770aa7c91819df69922e0d3c0d54ddb8de
+    linux_arm64: 6f38143ae782db1123d61421114ae7b035878115cab181af6625efe2d5c24bf8
+  archive:
+    tool: tar
+    #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
+    path: bin/buildctl
+
+crane:
+  version: 0.8.0
+  templates:
+    download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
+    sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
+  sha256:
+    darwin_amd64: afbfe58339ff7aea5733a1e4fa12bca023de7fab812769ca2945593fb8feda80
+    darwin_arm64: 531ebadd28b6367b9cce8b29ee36bc13a357002cc10cbe5e1cf5bf4100b5abac
+    linux_amd64: e3f2116d2bdda1c2f2247ee2f13259d41986560d0a06a16831e37096d8ecec0e
+    linux_arm64: 7fe926ab7029a4545210e996e6c6b4855d6fe4302d2ac34262d740d1b3f51bab
+  archive:
+    tool: tar
+    path: crane
+
+container-structure-test:
+  version: 1.11.0
+  templates:
+    # arm64 binary not yet available
+    download: https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-${os}-${arch}
+    sha256: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/container-structure-test-${os}-${arch}.sha256
+  sha256:
+    darwin_amd64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
+    darwin_arm64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
+    linux_amd64: 1524da5fd5a0fc88c4c9257a3de05a45f135df07e6a684380dd5f659b9ce189b
+    linux_arm64: b376ff80134d2d609c591b98d65d653a514755b4861185fd93159af7062ec65d
+
+kubie:
+  version: 0.16.0
+  template:
+    download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-${os}-${arch}
+  sha256:
+    darwin_amd64: 0528276eb3bdbff5cccaac2cd31f5be7a03173f374610a52d6f39b1f5d2cb17a
+    darwin_arm64: 4e886d30d80441b3f4b97a6946901c8ea578b1c336c2c35bf88c26c8d63ce022
+    linux_amd64: c089a98f54ebf4a4a015590cad41d884c1e17c0cf6cd9b305d34a0453a516f80
+    linux_arm64: f6b30620d0a0d04e0b8638c012484dcd93299bc5a096ebad94cfce767668e014
+
+fzf:
+  version: 0.28.0
+  template:
+    download: https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-${os}_${arch}.zip
+    sha256: https://github.com/junegunn/fzf/releases/download/${version}/fzf_${version}_checksums.txt
+  sha256:
+    darwin_amd64: 21f9feddfa773ce092dec02acb033cfd88a71b531c93e046d32f187ee6ccc31a
+    darwin_arm64: 78c5b032801c0cbc04b1a667f01a57789fac8e3701a697001efff056e45d981b
+    linux_amd64: For_fzf_on_linux_use_a_package_manager
+    linux_arm64: For_fzf_on_linux_use_a_package_manager
+  archive:
+    tool: zip
+    path: fzf
+
+oauth2l:
+  version: 1.2.2
+  template:
+    download: https://github.com/solsson/oauth2l/releases/download/v${version}/${os}_${arch}.tgz
+    sha256: https://github.com/solsson/oauth2l/releases/download/v${version}/sha256sum.txt
+  sha256:
+    darwin_amd64: fdd77f8fbcb27cd19d808675db80963279b7bbb9d80267405f5909250a5ea246
+    darwin_arm64: 1e134219665af5229b43cd294f95f79d1601048fbde46d666fd23e4e876f82d9
+    linux_amd64: 0803872f2afb447fee4767fca6af9aa1eb96506895d4d7713d2fbe780202016c
+    linux_arm64: d1f3e456b314ed4a40dc432b84f9d2ea7d30eea0e04a9f975a8069e66c9ff699
+  archive:
+    tool: tar
+    path: ${os}_${arch}/oauth2l
+
+rpk:
+  version: 21.11.12
+  template:
+    download: https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-${os}-${arch}.zip
+  sha256:
+    darwin_amd64: ae75b3feb3a198381f001e01fb057f35b30ed32ad7b5472e5ac554c2e7c6f152
+    darwin_arm64: e2375e7e03d00348d9e401d6d2ae2cd57c2c03427dc571173e2ac78af85f1d8e
+    linux_amd64: 5df845b81d2bee070a57e5edc548575638574bb71cd57cebcfd003d5ff6764bf
+    linux_arm64: 92bf053f3c35a875eebfa6b1169d619357c9b39b926e46fdc8063209835583c7
+  archive:
+    tool: zip
+    path: rpk
+
+promtool:
+  version: 2.32.1
+  template:
+    download: https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.${os}-${arch}.tar.gz
+    sha256: https://github.com/prometheus/prometheus/releases/download/v${version}/sha256sums.txt
+  sha256:
+    darwin_amd64: 7fb849fa03cad447a28592d205adb9e5a0ad4d8026118344bff77146563cd7cb
+    darwin_arm64: eeeeffc93654204ac3752ec4d5a3a7b73e85d63c5160a5272fbd90593ebbe27c
+    linux_amd64: f08e96d73330a9ee7e6922a9f5b72ea188988a083bbfa9932359339fcf504a74
+    linux_arm64: 2d185a8ed46161babeaaac8ce00ef1efdeccf3ef4ed234cd181eac6cad1ae4b2
+  archive:
+    tool: tar
+    path: prometheus-${version}.${os}-${arch}/promtool
+
+git-remote-https+iap:
+  version: 0.2.0-dev1
+  template:
+    download: https://github.com/solsson/remote-iap/releases/download/v${version}/git-remote-https+iap-${os}-${arch}-v${version}.tar.gz
+    sha256: https://github.com/solsson/remote-iap/releases/download/v${version}/git-remote-https+iap-${os}-${arch}-v${version}.tar.gz.sha256
+  sha256:
+    darwin_amd64: 46cb6dfa6143fc63008eaee89a8c89c3339bf33d3d904bf096738d56e688aa94
+    darwin_arm64: 2fb851bd2b674be57b9efb98539ddafa1a793cb52111e05c8eae2325225bbe1b
+    linux_amd64: 1a0abe652f15db009ba3fefbde717150b54332df9f257fb6667865a85cf9d53e
+    linux_arm64: a0b273fafe0c652dc0f486e96b4bf980f245948ba0311610760d0020bc9568fb
+  archive:
+    tool: tar
+    path: git-remote-https+iap
+
+esbuild:
+  version: 0.14.34
+  template:
+    download: https://registry.npmjs.org/esbuild-${os}-${arm}64/-/esbuild-${os}-${arm}64-${version}.tgz
+  sha256:
+    darwin_amd64: e0763435afdad49b02defbbb6a350f71c76f5575850dcf631a2bbf20d294b420
+    darwin_arm64: 992c07d248b124fae7f7d8e846fd51a1d156069e016a49f15d6745e4d13ba0cf
+    linux_amd64: f8ae70245fd4a48e0e57603827665da22a442b4327a27364db2a84f07e2e534c
+    linux_arm64: bd271aefc48df7615696ddaedf49fcdd7772bb3a999de7ad64433e6171b6256e
+  archive:
+    tool: tar
+    path: package/bin/esbuild

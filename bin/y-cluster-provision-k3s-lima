@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
+
+[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+
+# Not reusing y-k3s-install, avoid breaking multipass provision
+K3S_INSTALLER_REVISION=43b1cb48200d8f6af85c16ed944d68fcc96b6506
+
+QEMU_VERSION=$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 | rev)
+
+mkdir -p /tmp/lima/ystack/rancher/k3s
+curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh > /tmp/lima/ystack/install.sh
+
+limactl start --tty=false $YSTACK_HOME/k3s/ystack.yaml
+cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
+
+#limactl shell ystack sudo apk add curl
+limactl shell ystack swapoff -a
+limactl shell ystack sudo cp -rv /tmp/lima/ystack/rancher /etc
+limactl shell ystack sh /tmp/lima/ystack/install.sh
+limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sleep 1; done; cat /etc/rancher/k3s/k3s.yaml' > "$KUBECONFIG.tmp"
+
+# https://github.com/containerd/nerdctl/blob/master/docs/multi-platform.md
+# https://github.com/containerd/nerdctl/pull/448
+# But we do LIMA_INSTALL_BINFMT_MISC=true in https://github.com/solsson/alpine-lima/blob/ystack-test/edition/ystack
+#limactl shell ystack sudo nerdctl run --privileged --rm tonistiigi/binfmt --install all
+
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
+k() {
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME $@
+}
+
+until k -n kube-system get pods 2>/dev/null; do
+  echo "==> Waiting for the cluster respond ..."
+  sleep 1
+done
+
+until k -n kube-system get serviceaccount default 2>/dev/null; do
+  echo "==> Waiting for the default service account to exist ..."
+  sleep 1
+done
+
+echo "==> Testing amd64 compatibility ..."
+k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
+while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
+k delete --wait=false pod amd64test
+
+# TODO fix node-exporter pod failing on: Error: failed to generate container "..." spec: path "/" is mounted on "/" but it is not a shared or slave mount
+# KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
+
+# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
+for base in \
+    00-ystack-namespace \
+    10-minio \
+    20-builds-registry \
+    21-prod-registry \
+    22-node-update-hosts \
+    30-y-assert-support \
+    40-buildkit; do \
+  basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying $basepath ..."
+  k apply -k $basepath
+done
+
+k -n ystack apply -k $YSTACK_HOME/registry/node-update-hosts/
+
+y-kubeconfig-import "$KUBECONFIG.tmp"

@@ -3,15 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=0.2.0
-
-bin_name=git-remote-https+iap \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/adohkan/git-remote-https-iap/releases/download/v${version}/git-remote-https+iap-darwin-amd64-v${version}.tar.gz \
-  Darwin_sha256=1475a7d857aac02bf238e6aa2f4fe1a5123f4204e189a7b01ecbeb320c7a56f7 \
-  Linux_url=https://github.com/adohkan/git-remote-https-iap/releases/download/v${version}/git-remote-https+iap-linux-amd64-v${version}.tar.gz \
-  Linux_sha256=aa02d2c89f3e5f1b1b17b5bc93402e80428fa232183665a3ceb33ab268ee956b \
-  bin_tgz_path=git-remote-https+iap \
-  $YBIN/y-bin-dependency-download || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml 'git-remote-https+iap')
 
 $YBIN/y-git-remote-https+iap-v${version}-bin "$@" || exit $?

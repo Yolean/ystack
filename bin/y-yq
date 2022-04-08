@@ -1,15 +1,8 @@
 #!/bin/sh
 [ -z "$DEBUG" ] || set -x
 set -e
+YBIN="$(dirname $0)"
 
-version=4.11.1
-
-bin_name=yq \
-  bin_version=v${version} \
-  Darwin_url=https://github.com/mikefarah/yq/releases/download/v4.11.1/yq_darwin_amd64 \
-  Darwin_sha256=95244750f0d9e2bd37b48e473823cc8dacf8ccc8a69fd5bbd20fe023bfead002 \
-  Linux_url=https://github.com/mikefarah/yq/releases/download/v4.11.1/yq_linux_amd64 \
-  Linux_sha256=1f63c9fe412c0d17b263e0ccfd91a596bb359db69ef7dddf5f53af1b2e8db898 \
-  y-bin-dependency-download || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml yq)
 
 y-yq-v${version}-bin "$@" || exit $?

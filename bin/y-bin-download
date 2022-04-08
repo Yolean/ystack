@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+[ -z "$DEBUGDEBUG" ] || set -x
+set -e
+#set -eo pipefail
+
+[ "$1" = "help" ] && echo '
+Manages binaries through the following modes:
+y-bin-download y-bin.yaml           # downloads missing and those with a new version
+y-bin-download y-bin.yaml [name]    # downloads the named binary, if present as key in y-bin.yaml
+y-bin-dependency-download           # used in old y-[bin] scripts, deprecated but still working, can be replaced by the previous example
+And yes, we have been looking for an open source impl of this need :)
+' && exit 0
+
+[ -z "$YSTACK_HOME" ] && echo "The YSTACK_HOME variable is required" && exit 1
+
+BINYAML=$1
+
+binpath() {
+  echo "$YSTACK_HOME/bin"
+}
+
+# the one part of this script that modifies the host system
+install() {
+  name=$1
+  version=$2
+  url=$3
+  sha256=$4
+  archivetool=$5
+  archivepath=$6
+  # translate to legacy format's variable env names
+  archivecompression=z
+  [ "$archivetool" != "tar" ] || bin_tar_path=$archivepath
+  [ "$archivetool" != "zip" ] || bin_zip_path=$archivepath
+  # the legacy format, reused until phased out, note the mandatory v prefix to version
+  bin_name=$name \
+    bin_version=v${version} \
+    Darwin_url=$url \
+    Darwin_sha256=$sha256 \
+    Linux_url=$url \
+    Linux_sha256=$sha256 \
+    bin_zip_path=$bin_zip_path \
+    bin_tar_path=$bin_tar_path \
+    bin_tar_compression=$archivecompression \
+    y-bin-dependency-download 1>&2 || exit $?
+  echo $version
+}
+
+gotemplate() {
+  tpl=$1
+  key=$2
+  value=$3
+  echo $tpl | sed "s|{{ \.$key }}|$value|g"
+}
+
+os() {
+  uname -s | tr '[:upper:]' '[:lower:]'
+}
+
+osx() {
+  os=$(os)
+  case $os in
+    darwin) echo 'osx' ;;
+    *) echo "$os" ;;
+  esac
+}
+
+Os() {
+  uname -s
+}
+
+xarch() {
+  x=$(uname -m)
+  case $x in
+    aarch64) echo 'arm64' ;;
+    *) echo $x ;;
+  esac
+}
+
+arch() {
+  x=$(xarch)
+  case $x in
+    x86_64) echo 'amd64' ;;
+    *) echo $x ;;
+  esac
+}
+
+arm() {
+  x=$(xarch)
+  case $x in
+    arm64) echo 'arm' ;;
+    *) echo '' ;;
+  esac
+}
+
+names() {
+  yaml=$1
+  [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml"; return 1; }
+  cat $yaml | grep -v '^$' | grep -v '#' | grep -v '^ ' | cut -d: -f1
+}
+
+# should extract yaml into something that's safe to eval
+to_eval() {
+  yaml=$1
+  name=$2
+  [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml">2; return 1; }
+  awk "/^$name:/{f=1;next} /^[a-z0-9_-]+/{f=0} f" $yaml | \
+    sed 's| *version: *|version=|' | \
+    sed 's| *tool: *|archivetool=|' | \
+    sed 's| *path: *|archivepath=|' | \
+    sed 's| *download: *\(.*\)|url="\1"|' | \
+    sed "s| *$(os)_$(arch): *|sha256=|" | \
+    grep -E '^[[:alnum:]]+='
+}
+
+run() {
+  yaml=$1
+  name=$2
+  os=$(os)
+  arch=$(arch)
+  xarch=$(xarch)
+  osx=$(osx)
+  Os=$(Os)
+  arm=$(arm)
+  eval $(to_eval $yaml $name)
+  install "$name" "$version" "$url" "$sha256" "$archivetool" "$archivepath"
+}
+
+# https://github.com/shellspec/shellspec#testing-shell-functions
+[ "${__SOURCED__:+x}" ] && return 0
+
+[ $# -eq 0 ] && >&2 echo "First arg must be an y-bin yaml path" && exit 1
+yaml=$1
+if [ $# -eq 1 ]; then
+  for name in $(names $1); do
+    run $yaml $name
+  done
+else
+  while [ $# -gt 1 ]; do
+    run $yaml $2
+    shift
+  done
+fi

@@ -8,6 +8,19 @@ Y-stack is a micro-PaaS(?) with the following goals:
  - Make Kubernetes patterns like sidecars and operators an intergral part of design
  - Support event-driven microservices patterns
 
+## Installation
+
+Use `git clone https://github.com/Yolean/ystack`
+
+Add the following to env:
+
+```
+export YSTACK_HOME=/Users/me/Yolean/ystack
+export PATH=$PATH:$YSTACK_HOME/bin
+```
+
+Note that ystach should be after system path entries because it contains fallback impls for MacOS such as `basepath` and `sha256sum`.
+
 ## Why
 
 Y-stack is higly opinionated:
@@ -95,6 +108,24 @@ We therefore download some CLIs to the aforementioned `PATH` entry.
 ```
 docker volume rm ystack_admin 2> /dev/null || true
 ./test.sh
+```
+
+## Multi-arch runner build (beta)
+
+```
+YSTACK_GIT_COMMIT=$(git rev-parse --verify HEAD 2>/dev/null || echo '')
+if [[ ! -z "$YSTACK_GIT_COMMIT" ]]; then
+  GIT_STATUS=$(git status --untracked-files=no --porcelain=v2)
+  if [[ ! -z "$GIT_STATUS" ]]; then
+    YSTACK_GIT_COMMIT="$YSTACK_GIT_COMMIT-dirty"
+  fi
+fi
+docker buildx build --progress=plain --platform=linux/amd64,linux/arm64/v8 -t yolean/ystack-runner:$YSTACK_GIT_COMMIT -f runner.Dockerfile .
+```
+
+Dogfooding build
+```
+PLATFORMS=linux/amd64,linux/arm64/v8 y-build . --opt filename=runner.Dockerfile
 ```
 
 ## Development

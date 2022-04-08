@@ -1,11 +1,12 @@
-FROM ubuntu:20.04@sha256:669e010b58baf5beb2836b253c1fd5768333f0d1dbcb834f7c07a4dc93f474be \
+# syntax=docker/dockerfile:1.4
+FROM --platform=$TARGETPLATFORM ubuntu:20.04@sha256:669e010b58baf5beb2836b253c1fd5768333f0d1dbcb834f7c07a4dc93f474be \
   as base
 
 RUN set -ex; \
   (cd /usr/local/bin; ln -s ../lib/node_modules/npm/bin/npm-cli.js npm); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq unzip findutils'; \
+  runDeps='ca-certificates curl git jq unzip findutils patch'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
@@ -18,12 +19,16 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM node:16.14.0-bullseye-slim@sha256:22841c8578ef743f8e517ae194bdd6688537364b4c929f61a140b37578365d6c \
+FROM --platform=$TARGETPLATFORM node:16.14.2-bullseye-slim@sha256:84166838030b78441db7c90e0407cee1da736157a70f398b6589ea1f4ffa753a \
   as node
+RUN npm install -g npm@8.6.0
 
 FROM base as bin
 
-COPY bin/y-bin-dependency-download /usr/local/src/ystack/bin/
+COPY bin/y-bin.yaml \
+  bin/y-bin-download \
+  bin/y-bin-dependency-download \
+  /usr/local/src/ystack/bin/
 
 COPY bin/y-kubectl /usr/local/src/ystack/bin/
 RUN y-kubectl version --client=true
@@ -49,7 +54,12 @@ RUN y-yq --version
 COPY bin/y-skaffold /usr/local/src/ystack/bin/
 RUN y-skaffold config set --global collect-metrics false
 
-FROM base
+COPY bin/y-esbuild /usr/local/src/ystack/bin/
+RUN y-esbuild --version
+
+RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml kpt
+
+FROM --platform=$TARGETPLATFORM base
 
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/bin/node /usr/local/bin/

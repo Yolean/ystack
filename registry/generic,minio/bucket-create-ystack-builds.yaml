@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
       - name: mc
-        image: minio/mc:RELEASE.2020-07-11T05-18-52Z@sha256:fd5c0b878f2f1d2b531d966c599a78055aaf334c0a47ac66e20f40fae0e54d9a
+        image: minio/mc:RELEASE.2022-03-03T21-12-24Z@sha256:a016f510a2f5e4dc673c227b21ae0d5f9c06fd86dc29efcd9b4d4a95ea7e5c87
         env:
         - name: MINIO_HOST
           value: http://blobs-minio
@@ -30,6 +30,7 @@ spec:
         - sh
         - -ce
         - |
+          sleep 30
           mc config host add ystack $MINIO_HOST $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
           mc stat ystack/$BUCKET_NAME || {
             mc mb --region="$MINIO_REGION" ystack/$BUCKET_NAME

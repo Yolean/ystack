@@ -3,15 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=3.7.1
-
-bin_name=helm \
-  bin_version=v${version} \
-  Darwin_url=https://get.helm.sh/helm-v${version}-darwin-amd64.tar.gz \
-  Darwin_sha256=3a9efe337c61a61b3e160da919ac7af8cded8945b75706e401f3655a89d53ef5 \
-  Linux_url=https://get.helm.sh/helm-v${version}-linux-amd64.tar.gz \
-  Linux_sha256=6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4 \
-  bin_tgz_path=darwin-amd64/helm \
-  y-bin-dependency-download 1>&2 || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml helm)
 
 y-helm-v${version}-bin "$@" || exit $?

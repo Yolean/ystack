@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
+
+[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+K3D_NAME=ystack
+
+[ -z "$YSTACK_HOST" ] && YSTACK_HOST=ystack.local
+[ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
+[ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
+[ -z "$K3D_ARGS" ] && K3D_ARGS="--servers-memory=6G"
+[ -z "$K3D_DOCKER_UPDATE" ] && K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
+K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
+
+y-k3d cluster create $K3D_NAME \
+  --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
+  --no-lb \
+  --agents=0 \
+  $VM_RESOURCES
+
+docker update $K3D_DOCKER_NAME $K3D_DOCKER_UPDATE
+docker inspect $K3D_DOCKER_NAME | grep Cpu
+
+# Could interfere with some k3d functionality. For example skaffold's k3d detection will probably not work.
+kubectl config rename-context k3d-ystack $CONTEXTNAME
+
+y-cluster-assert-install --context=$CONTEXTNAME
+
+# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile, and in y-cluster-provision-multipass
+for base in \
+    00-ystack-namespace \
+    10-minio \
+    20-builds-registry \
+    21-prod-registry \
+    30-y-assert-support \
+    40-buildkit; do \
+  basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying $basepath ..."
+  kubectl --context=$CONTEXTNAME apply -k $basepath
+done
+
+BUILDS_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
+docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
