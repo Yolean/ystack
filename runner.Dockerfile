@@ -21,6 +21,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
 
 FROM --platform=$TARGETPLATFORM node:16.14.2-bullseye-slim@sha256:84166838030b78441db7c90e0407cee1da736157a70f398b6589ea1f4ffa753a \
   as node
+RUN npm install -g npm@8.6.0
 
 FROM base as bin
 
