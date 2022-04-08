@@ -3,15 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=0.13.3
-
-bin_name=esbuild \
-  bin_version=v${version} \
-  Darwin_url=https://registry.npmjs.org/esbuild-darwin-64/-/esbuild-darwin-64-${version}.tgz \
-  Darwin_sha256=aaf92afd30aa1a7f5f3a96299000e8af9d959aa3e03f79f2588ef5613c8e33aa \
-  Linux_url=https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${version}.tgz \
-  Linux_sha256=ec90a917256d56e8812dcb8877e11b1cdce2f0a972f4d135aabc6f7e98dfdad8 \
-  bin_tgz_path=package/bin/esbuild \
-  y-bin-dependency-download 1>&2 || exit $?
+version=$(y-bin-download $YBIN/y-bin.yaml esbuild)
 
 y-esbuild-v${version}-bin "$@" || exit $?

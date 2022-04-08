@@ -123,6 +123,11 @@ fi
 docker buildx build --progress=plain --platform=linux/amd64,linux/arm64/v8 -t yolean/ystack-runner:$YSTACK_GIT_COMMIT -f runner.Dockerfile .
 ```
 
+Dogfooding build
+```
+PLATFORMS=linux/amd64,linux/arm64/v8 y-build . --opt filename=runner.Dockerfile
+```
+
 ## Development
 
 Using the [y-docker-compose](./bin/y-docker-compose) wrapper that extends [docker-compose.test.yml](./docker-compose.test.yml) that is used for CI with [docker-compose.dev-overrides.yml](./docker-compose.dev-overrides.yml). The k3s [image](./k3s/docker-image/) is the stock k3s image with y-stack's local registry config.

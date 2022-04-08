@@ -237,3 +237,16 @@ git-remote-https+iap:
   archive:
     tool: tar
     path: git-remote-https+iap
+
+esbuild:
+  version: 0.14.34
+  template:
+    download: https://registry.npmjs.org/esbuild-${os}-${arm}64/-/esbuild-${os}-${arm}64-${version}.tgz
+  sha256:
+    darwin_amd64: e0763435afdad49b02defbbb6a350f71c76f5575850dcf631a2bbf20d294b420
+    darwin_arm64: 992c07d248b124fae7f7d8e846fd51a1d156069e016a49f15d6745e4d13ba0cf
+    linux_amd64: f8ae70245fd4a48e0e57603827665da22a442b4327a27364db2a84f07e2e534c
+    linux_arm64: bd271aefc48df7615696ddaedf49fcdd7772bb3a999de7ad64433e6171b6256e
+  archive:
+    tool: tar
+    path: package/bin/esbuild

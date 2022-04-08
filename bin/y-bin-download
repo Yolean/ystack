@@ -84,6 +84,14 @@ arch() {
   esac
 }
 
+arm() {
+  x=$(xarch)
+  case $x in
+    arm64) echo 'arm' ;;
+    *) echo '' ;;
+  esac
+}
+
 names() {
   yaml=$1
   [ -f "$yaml" ] || { >&2 echo "bin yaml not found at path $yaml"; return 1; }
@@ -112,6 +120,7 @@ run() {
   xarch=$(xarch)
   osx=$(osx)
   Os=$(Os)
+  arm=$(arm)
   eval $(to_eval $yaml $name)
   install "$name" "$version" "$url" "$sha256" "$archivetool" "$archivepath"
 }
