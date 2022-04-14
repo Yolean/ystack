@@ -5,8 +5,20 @@ set -eo pipefail
 # For example: --opt filename=test.Dockerfile
 BUILDCTL_OPTS="$@"
 
-# Needed until Skaffold supports buildctl, or the buildkit that comes with Docker supports BUILDKIT_HOST
-# We could also build using Tekton, if Skaffold had a generic way to transfer the build context to a waitinig build step container
+FILENAME=""
+for arg in $BUILDCTL_OPTS; do
+  case "$arg" in
+    --opt)
+      opt=true ;;
+    filename=*)
+      [ -z "$opt" ] && echo "filename arg without preceding --opt: $arg" && exit 1
+      FILENAME="$(echo $arg | cut -d= -f2-)"
+      [ -z "$FILENAME" ] && echo "Failed to extract filename from arg $arg" && exit 1
+      opt="" ;;
+    *)
+      opt="" ;;
+  esac
+done
 
 # Settings
 DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
