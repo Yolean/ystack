@@ -23,18 +23,15 @@ done
 stat $FILENAME >/dev/null
 stat $FILENAME.dockerignore >/dev/null || (echo "Missing .dockerignore for $FILENAME" && exit 1)
 
-DOCKERFILE_SYNTAX="$(head -n 1 $FILENAME | grep '^#' || true)"
+DOCKERFILE_SYNTAX="$(head -n 1 $FILENAME)"
 
 case "$DOCKERFILE_SYNTAX" in
-  "")
-    ;;
   "# syntax=ystack/v1-base:"*)
     DOCKERFILE_BASE=$(echo $DOCKERFILE_SYNTAX | cut -d: -f2)
     ;;
   "# syntax=docker/dockerfile:"*)
     ;;
   *)
-    echo "Unrecognized syntax for filename $FILENAME: $DOCKERFILE_SYNTAX" && exit 1
     ;;
 esac
 
