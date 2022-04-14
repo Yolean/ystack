@@ -20,6 +20,63 @@ for arg in $BUILDCTL_OPTS; do
   esac
 done
 
+stat $FILENAME >/dev/null
+stat $FILENAME.dockerignore >/dev/null || (echo "Missing .dockerignore for $FILENAME" && exit 1)
+
+DOCKERFILE_SYNTAX="$(head -n 1 $FILENAME | grep '^#' || true)"
+
+case "$DOCKERFILE_SYNTAX" in
+  "")
+    ;;
+  "# syntax=ystack/v1-base:"*)
+    DOCKERFILE_BASE=$(echo $DOCKERFILE_SYNTAX | cut -d: -f2)
+    ;;
+  "# syntax=docker/dockerfile:"*)
+    ;;
+  *)
+    echo "Unrecognized syntax for filename $FILENAME: $DOCKERFILE_SYNTAX" && exit 1
+    ;;
+esac
+
+# Needed as long as we modify local files
+function cleanup {
+  if [ -n "$DOCKERFILE_BASE" ]; then
+    mv $FILENAME.y-build.tmp $FILENAME
+    mv $FILENAME.y-build.tmp.dockerignore $FILENAME.dockerignore
+    rm "$DOCKERFILE_TMP.dockerignore"
+  fi
+}
+trap cleanup EXIT
+
+if [ -n "$DOCKERFILE_BASE" ]; then
+  DOCKERFILE_DIR=$(dirname $FILENAME)
+  echo "y-stack dockerfile syntax detected base: $DOCKERFILE_BASE (in $DOCKERFILE_DIR/)"
+  (cd $DOCKERFILE_DIR;
+    stat $DOCKERFILE_BASE >/dev/null;
+    stat $DOCKERFILE_BASE.dockerignore >/dev/null || (echo "Missing .dockerignore for $DOCKERFILE_BASE" && exit 1)
+    )
+  head -n 1 $FILENAME.dockerignore | grep '*' >/dev/null || (echo "$FILNEAME.dockerignore must start with a * line when using a base" && exit 1)
+  DOCKERFILE_TMP=$(mktemp)
+  (cd $DOCKERFILE_DIR;
+    cat $DOCKERFILE_BASE > $DOCKERFILE_TMP;
+    echo "# ^^^ ystack base $DOCKERFILE_BASE ____ $FILENAME" >> $DOCKERFILE_TMP
+    cat $DOCKERFILE_BASE.dockerignore > $DOCKERFILE_TMP.dockerignore;
+    echo "# ^^^ ystack base $DOCKERFILE_BASE.dockerignore ____ $FILENAME.dockerignore" >> $DOCKERFILE_TMP.dockerignore
+  )
+  cat $FILENAME >> $DOCKERFILE_TMP;
+  cat $FILENAME.dockerignore | tail -n+2 >> $DOCKERFILE_TMP.dockerignore;
+  mv $FILENAME $FILENAME.y-build.tmp
+  mv $FILENAME.dockerignore $FILENAME.y-build.tmp.dockerignore
+  cat $DOCKERFILE_TMP > $FILENAME
+  cat $DOCKERFILE_TMP.dockerignore > $FILENAME.dockerignore
+  [ -z "$DEBUG" ] || ls -l $FILENAME*
+  [ -z "$DEBUGDEBUG" ] || cat $DOCKERFILE_TMP
+  [ -z "$DEBUGDEBUG" ] || cat $DOCKERFILE_TMP.dockerignore
+  # Default to not exporting cache when doing full builds, but add cache info to manifest
+  # but not if import cache is overridden because that's probably a different image URL
+  [ -z "$EXPORT_CACHE" ] && [ -z "$IMPORT_CACHE" ] && EXPORT_CACHE="--export-cache type=inline" && echo "Default EXPORT_CACHE changed to: $EXPORT_CACHE"
+fi
+
 # Settings
 DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
@@ -37,7 +94,7 @@ fi
 # Envs from Skaffold build custom
 # (but for now we simply ignore PUSH_IMAGE as it has no clear significance for in-cluster builds)
 [ -z "$BUILD_CONTEXT" ] && {
-  echo "No BUILD_CONTEXT env (from for example Skaffold). Using first arg like traditional Docker build do."
+  echo "No BUILD_CONTEXT env (from for example Skaffold). Using first arg like traditional Docker builds do."
   BUILD_CONTEXT="$1"
   [ -z "$BUILD_CONTEXT" ] && echo "... and no first arg either. Exiting." && exit 1
 }
