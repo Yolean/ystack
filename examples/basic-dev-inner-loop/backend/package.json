@@ -7,9 +7,9 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.17.3"
   },
   "devDependencies": {
-    "nodemon": "^1.18.4"
+    "nodemon": "^2.0.15"
   }
 }
