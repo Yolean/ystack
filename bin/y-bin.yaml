@@ -236,3 +236,29 @@ esbuild:
   archive:
     tool: tar
     path: package/bin/esbuild
+
+dagger:
+  version: 0.2.11
+  template:
+    download: https://github.com/dagger/dagger/releases/download/v${version}/dagger_v${version}_${os}_${arch}.tar.gz
+  sha256:
+    darwin_amd64: 014b2f0ff49c17b7c9d2cc0c0290bbd80db2dad064966f3a061a7e001151370e
+    darwin_arm64: 50ba09bf51943679070c5b0bd3a0bfb3bb1e89beec90ef892bfb98172765c8d2
+    linux_amd64: 49ff354c011465dee363b2da499cbea81ed61de68e7dea576019e37a6595ea64
+    linux_arm64: 4832d87a554852330bceea75f93d1e915128293a03f921fffd22a9dbf5270aa9
+  archive:
+    tool: tar
+    path: dagger
+
+cue:
+  version: 0.4.3
+  template:
+    download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
+  sha256:
+    darwin_amd64: 1161254cf38b928b87a7ac1552dc2e12e6c5da298f9ce370d80e5518ddb6513d
+    darwin_arm64: 3d84b85a7288f94301a4726dcf95b2d92c8ff796c4d45c4733fbdcc04ceaf21d
+    linux_amd64: 5e7ecb614b5926acfc36eb1258800391ab7c6e6e026fa7cacbfe92006bac895c
+    linux_arm64: a8c3f4140d18c324cc69f5de4df0566e529e1636cff340095a42475799bf3fed
+  archive:
+    tool: tar
+    path: cue
