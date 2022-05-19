@@ -134,15 +134,15 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.8.0
+  version: 0.9.0
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: afbfe58339ff7aea5733a1e4fa12bca023de7fab812769ca2945593fb8feda80
-    darwin_arm64: 531ebadd28b6367b9cce8b29ee36bc13a357002cc10cbe5e1cf5bf4100b5abac
-    linux_amd64: e3f2116d2bdda1c2f2247ee2f13259d41986560d0a06a16831e37096d8ecec0e
-    linux_arm64: 7fe926ab7029a4545210e996e6c6b4855d6fe4302d2ac34262d740d1b3f51bab
+    darwin_amd64: 9aeafac0c6379d19e956a152e2aeb86c2b27de902e53a0e6054dff42e7c8f821
+    darwin_arm64: 6e3ad168bbc630a51b5f27a19b49992cc2cc327c9fde4b1922ea0f63a30ee102
+    linux_amd64: 1d2cf3fac0830dd8e5fb6e2829fdfc304a3d4a0f48f7e1df9ebb7e2921f28803
+    linux_arm64: 3333bb5eeecbe1cf58f32f52d25e974307aa1e78c488f570edba77fc004dbc65
   archive:
     tool: tar
     path: crane
@@ -225,14 +225,14 @@ promtool:
     path: prometheus-${version}.${os}-${arch}/promtool
 
 esbuild:
-  version: 0.14.34
+  version: 0.14.39
   template:
     download: https://registry.npmjs.org/esbuild-${os}-${arm}64/-/esbuild-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: e0763435afdad49b02defbbb6a350f71c76f5575850dcf631a2bbf20d294b420
-    darwin_arm64: 992c07d248b124fae7f7d8e846fd51a1d156069e016a49f15d6745e4d13ba0cf
-    linux_amd64: f8ae70245fd4a48e0e57603827665da22a442b4327a27364db2a84f07e2e534c
-    linux_arm64: bd271aefc48df7615696ddaedf49fcdd7772bb3a999de7ad64433e6171b6256e
+    darwin_amd64: 880584d6cabdefd049c0684277f69a413fecbee776f52faa8be7bc32cf235d69
+    darwin_arm64: 333a36bc4c4bef983259858c937c58b4a7095a31034468660c60bbb3ce6a7305
+    linux_amd64: 061976e758232f31afffdd01337a77b5362e8a3e0753b4bcf2cfe7e9e5ee8930
+    linux_arm64: 1ca656fc0f4cd325e6641c77dce12d7a6ca8b02eca47b8dde0b727b52d039c37
   archive:
     tool: tar
     path: package/bin/esbuild
