@@ -238,14 +238,14 @@ esbuild:
     path: package/bin/esbuild
 
 dagger:
-  version: 0.2.12
+  version: 0.2.15
   template:
     download: https://github.com/dagger/dagger/releases/download/v${version}/dagger_v${version}_${os}_${arch}.tar.gz
   sha256:
-    darwin_amd64: 6c454b786b35452f2f769d5f7707f2edf2e84a027dd3432b53e9206e79351bad
-    darwin_arm64: 583adf17f10aef245f43d3715446c202cf484ad7a33b08dcd6dce5d8e079d359
-    linux_amd64: 2af58c583667b03ce9ad64eed6ecbc238274c37a7447040bfde78e51517064bf
-    linux_arm64: e8172c653b173b8e541c0ecf93db2333861438af4b905645e744e157ee468447
+    darwin_amd64: 2e2c5a5afdf97555a7bb692a272e8806134bb0fca4f5f2d13940adf24eceb878
+    darwin_arm64: 8824ccab0ff47ad2d4746c477c665435eeb09686a4cca20c1c0664d684d91279
+    linux_amd64: 3164fcffdc7f3ea4e923774cc3fcbeae6f519c6ead337450e1c70a0a57ad0ea5
+    linux_arm64: bd74b5dc5ecbdf56270c4f3271327f7fc757f285b54db65e80dd9ac4b018a322
   archive:
     tool: tar
     path: dagger
