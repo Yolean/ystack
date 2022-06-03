@@ -58,6 +58,7 @@ COPY bin/y-esbuild /usr/local/src/ystack/bin/
 RUN y-esbuild --version
 
 RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml kpt
+RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml cue
 
 FROM --platform=$TARGETPLATFORM base
 
