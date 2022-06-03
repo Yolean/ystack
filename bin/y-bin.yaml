@@ -198,14 +198,14 @@ oauth2l:
     path: ${os}_${arch}/oauth2l
 
 rpk:
-  version: 21.11.12
+  version: 22.1.3
   template:
     download: https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-${os}-${arch}.zip
   sha256:
-    darwin_amd64: ae75b3feb3a198381f001e01fb057f35b30ed32ad7b5472e5ac554c2e7c6f152
-    darwin_arm64: e2375e7e03d00348d9e401d6d2ae2cd57c2c03427dc571173e2ac78af85f1d8e
-    linux_amd64: 5df845b81d2bee070a57e5edc548575638574bb71cd57cebcfd003d5ff6764bf
-    linux_arm64: 92bf053f3c35a875eebfa6b1169d619357c9b39b926e46fdc8063209835583c7
+    darwin_amd64: 2956dcf87cc12055bc65545aa4269a034e2880af686f7e438a9caa2fa5a1854b
+    darwin_arm64: 56dac79665f9a5606019cead4d51bbd955a46e2888b257e631e47cb0df4ff203
+    linux_amd64: b4830d78c32cd11e252857588e56743a7f596cfd72203846389573e0e333458d
+    linux_arm64: c8597d35aa8fb4011e03445d0979f10d7f323d7ee87edd82d50975bbe5349a69
   archive:
     tool: zip
     path: rpk
