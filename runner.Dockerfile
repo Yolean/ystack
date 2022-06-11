@@ -61,8 +61,8 @@ RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml cue
 
 FROM --platform=$TARGETPLATFORM base
 
-COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node /usr/local/bin/node /usr/local/bin/
+COPY --from=node --link /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node --link /usr/local/bin/node /usr/local/bin/
 
 COPY --from=bin /usr/local/src/ystack/bin /usr/local/src/ystack/bin
 
