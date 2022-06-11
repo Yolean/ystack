@@ -19,9 +19,8 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM --platform=$TARGETPLATFORM node:16.15.0-bullseye-slim@sha256:14af3fc10c3b85be74621ae6f0066ee4b2ab1ae1d6c0c87e0ada9ca193346071 \
+FROM --platform=$TARGETPLATFORM node:18.3.0-bullseye-slim@sha256:0739e03851228cc1380f60e9dc14c192bd9d22d02eab364de609b6b8efb94174 \
   as node
-RUN npm install -g npm@8.10.0
 
 FROM base as bin
 
