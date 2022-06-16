@@ -11,4 +11,4 @@ resources:
 images:
 - name: gitea/gitea
   newName: docker.io/gitea/gitea
-  newTag: 1.16.7@sha256:ce39b9e63083c15d9bf43e9eeed4d2770e7c1f643f4b77c77bd80c8d2906ad6e
+  newTag: 1.16.8@sha256:b0bdf102b485fd8befd564e2473f045f260eaf1b29c9fdcb9b415d1564cba332
