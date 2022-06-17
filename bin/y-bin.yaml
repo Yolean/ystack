@@ -109,15 +109,15 @@ kubefwd:
     path: kubefwd
 
 kpt:
-  version: 1.0.0-beta.15
+  version: 1.0.0-beta.17
   templates:
     download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
     sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: ecb8fa7958f575ec5d0e80abbc9130420acb53be288dde85fefd0866c60b5fd7
-    darwin_arm64: 5ff1f3647d09e65f336ac061359b642a11fb8002372b8053a0e1f1cfb128d985
-    linux_amd64: fd7b8fad2c1cc10d7fb01a391952c4b6afe2dfd48e3da8f18c176410f91b01c7
-    linux_arm64: 4d6144182fea60f46fb2cf2d347b9ff7289050a0c4308123ea1c1a4f3b40d28a
+    darwin_amd64: 794c3a52fac83d4d28c85be3e6f3d9f2c3c8d2c41f2c3a4e5216cc6cd0ce6e64
+    darwin_arm64: fe5df6acefefe541449b319dc680c983fb9b0c7ad76897030132f19db6f1b142
+    linux_amd64: 29b7731e8c5456a07b3875e3c6e7fdc4bdf4c84b232309fc1833981e4f8b346b
+    linux_arm64: 9c54ff866bc5f5c9ba057354ca3285202b1df58bd094bb5d703bbd7cac2b3031
 
 buildctl:
   version: 0.10.3
@@ -225,27 +225,27 @@ promtool:
     path: prometheus-${version}.${os}-${arch}/promtool
 
 esbuild:
-  version: 0.14.39
+  version: 0.14.45
   template:
     download: https://registry.npmjs.org/esbuild-${os}-${arm}64/-/esbuild-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 880584d6cabdefd049c0684277f69a413fecbee776f52faa8be7bc32cf235d69
-    darwin_arm64: 333a36bc4c4bef983259858c937c58b4a7095a31034468660c60bbb3ce6a7305
-    linux_amd64: 061976e758232f31afffdd01337a77b5362e8a3e0753b4bcf2cfe7e9e5ee8930
-    linux_arm64: 1ca656fc0f4cd325e6641c77dce12d7a6ca8b02eca47b8dde0b727b52d039c37
+    darwin_amd64: 7b3c33816fc836341872bc647df452fe61ec165831ea42cca1c844387963ffea
+    darwin_arm64: 39ba622eb16a7acf9ee4b2d8201440390ec300c667aec275484b301f2c78b60e
+    linux_amd64: bb03ff78d136f4c6f5c1e279ab9eaae31c5aa89e03ebd8cf85fab41bf16ac1bb
+    linux_arm64: 8c0b1641e85834edb72d39e2d4472737269501742807ec836853e4ced76fcece
   archive:
     tool: tar
     path: package/bin/esbuild
 
 dagger:
-  version: 0.2.18
+  version: 0.2.19
   template:
     download: https://github.com/dagger/dagger/releases/download/v${version}/dagger_v${version}_${os}_${arch}.tar.gz
   sha256:
-    darwin_amd64: 29849d4703b635682f9fa73ffcaf04a1f0a760092347dc3574d71148186bb5d2
-    darwin_arm64: 645a236f8d4cb2eb329d5003136d3f9d4321819f7b5a87e808bf15f59e0516dd
-    linux_amd64: e5a18485fd6f1df2b9d7f71aa7601255b84998e2eb859e8a24d27ccf94d5886e
-    linux_arm64: fd6dda3058dee6e4988d602b4654749ffa65b1a3e9514063c5b784d408c353c0
+    darwin_amd64: 4496883b1fa957bc05ebe6406a3f02d828a61a1f193445d59c55a74275749c4e
+    darwin_arm64: 13586bb0ea3c5c7ffd21984f3d8ac29d1dbaa02a0e6f0472c92a285b2be1cfd8
+    linux_amd64: 0591bde1a8088cbc151d9bff3df409bc451870f8f548f9f652a616a9325fc9b8
+    linux_arm64: f2f8574eb39a646937d6051310f0ba366340925433d775adc00932619437434b
   archive:
     tool: tar
     path: dagger
