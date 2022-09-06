@@ -4,8 +4,11 @@
 # our executables are symlinked to real names
 buildctl
 buildx
+bunyan
 container-structure-test
 crane
+cue
+dagger
 dive
 dgraph*
 gotemplate
