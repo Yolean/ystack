@@ -7,12 +7,12 @@
 
 # NOTE yq must be first in the file because this script depends on it
 yq:
-  version: 4.25.2
+  version: 4.28.2
   sha256:
-    darwin_amd64: 0fe604d3332cd1a0667b22b41bf404052da451cab35b502f17cb5023d2b8a98d
-    darwin_arm64: db8c11ca4c1dda8fe7c211e82e28191d48bd9ae83471b952003e819de79bcb51
-    linux_amd64: 042f7462ec8378f8b0d3bac85d1b1a063b63beef5d8e3826bb2377294116ae90
-    linux_arm64: dc58ef7f1651f5a8da6ded8d1ced99df933f9f511b102302c1502ba70350c527
+    darwin_amd64: 6a7960ba6ff179c69855e24d0752edc8bff0432e2cbc0d2c49ede3ce598c4308
+    darwin_arm64: a21ccb54cb05508f9f28f7887256d115bba7d0147505067bd2ec0b639445a150
+    linux_amd64: 7e0d59c65be5054a14ff2a76eb12c2d4ec3e5bc2f1dfa03c7356bb35b50bbf41
+    linux_arm64: 6cd03bf2b94a07ce149a9f388bbded1f85b4a0d4e0418ef2fc7e0f4285178a36
   templates:
     download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
@@ -109,15 +109,15 @@ kubefwd:
     path: kubefwd
 
 kpt:
-  version: 1.0.0-beta.17
+  version: 1.0.0-beta.21
   templates:
     download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
     sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: 794c3a52fac83d4d28c85be3e6f3d9f2c3c8d2c41f2c3a4e5216cc6cd0ce6e64
-    darwin_arm64: fe5df6acefefe541449b319dc680c983fb9b0c7ad76897030132f19db6f1b142
-    linux_amd64: 29b7731e8c5456a07b3875e3c6e7fdc4bdf4c84b232309fc1833981e4f8b346b
-    linux_arm64: 9c54ff866bc5f5c9ba057354ca3285202b1df58bd094bb5d703bbd7cac2b3031
+    darwin_amd64: 07993c65577cc0a55799ac9464571df8eabdbb19a4a61d1175366c2155972cd6
+    darwin_arm64: 23fb56c38e7d06b7056154e555a736dfd981c3dc77477a4ba51c70f63039e242
+    linux_amd64: 5fcc2764f700ffceb9f472319e674556431e1a55ee0e668fe908bd22613bd6ce
+    linux_arm64: 1850172c93af24e3a215a961736e3d443277a627e89a0cac7075e70924f22b77
 
 buildctl:
   version: 0.10.4
@@ -198,14 +198,14 @@ oauth2l:
     path: ${os}_${arch}/oauth2l
 
 rpk:
-  version: 22.2.2
+  version: 22.2.6
   template:
     download: https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-${os}-${arch}.zip
   sha256:
-    darwin_amd64: 7fb07b933bcbfc16a1f02b815b47a70a62ecee303aa92a9c03c6119c70219319
-    darwin_arm64: 9b2b16b007004e5b0dcfd0aee99d9a3642c2bb5608d0a96ce6cc4057fa61b8d3
-    linux_amd64: b357c0c799a10f0ba06734a4e22af6d821fcca97c99be5b7e04cd7eee42b086c
-    linux_arm64: d2797fe748ca2523692cccce37fd50cd4364d543e840add1c6e999474d21d4ca
+    darwin_amd64: 8538aa7a6f92ccedc14cc6b28dc3473e3306062c861c5416d7cf42dede99e7d9
+    darwin_arm64: e07b64d808a7bbd977b8ac08469816944fb253fdc4081fbe90507a6f8ae7b55f
+    linux_amd64: 54c123d62c2cb08d784199a449f3b16f903645e88bd0abe8efa837ea0644953f
+    linux_arm64: c6f05cf17623a62d67ee96eb336e98c97fdd5b43efcfb4f022adf30328f5e204
   archive:
     tool: zip
     path: rpk
@@ -225,14 +225,14 @@ promtool:
     path: prometheus-${version}.${os}-${arch}/promtool
 
 esbuild:
-  version: 0.14.45
+  version: 0.15.12
   template:
     download: https://registry.npmjs.org/esbuild-${os}-${arm}64/-/esbuild-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 7b3c33816fc836341872bc647df452fe61ec165831ea42cca1c844387963ffea
-    darwin_arm64: 39ba622eb16a7acf9ee4b2d8201440390ec300c667aec275484b301f2c78b60e
-    linux_amd64: bb03ff78d136f4c6f5c1e279ab9eaae31c5aa89e03ebd8cf85fab41bf16ac1bb
-    linux_arm64: 8c0b1641e85834edb72d39e2d4472737269501742807ec836853e4ced76fcece
+    darwin_amd64: 4183b6fbfe5af6f9259171847ed66342d262c5082cb6af2db9af2d8909631527
+    darwin_arm64: 7bbeedc0e5916811ac63ede102e61b8479b454344fc99bee471d7b302cdd81fd
+    linux_amd64: daeed357eec71bc707f9f375fa136c1f91d371bfdff04ea06fe779b960fccbb6
+    linux_arm64: 32004f9f008dbd099dfaf51eb861f9e0b1e9c4ca422d4466d1ca6e92b66c1cfd
   archive:
     tool: tar
     path: package/bin/esbuild
