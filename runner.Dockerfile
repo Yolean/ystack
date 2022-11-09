@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM --platform=$TARGETPLATFORM ubuntu:22.04@sha256:7cfe75438fc77c9d7235ae502bf229b15ca86647ac01c844b272b56326d56184 \
+FROM --platform=$TARGETPLATFORM ubuntu:22.04@sha256:4b1d0c4a2d2aaf63b37111f34eb9fa89fa1bf53dd6e4ca954d47caebca4005c2 \
   as base
 
 RUN set -ex; \
@@ -19,7 +19,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM --platform=$TARGETPLATFORM node:18.12.0-bullseye-slim@sha256:0a621cdd7d66ad8976f4246ab0661e3b1dd0d397c1dd784ea01bf740bd1c2522 \
+FROM --platform=$TARGETPLATFORM node:18.12.1-bullseye-slim@sha256:78e6da5da446d42872eb5c21bb651e478b01613475b321ce9e25e392dd876fff \
   as node
 
 FROM base as bin
