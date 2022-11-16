@@ -36,6 +36,7 @@ vault
 jq
 yq
 esbuild
+turbo
 oauth2l
 rpk
 remote-iap

@@ -56,6 +56,9 @@ RUN y-skaffold config set --global collect-metrics false
 COPY bin/y-esbuild /usr/local/src/ystack/bin/
 RUN y-esbuild --version
 
+COPY bin/y-turbo /usr/local/src/ystack/bin/
+RUN y-turbo --version
+
 RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml kpt
 RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml cue
 
