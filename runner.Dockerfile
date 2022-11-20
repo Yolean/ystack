@@ -3,7 +3,10 @@ FROM --platform=$TARGETPLATFORM ubuntu:22.04@sha256:4b1d0c4a2d2aaf63b37111f34eb9
   as base
 
 RUN set -ex; \
-  (cd /usr/local/bin; ln -s ../lib/node_modules/npm/bin/npm-cli.js npm); \
+  (cd /usr/local/bin; \
+    ln -s ../lib/node_modules/npm/bin/npm-cli.js npm; \
+    ln -s ../lib/node_modules/corepack/dist/corepack.js corepack; \
+  ); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
   runDeps='ca-certificates curl git jq unzip findutils patch'; \
@@ -66,6 +69,7 @@ FROM --platform=$TARGETPLATFORM base
 
 COPY --from=node --link /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node --link /usr/local/bin/node /usr/local/bin/
+RUN corepack enable && corepack prepare yarn@4.0.0-rc.30 --activate
 
 COPY --from=bin /usr/local/src/ystack/bin /usr/local/src/ystack/bin
 
