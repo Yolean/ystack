@@ -20,7 +20,7 @@ spec:
       hostNetwork: true
       initContainers:
       - name: update
-        image: ubuntu:18.04@sha256:b88f8848e9a1a4e4558ba7cfc4acc5879e1d0e7ac06401409062ad2627e6fb58
+        image: ubuntu:22.04@sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9
         volumeMounts:
         - name: etc-containerd
           mountPath: /etc/containerd
@@ -37,22 +37,32 @@ spec:
         #to troubleshoot use: - -cex
         - -ce
         - |
+          CONTAINERD_VERSION=$(nsenter --mount=/proc/1/ns/mnt -- containerd -v)
+          case "$CONTAINERD_VERSION" in
+            *"containerd 1.4."*) CRI_PLUGIN='plugins.cri' ;;
+            *) CRI_PLUGIN='plugins."io.containerd.grpc.v1.cri"' ;;
+          esac
+          echo "CONTAINERD_VERSION=$CONTAINERD_VERSION CRI_PLUGIN=$CRI_PLUGIN"
           if ! grep builds-registry.ystack.svc.cluster.local $CONFIG_PATH; then
-            echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local"]' >> $CONFIG_PATH
+            echo "[$CRI_PLUGIN.registry.mirrors.\"builds-registry.ystack.svc.cluster.local\"]"    >> $CONFIG_PATH
             echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"]'          >> $CONFIG_PATH
-            echo '[plugins.cri.registry.mirrors."builds-registry.ystack.svc.cluster.local:80"]' >> $CONFIG_PATH
+            echo "[$CRI_PLUGIN.registry.mirrors.\"builds-registry.ystack.svc.cluster.local:80\"]" >> $CONFIG_PATH
             echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"]'          >> $CONFIG_PATH
             touch /results/config-updated
           fi
           if ! grep prod-registry.ystack.svc.cluster.local $CONFIG_PATH; then
-            echo '[plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local"]'   >> $CONFIG_PATH
+            echo "[$CRI_PLUGIN.registry.mirrors.\"prod-registry.ystack.svc.cluster.local\"]" >> $CONFIG_PATH
             echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"]'            >> $CONFIG_PATH
-            echo '[plugins.cri.registry.mirrors."prod-registry.ystack.svc.cluster.local:80"]'   >> $CONFIG_PATH
+            echo "[$CRI_PLUGIN.registry.mirrors.\"prod-registry.ystack.svc.cluster.local:80\"]" >> $CONFIG_PATH
             echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"]'            >> $CONFIG_PATH
             touch /results/config-updated
           fi
+          echo "-------------------- file --------------------"
           cat $CONFIG_PATH
-           if [ -f /results/config-updated ]; then
+          echo "-------------------- dump --------------------"
+          nsenter --mount=/proc/1/ns/mnt -- containerd config dump
+          echo "-------------------- --- --------------------"
+          if [ -f /results/config-updated ]; then
             echo "Configuration has been updated; restarting containerd (not expecting any output) ..."
             nsenter --mount=/proc/1/ns/mnt -- systemctl restart containerd
             echo "Restart triggered"
@@ -62,7 +72,7 @@ spec:
           echo "Done"
       containers:
       - name: init-container-did-the-work
-        image: gcr.io/google_containers/pause:3.2@sha256:927d98197ec1141a368550822d18fa1c60bdae27b78b0c004f705f548c07814f
+        image: k8s.gcr.io/pause:3.6@sha256:3d380ca8864549e74af4b29c10f9cb0956236dfb01c40ca076fb6c37253234db
       terminationGracePeriodSeconds: 30
       volumes:
       - name: etc-containerd

@@ -18,7 +18,7 @@ spec:
         operator: Exists
       initContainers:
       - name: update
-        image: debian:stretch-slim@sha256:9490c476443a3869e39c2897fa66c91daf5dcbbfca53c976dac7bbdc45775b28
+        image: ubuntu:22.04@sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9
         volumeMounts:
         - name: etchosts
           mountPath: /host-etc/hosts
@@ -46,7 +46,7 @@ spec:
           echo "Done."
       containers:
       - name: init-container-did-the-work
-        image: gcr.io/google_containers/pause:3.2@sha256:927d98197ec1141a368550822d18fa1c60bdae27b78b0c004f705f548c07814f
+        image: k8s.gcr.io/pause:3.6@sha256:3d380ca8864549e74af4b29c10f9cb0956236dfb01c40ca076fb6c37253234db
       terminationGracePeriodSeconds: 30
       volumes:
       - name: etchosts
