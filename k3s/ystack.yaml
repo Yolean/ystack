@@ -1,19 +1,19 @@
 # https://github.com/lima-vm/lima/blob/master/examples/alpine.yaml
 
 images:
-- location: https://github.com/solsson/alpine-lima/releases/download/test-v20211126t1029/alpine-lima-y-3.14.3-aarch64.iso
-  arch: aarch64
-  digest: sha512:71b9dc3725701d1e25353bbd05493e521c82323102cddd1ee0b7dfd17fb51590082538fb01e7c2de19833ed857a5acc62ca1cbce589c06e28fda941071c04506
-- location: https://github.com/solsson/alpine-lima/releases/download/test-v20211126t1029/alpine-lima-y-3.14.3-x86_64.iso
-  arch: x86_64
-  digest: sha512:44e7c496ecd2ee4a54c029138bf0ee4874747edd0c4547585397839b747d00656f6cd3909d927cf5cbb177941807262df305b9bfd996fe771a1765ff058ccb27
+- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.26/alpine-lima-std-3.17.0-x86_64.iso"
+  arch: "x86_64"
+  digest: "sha512:93bf8d52ad2b3a6ef401a1a565f67e4f06f8022ec8963cad36cac4a25253f056ac0b755d1ed56b8993b0261440e0d5d38bad15b271864ed33cd3b02272738672"
+- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.26/alpine-lima-std-3.17.0-aarch64.iso"
+  arch: "aarch64"
+  digest: "sha512:aacd3a9e7a3231553bcee879c6770b379afbfad3dcfac7f274a80d6c490faf33f3c23b6130efa881f57c0c5235ced2877e2f45e3cdf4fefff11531d6023ae214"
 
 cpus: 4
 memory: "8GiB"
 disk: "20GiB"
 
 env:
-  INSTALL_K3S_VERSION: v1.22.4+k3s1
+  INSTALL_K3S_VERSION: v1.25.5+k3s1
   INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
   K3S_NODE_NAME: ystack-master
 

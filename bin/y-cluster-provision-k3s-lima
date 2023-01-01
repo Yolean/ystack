@@ -7,7 +7,7 @@ set -eo pipefail
 [ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
 
 # Not reusing y-k3s-install, avoid breaking multipass provision
-K3S_INSTALLER_REVISION=43b1cb48200d8f6af85c16ed944d68fcc96b6506
+K3S_INSTALLER_REVISION=fae8817655a8ad1250d40e5b4f9a938cbb9c960a
 
 QEMU_VERSION=$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 | rev)
 
@@ -64,7 +64,5 @@ for base in \
   echo "# Applying $basepath ..."
   k apply -k $basepath
 done
-
-k -n ystack apply -k $YSTACK_HOME/registry/node-update-hosts/
 
 y-kubeconfig-import "$KUBECONFIG.tmp"

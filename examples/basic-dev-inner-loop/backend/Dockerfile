@@ -1,4 +1,4 @@
-FROM node:12.16.3-alpine@sha256:84f5c9090cc741421b2376b2393e7d5fa2f89d36167c12eb57aef16dd64ecf6c
+FROM node:18.12.1-alpine@sha256:a136ed7b0df71082cdb171f36d640ea3b392a5c70401c642326acee767b8c540
 
 ARG build_tag
 ARG build_timestamp
