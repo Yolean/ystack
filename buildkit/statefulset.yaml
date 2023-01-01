@@ -15,11 +15,10 @@ spec:
       labels:
         app: buildkitd
         status: accepts-new-builds
-      annotations:
-        container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
-        container.seccomp.security.alpha.kubernetes.io/buildkitd: unconfined
-# see buildkit/docs/rootless.md for caveats of rootless mode
     spec:
+      securityContext:
+        seccompProfile:
+          type: Unconfined
       containers:
       - name: buildkitd
         image: moby/buildkit:rootless

@@ -1,4 +1,4 @@
-apiVersion: skaffold/v2beta10
+apiVersion: skaffold/v3
 kind: Config
 metadata:
   name: in-cluster-build
@@ -13,8 +13,9 @@ build:
     kaniko:
       reproducible: true
   cluster: {}
+manifests:
+  rawYaml:
+  - k8s/example-server-deployment.yaml
+  - k8s/example-server-service.yaml
 deploy:
-  kubectl:
-    manifests:
-    - k8s/example-server-deployment.yaml
-    - k8s/example-server-service.yaml
+  kubectl: {}
