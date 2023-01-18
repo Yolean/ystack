@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM --platform=$TARGETPLATFORM ubuntu:22.04@sha256:4b1d0c4a2d2aaf63b37111f34eb9fa89fa1bf53dd6e4ca954d47caebca4005c2 \
+FROM --platform=$TARGETPLATFORM ubuntu:22.04@sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9 \
   as base
 
 RUN set -ex; \
@@ -22,7 +22,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false
 
-FROM --platform=$TARGETPLATFORM node:18.12.1-bullseye-slim@sha256:78e6da5da446d42872eb5c21bb651e478b01613475b321ce9e25e392dd876fff \
+FROM --platform=$TARGETPLATFORM node:18.13.0-bullseye-slim@sha256:bc946484118735406562f17c57ddf5fded436e175b6a51f827aa6540ba1e13de \
   as node
 
 FROM base as bin
@@ -69,7 +69,7 @@ FROM --platform=$TARGETPLATFORM base
 
 COPY --from=node --link /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node --link /usr/local/bin/node /usr/local/bin/
-RUN corepack enable && corepack prepare yarn@4.0.0-rc.30 --activate
+RUN corepack enable && corepack prepare yarn@4.0.0-rc.35 && corepack prepare pnpm@7.25.0 --activate
 
 COPY --from=bin /usr/local/src/ystack/bin /usr/local/src/ystack/bin
 
