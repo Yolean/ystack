@@ -5,4 +5,22 @@ YBIN="$(dirname $0)"
 
 version=$(y-bin-download $YBIN/y-bin.yaml turbo)
 
-y-turbo-v${version}-bin "$@" || exit $?
+WORKDIR="$PWD"
+TURBODIR="$WORKDIR"
+ADDFILTER=""
+[ "$1" != "run" ] ||
+  [ ! -f package.json ] ||
+  [[ $* = *--filter* ]] ||
+  until [ -f "$TURBODIR/turbo.json" ] ||
+    [ "$TURBODIR" = '/' ] ||
+    [ "$TURBODIR" = '.' ];
+    do TURBODIR="$(dirname $TURBODIR)";
+    done
+
+[ "$WORKDIR" = "$TURBODIR" ] || {
+  WORKPKG=$(jq -r '.name' "$WORKDIR/package.json")
+  ADDFILTER="--filter=$WORKPKG"
+  >&2 echo "=> Found turborepo workspace root '$TURBODIR' workdir filter '$ADDFILTER'"
+}
+
+(cd $TURBODIR; y-turbo-v${version}-bin "$@" $ADDFILTER) || exit $?

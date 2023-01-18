@@ -13,6 +13,4 @@ ERR=/dev/null
 [ -z "$DEBUG" ] || OUT=/dev/stdout
 [ -z "$DEBUG" ] || ERR=/dev/stderr
 
-
-
 crane digest $IMAGE >$OUT 2>$ERR
