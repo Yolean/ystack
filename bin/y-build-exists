@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+case "$IMAGE" in
+  '') echo "y-build-exists missing IMAGE env" && exit 2 ;;
+  *':'*) ;;
+  *) echo "y-build-exsits refusing to check untagged: $IMAGE" && exit 3 ;;
+esac
+
+OUT=/dev/null
+ERR=/dev/null
+[ -z "$DEBUG" ] || OUT=/dev/stdout
+[ -z "$DEBUG" ] || ERR=/dev/stderr
+
+
+
+crane digest $IMAGE >$OUT 2>$ERR
