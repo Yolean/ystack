@@ -44,9 +44,6 @@ RUN y-helm version --client=true
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl --version
 
-COPY bin/y-container-structure-test /usr/local/src/ystack/bin/
-RUN y-container-structure-test version
-
 COPY bin/y-crane /usr/local/src/ystack/bin/
 RUN y-crane version
 
@@ -61,9 +58,6 @@ RUN y-esbuild --version
 
 COPY bin/y-turbo /usr/local/src/ystack/bin/
 RUN y-turbo --version
-
-RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml kpt
-RUN y-bin-download /usr/local/src/ystack/bin/y-bin.yaml cue
 
 FROM --platform=$TARGETPLATFORM base
 
