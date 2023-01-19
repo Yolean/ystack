@@ -60,15 +60,15 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.0.2
+  version: 2.0.4
   template:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: a4987343fc661cefc4b7117bd6f839903c43daf7973b94b3f2aeffd7189a1ff4
-    darwin_arm64: 2aa02d2d1b449f292ba0836d10235f961e12a893a4a007fc6dbd06b22a4f4606
-    linux_amd64: 32e73cf27d6ba880e8b1dcaff322abcf3f4ed176705ebd6a3562079f0128fc2e
-    linux_arm64: 92f4d22d2f57eaf328dd7a164969b45d774bfd3ba94f8d9ce0e4a79456a02c1c
+    darwin_amd64: d0956712db4d2dd8084ffe297bf645ec92506b87db5f61c0f5e24c7fd99bf0a3
+    darwin_arm64: 3d6a328f7f8f76795a818a2d58524e34b41fb0f2ce428aeca872d69e8fd43f1a
+    linux_amd64: f1c54245b97073f39b209dd4b769802701c9901ceaa95774e7507d95bbd1d4c0
+    linux_arm64: 03f077e7d2b210dfa3c34d6a938a6a64f93b490fbb2c39b77d5896ffad27a52a
 
 helm:
   version: 3.7.2
@@ -198,14 +198,15 @@ oauth2l:
     path: ${os}_${arch}/oauth2l
 
 rpk:
-  version: 22.3.10
+  version: 22.3.11
   template:
     download: https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-${os}-${arch}.zip
+    sha256: https://github.com/redpanda-data/redpanda/releases/download/v${version}/rpk_${version}_checksums.txt
   sha256:
-    darwin_amd64: 3fe0aa78dbce63608eeb8c4bf4353bede08de05b6106bf627805283fcedd27d3
-    darwin_arm64: 988b6ee8ebc3d768cd8f91e84ff4f634564b6177655d4246fea21faaa1df8f9e
-    linux_amd64: 96355cfec844ea04a4ebd97298a215eeb4698983b988a9b5d26c3d72d6a5143e
-    linux_arm64: d1f87c4a26f5d2e0a77a4dbda1377845a9161fc450be02725eee58a9bee29430
+    darwin_amd64: 8e01288677a863a0c80924173600caf83c683b0e67326d0f6502edbf29ee0b34
+    darwin_arm64: cfb6434f773c29a3812cfd2cf7414e0804481bce929c31d84805299e314a9638
+    linux_amd64: fa8644cadd531d2b6b9903f7741be542f4a799b3527e167768bf558a4ac49969
+    linux_arm64: 88d7a5fa34455f9364b64a9a1a94f6ea358b302344c555426551714468c531e5
   archive:
     tool: zip
     path: rpk
