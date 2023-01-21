@@ -15,10 +15,14 @@ spec:
       labels:
         app: buildkitd
         status: accepts-new-builds
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
     spec:
       securityContext:
         seccompProfile:
           type: Unconfined
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
       - name: buildkitd
         image: moby/buildkit:rootless
