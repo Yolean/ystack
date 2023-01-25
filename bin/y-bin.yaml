@@ -60,15 +60,15 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.0.4
+  version: 2.1.0
   template:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: d0956712db4d2dd8084ffe297bf645ec92506b87db5f61c0f5e24c7fd99bf0a3
-    darwin_arm64: 3d6a328f7f8f76795a818a2d58524e34b41fb0f2ce428aeca872d69e8fd43f1a
-    linux_amd64: f1c54245b97073f39b209dd4b769802701c9901ceaa95774e7507d95bbd1d4c0
-    linux_arm64: 03f077e7d2b210dfa3c34d6a938a6a64f93b490fbb2c39b77d5896ffad27a52a
+    darwin_amd64: 2535ea3e5bed129926b300be104df1d606e1637160d471845660681378fed239
+    darwin_arm64: 8990ba618a8bcab3bb7fe8a2b79c0d47ee31d6f3e0ff6885739f3e2c9f6f12d0
+    linux_amd64: 62fe1c68bf8b177e43fb900a4166b4f087ac5b68f927a6854d625bf38c8bcc41
+    linux_arm64: 31843ba1ea91d8fe62bdbc07e6c67fe57e1d2f847862305b89ffe34905fda2ec
 
 helm:
   version: 3.7.2
@@ -134,15 +134,15 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.12.1
+  version: 0.13.0
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: 09fe9f7d6bdbddea43ce9450344fadefd42c683f2ece111dbbc2083a86d8f0d0
-    darwin_arm64: b42f287000352ea43cf25d12cd1c80dd80e9bff48f119c9c7b1a1cae6a31125f
-    linux_amd64: 77a0d37334e5323e8ad08a02d6df0170cd3f0af491643cd15a98749a810de3d6
-    linux_arm64: d2a91a116e64f119fdaa8d33cf0e1e2c18369dd74d9cb15aeecc85247eecdb09
+    darwin_amd64: 3a1b3f99a09c1384fadcdf4d283baf59114836f78bcca3b0c37b9bf65da06fee
+    darwin_arm64: 3d609a3f5037eaf61038b900cc483fe196f2fbd2f4475c575d12d5309acdcf17
+    linux_amd64: b06641f6cd08c509d5f1b234076269bfbb512f91e7ba4f796adb8c4b1626c9b7
+    linux_arm64: b26d322276cf6934a162200a1bde19d9318e4b9656a357527a7465c3bf53f4c2
   archive:
     tool: tar
     path: crane
