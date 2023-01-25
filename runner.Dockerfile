@@ -63,7 +63,7 @@ FROM --platform=$TARGETPLATFORM base
 
 COPY --from=node --link /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node --link /usr/local/bin/node /usr/local/bin/
-RUN corepack enable && corepack prepare yarn@4.0.0-rc.35 && corepack prepare pnpm@7.25.0
+RUN corepack enable && corepack prepare yarn@4.0.0-rc.36 && corepack prepare pnpm@7.26.0
 
 COPY --from=bin /usr/local/src/ystack/bin /usr/local/src/ystack/bin
 
