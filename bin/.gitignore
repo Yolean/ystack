@@ -30,7 +30,6 @@ deno
 k8s-ingress-hosts
 istioctl
 logcli
-git-remote-https+iap
 golangci-lint
 vault
 jq
@@ -40,6 +39,8 @@ turbo
 oauth2l
 rpk
 remote-iap
+git-remote-https+iap
+git-remote-iap
 shellcheck
 shellspec
 zap-pretty
