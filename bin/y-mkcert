@@ -1,0 +1,8 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname $0)"
+
+version=$(y-bin-download $YBIN/y-bin.yaml mkcert)
+
+y-mkcert-v$version-bin "$@" || exit $?
