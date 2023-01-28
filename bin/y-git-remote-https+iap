@@ -1,8 +1,0 @@
-#!/bin/sh
-[ -z "$DEBUG" ] || set -x
-set -e
-YBIN="$(dirname $0)"
-
-version=$(y-bin-download $YBIN/y-bin.yaml 'git-remote-https+iap')
-
-$YBIN/y-git-remote-https+iap-v${version}-bin "$@" || exit $?

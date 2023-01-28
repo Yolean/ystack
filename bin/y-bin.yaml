@@ -277,16 +277,16 @@ cue:
     tool: tar
     path: cue
 
-remote-iap:
-  version: 0.5.5
+git-remote-iap:
+  version: 0.5.6
   templates:
-    download: https://github.com/solsson/remote-iap/releases/download/v${version}/remote-iap-${os}-${arch}-v${version}.tar.gz
-    sha256: https://github.com/solsson/remote-iap/releases/download/v${version}/remote-iap-${os}-${arch}-v${version}.tar.gz.sha256
+    download: https://github.com/c9h-to/remote-iap/releases/download/v${version}/remote-iap-${os}-${arch}-v${version}.tar.gz
+    sha256: https://github.com/c9h-to/remote-iap/releases/download/v${version}/remote-iap-${os}-${arch}-v${version}.tar.gz.sha256
   sha256:
-    darwin_amd64: 8fe97c310b8dc2c3db32194b65539ad3fac8a537684b75ec65b018245c7e7320
-    darwin_arm64: eb0cc7a1e359f16224b056c26fb58a3201b7c4f17c91ed2ce96e38d1a65755ae
-    linux_amd64: 2f493477c09a82f7e047c554b49612b52aab78f77963abb70526255223496d98
-    linux_arm64: 163d7d15e99c6217e4dbb778aa4b1b8aa185ba595eedf887090ab063e8f1b224
+    darwin_amd64: c40586cf75df85a9c1486d12a15733a3049b6e54a649328f6a01ec14371337b6
+    darwin_arm64: cfcee050980e9e925844bca862788fe36ba7d6cc744b66a354db7853c05f4f38
+    linux_amd64: a355bfdfae05e250b638acc3cafc9ea23f9d6c2f23fad769df3ca781d0a9a781
+    linux_arm64: c759ad88304834dd9cd9e61a40adf51d2648332942dc1aead1c852848f7ac109
   archive:
     tool: tar
     path: remote-iap
