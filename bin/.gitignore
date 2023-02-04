@@ -36,6 +36,7 @@ jq
 yq
 esbuild
 turbo
+go-turbo
 oauth2l
 rpk
 remote-iap
