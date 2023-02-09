@@ -239,27 +239,27 @@ esbuild:
     path: package/bin/esbuild
 
 turbo:
-  version: 1.7.3
+  version: 1.7.4
   template:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 6c0c2eac4e167f581759c8d2a8c6f9c6df0df2a6569d4f546b35326dfe412518
-    darwin_arm64: 043167c28f432a1914af619172698455313dc885b7f158baa20338fd00c9d34d
-    linux_amd64: 1036233cace41a399b694b68d2776dafed79b71b2369bcbab4467af980607612
-    linux_arm64: ee376814268c104623d8a4f5e2168fad724e380755648c7fe9f24f08d6a0af51
+    darwin_amd64: 596b2748543e3583b1c4e1e64850038ac829f411c9838be7f14271ed75319d46
+    darwin_arm64: 327650048fb3db73dca2824c8c418cf061848241ccc217138f009c5388c2b557
+    linux_amd64: 6f08be8ed8680def9212f08f3cd34dbfd011f27e480357dce08f1c9df0b4f796
+    linux_arm64: 8f7994777c75ead611dd0430788074ec86c2298b8a3de1242a450786ba47cf27
   archive:
     tool: tar
     path: turbo-${os}-${arm}64/bin/turbo
 # exact copy of turbo except archive path
 go-turbo:
-  version: 1.7.3
+  version: 1.7.4
   template:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 6c0c2eac4e167f581759c8d2a8c6f9c6df0df2a6569d4f546b35326dfe412518
-    darwin_arm64: 043167c28f432a1914af619172698455313dc885b7f158baa20338fd00c9d34d
-    linux_amd64: 1036233cace41a399b694b68d2776dafed79b71b2369bcbab4467af980607612
-    linux_arm64: ee376814268c104623d8a4f5e2168fad724e380755648c7fe9f24f08d6a0af51
+    darwin_amd64: 596b2748543e3583b1c4e1e64850038ac829f411c9838be7f14271ed75319d46
+    darwin_arm64: 327650048fb3db73dca2824c8c418cf061848241ccc217138f009c5388c2b557
+    linux_amd64: 6f08be8ed8680def9212f08f3cd34dbfd011f27e480357dce08f1c9df0b4f796
+    linux_arm64: 8f7994777c75ead611dd0430788074ec86c2298b8a3de1242a450786ba47cf27
   archive:
     tool: tar
     path: turbo-${os}-${arm}64/bin/go-turbo
