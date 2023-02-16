@@ -85,15 +85,15 @@ helm:
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
 
 k3d:
-  version: 5.4.3
+  version: 5.4.7
   templates:
     download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-${os}-${arch}
     sha256: https://github.com/rancher/k3d/releases/download/v${version}/sha256sum.txt
   sha256:
-    darwin_amd64: bcd43845c34265d0d5ded9f342f2be3e876eff8fc1ddcaf9607f720a64ec0d3b
-    darwin_arm64: e63e601445a752e97a71bd313f36b69feec88e72c08079b7ece618727ef2b92a
-    linux_amd64: 8360b69f5f86b3fedfd632ac67b6e8f70af731d4c64df6dbb3d3c67eb723421b
-    linux_arm64: f604723614cc2a0a0cdbb69b927320b1634365cd36cd2fefb7375995f947559b
+    darwin_amd64: 8a62a54575517335fbada845cafb75a058c90f7b7be83e77da866602507caa71
+    darwin_arm64: c9811e94b9691f5be84612183b00e1f228fcb4633f41dd21557bcb0ca205b459
+    linux_amd64: c54218d5bf6cb6e74987bf21f7820483f581b00c49fee11dbdb8c17c7829a025
+    linux_arm64: c8ceb55ed2ffe2015b915848d0b6eaa72dbc1358270dee4e0c12358c16231d40
 
 kubefwd:
   version: 1.22.0
