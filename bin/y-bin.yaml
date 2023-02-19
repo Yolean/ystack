@@ -120,14 +120,14 @@ kpt:
     linux_arm64: 1850172c93af24e3a215a961736e3d443277a627e89a0cac7075e70924f22b77
 
 buildctl:
-  version: 0.11.2
+  version: 0.11.3
   templates:
     download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: bf0f536f8ec775392ed7542acaf5390496e6d931df6758a17f341d595e0c7691
-    darwin_arm64: 7606f2aee4898170edfeee0ea0044cd99905f480a84b8c621f878bb9493d4f09
-    linux_amd64: 6d0fe3f1ec2dce4ed2a5c9baf05fb279225b3b0e3bbee4092304fe284ca7fc47
-    linux_arm64: 8a8c2274852ea4bac6ccf1862a46679e93c013de8c5c0434a3040bab2e0a42a7
+    darwin_amd64: cc87d6ee6d8e2f1b110124e2548b29efebd85b4759cd8b3f9c2e87d1c6a52f57
+    darwin_arm64: 1c58bf0a6d0853d57fae79c429b512f0e3a149933e87e76dbe6d16c82eb91f5c
+    linux_amd64: f631978dc283670500a602df1ba1a49333af137c0792716c5510d3cbb9cb4ede
+    linux_arm64: 3425ebba8ff0748e2a26dc9f45a879a03bde0937c6acbbc8e6659b905d014f07
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")

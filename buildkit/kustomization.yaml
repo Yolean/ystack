@@ -4,7 +4,7 @@ kind: Kustomization
 images:
 - name: moby/buildkit:rootless
   newName: docker.io/moby/buildkit
-  newTag: v0.11.2-rootless@sha256:73a5b76c9d21e5d318ca4f0aab23a49e24cfd3401fba1424790bd0def86eb1d9
+  newTag: v0.11.3-rootless@sha256:1e61e92773befbaffc45e06094203814e31528e650b4a0901cf65b7a452e7d6f
 
 resources:
 - service.yaml
