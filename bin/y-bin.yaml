@@ -226,14 +226,14 @@ promtool:
     path: prometheus-${version}.${os}-${arch}/promtool
 
 esbuild:
-  version: 0.17.5
+  version: 0.17.10
   template:
     download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
   sha256:
-    darwin_amd64: 6c14febaa2a84598de7a13ba8409b0d132eca1c5c82b8d6d496f0384a1df3643
-    darwin_arm64: 92ee99a9c49c93b78742a4f2f5863e228980e2f2569053018bd0eba2e2a7b23e
-    linux_amd64: c9ae89c52c2e476f08aa39911d79ebef26e170730005f91343887f542d2b632a
-    linux_arm64: d55954ec89f49dab8948992a0fe4b82ce629df0d23ac9716451a2f662dd3ae0c
+    darwin_amd64: f79958107c64bbcdda2c535e09f52436f17817eabcad200f2c7a896caf064ce5
+    darwin_arm64: 9cd3852cda0b6ecaf49e6028c9a08789ea022895ea9596cc41a8823ea34d63cc
+    linux_amd64: 5ed9eeeb2dc6def48b48128358feb625857b7811db32a781f247ae3a2293a62a
+    linux_arm64: 8e9dce9c8ccf0733b0541d113613b5322751e1cc8a6d288d3d243a6ca1de0d02
   archive:
     tool: tar
     path: package/bin/esbuild
