@@ -15,10 +15,11 @@ spec:
         storage-driver: overlay2
       annotations:
         container.apparmor.security.beta.kubernetes.io/dockerd: unconfined
-        container.seccomp.security.alpha.kubernetes.io/dockerd: unconfined
     spec:
       terminationGracePeriodSeconds: 25
       securityContext:
+        seccompProfile:
+          type: Unconfined
         fsGroup: 1000
       initContainers:
       - name: setup
