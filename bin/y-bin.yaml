@@ -264,19 +264,6 @@ go-turbo:
     tool: tar
     path: turbo-${os}-${arm}64/bin/go-turbo
 
-dagger:
-  version: 0.2.32
-  template:
-    download: https://github.com/dagger/dagger/releases/download/v${version}/dagger_v${version}_${os}_${arch}.tar.gz
-  sha256:
-    darwin_amd64: 61bc9030c5f0dcefda5c62ff763872aaa90e0ebddf820663eef93bfbe672c808
-    darwin_arm64: 236923de552b9585053fe6579911024f9e1e43c030e842cfdd2a60d8eb072dc3
-    linux_amd64: b33c8f3d141090724a52b5b5d2ebdafa79ca90b66f0fa42a47987dfa40ce8676
-    linux_arm64: ba08cd1e0d95ea9b7626efc9f946ac9d51e111daf7d83635542bd9b49ab91c8a
-  archive:
-    tool: tar
-    path: dagger
-
 cue:
   version: 0.4.3
   template:
