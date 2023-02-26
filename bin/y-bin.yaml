@@ -96,14 +96,14 @@ k3d:
     linux_arm64: c8ceb55ed2ffe2015b915848d0b6eaa72dbc1358270dee4e0c12358c16231d40
 
 kubefwd:
-  version: 1.22.0
+  version: 1.22.4
   templates:
     download: https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_${Os}_${xarch}.tar.gz
   sha256:
-    darwin_amd64: 69e30718737cffd61979d2baf4bea01555299826e49016bc0b82987d7a8708c4
-    darwin_arm64: 48ff8e49842a4fb3ee042b4a1f8c8c9fca66f2d68322d702e8c671f0dd20f4ab
-    linux_amd64: 7bcd135021a2fbf6d5da7b2aff0a27e8eb2edeb39814daf3ab1cc9dff68388f7
-    linux_arm64: 23e3e3cd719a3cb90c8a9639bbff2aff7fb141af958c6680cbe81443fde35b2a
+    darwin_amd64: 3e9f59e7f1631acd8a42f22201f6a4a1fa220360db0dd0b6f9e9aed0c17be681
+    darwin_arm64: 66eebaffe9bee79a3fe35ce4e7ca916da115e4573ef2edd17ac9b9cad08c5805
+    linux_amd64: 3e9f59e7f1631acd8a42f22201f6a4a1fa220360db0dd0b6f9e9aed0c17be681
+    linux_arm64: 66eebaffe9bee79a3fe35ce4e7ca916da115e4573ef2edd17ac9b9cad08c5805
   archive:
     tool: tar
     path: kubefwd
