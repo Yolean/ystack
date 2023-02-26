@@ -20,7 +20,8 @@ RUN set -ex; \
 ENV YSTACK_HOME=/usr/local/src/ystack \
   PATH="${PATH}:/usr/local/src/ystack/bin" \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
-  SKAFFOLD_UPDATE_CHECK=false
+  SKAFFOLD_UPDATE_CHECK=false \
+  npm_config_update_notifier=false
 
 FROM --platform=$TARGETPLATFORM node:18.14.2-bullseye-slim@sha256:81b43146e32b3704663eb243d092b82592eab50f683498c5db9bda07d4ee7e46 \
   as node
