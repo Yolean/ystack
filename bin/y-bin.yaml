@@ -109,15 +109,15 @@ kubefwd:
     path: kubefwd
 
 kpt:
-  version: 1.0.0-beta.21
+  version: 1.0.0-beta.27
   templates:
     download: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/kpt_${os}_${arch}
     sha256: https://github.com/GoogleContainerTools/kpt/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: 07993c65577cc0a55799ac9464571df8eabdbb19a4a61d1175366c2155972cd6
-    darwin_arm64: 23fb56c38e7d06b7056154e555a736dfd981c3dc77477a4ba51c70f63039e242
-    linux_amd64: 5fcc2764f700ffceb9f472319e674556431e1a55ee0e668fe908bd22613bd6ce
-    linux_arm64: 1850172c93af24e3a215a961736e3d443277a627e89a0cac7075e70924f22b77
+    darwin_amd64: 2425c748eab0b19e12ff46af9c43f0b8d8a92cd2ccaea95a6ef41e7c85de7761
+    darwin_arm64: 7dcecee49d017c99bc9bf158dcbd85e64f35b47dc53f3884f740c25fe162a554
+    linux_amd64: 076799ffbc7ea34382adcf56c39ef0e4df5e0779bd0e824ec75c016803015f16
+    linux_arm64: 176399c0b61b1cc132bfc1c1693f16b3a1fb037b4220bf1f860b3494c43e343b
 
 buildctl:
   version: 0.11.3
