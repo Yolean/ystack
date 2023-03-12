@@ -148,16 +148,15 @@ crane:
     path: crane
 
 container-structure-test:
-  version: 1.11.0
+  version: 1.14.0
   templates:
-    # arm64 binary not yet available
-    download: https://storage.googleapis.com/container-structure-test/v${version}/container-structure-test-${os}-${arch}
-    sha256: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/container-structure-test-${os}-${arch}.sha256
+    download: https://github.com/solsson/container-structure-test/releases/download//v${version}/container-structure-test-${os}-${arch}
+    sha256: https://github.com/solsson/container-structure-test/releases/download//v${version}/container-structure-test-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
-    darwin_arm64: 0a4ac9e221a86cda6bb9fedb2a0dfdce56f918327b8881977ad787ea15d0e82f
-    linux_amd64: 1524da5fd5a0fc88c4c9257a3de05a45f135df07e6a684380dd5f659b9ce189b
-    linux_arm64: b376ff80134d2d609c591b98d65d653a514755b4861185fd93159af7062ec65d
+    darwin_amd64: d55ba0ba697fc6e62808f930d587a5699747c77047a72b09828c12386d59da21
+    darwin_arm64: e02f98d4a3086b00c6f9592e9ae3c868c1e500fd667f596b91af6e0c1c428fb9
+    linux_amd64: 1a5fb5f7ba8aefafe30561be81f825c208a4fb66e6889979efffadf131e91070
+    linux_arm64: 5a77d3d9fddec7187265a4a45ec7a04cfee454dbc56c59df468a3d2e9e61e683
 
 kubie:
   version: 0.19.3
