@@ -5,6 +5,7 @@
 buildctl
 buildx
 bunyan
+contain
 container-structure-test
 crane
 cue

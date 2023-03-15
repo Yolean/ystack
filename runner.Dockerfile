@@ -61,6 +61,9 @@ RUN y-esbuild --version
 COPY bin/y-turbo /usr/local/src/ystack/bin/
 RUN y-turbo --version
 
+COPY bin/y-contain /usr/local/src/ystack/bin/
+RUN y-contain || true
+
 FROM --platform=$TARGETPLATFORM base
 
 COPY --from=node --link /usr/local/lib/node_modules /usr/local/lib/node_modules
