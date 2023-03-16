@@ -62,7 +62,7 @@ COPY bin/y-turbo /usr/local/src/ystack/bin/
 RUN y-turbo --version
 
 COPY bin/y-contain /usr/local/src/ystack/bin/
-RUN y-contain || true
+RUN y-contain --version
 
 FROM --platform=$TARGETPLATFORM base
 

@@ -134,15 +134,15 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.13.0
+  version: 0.14.0
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: 3a1b3f99a09c1384fadcdf4d283baf59114836f78bcca3b0c37b9bf65da06fee
-    darwin_arm64: 3d609a3f5037eaf61038b900cc483fe196f2fbd2f4475c575d12d5309acdcf17
-    linux_amd64: b06641f6cd08c509d5f1b234076269bfbb512f91e7ba4f796adb8c4b1626c9b7
-    linux_arm64: b26d322276cf6934a162200a1bde19d9318e4b9656a357527a7465c3bf53f4c2
+    darwin_amd64: 87ebddb174a77decfc31480b30f2cb83bb55a9ecb2452c522416ad0bffb23d16
+    darwin_arm64: f20fb7af3899296fce2b660f4c75169af1435215faff35c89d8fed55968e6f61
+    linux_amd64: 5b68fe0f7fe9170ba3e1677f47ecfc892c687a2fdcbc2b1de39ab5e9663de5d7
+    linux_arm64: f1078c823962daf14d23d40154a65510b5364e89a9c9c7df3f991f19e9feb401
   archive:
     tool: tar
     path: crane
@@ -301,12 +301,12 @@ mkcert:
     linux_arm64: b98f2cc69fd9147fe4d405d859c57504571adec0d3611c3eefd04107c7ac00d0
 
 contain:
-  version: 0.1.0
+  version: 0.1.1
   templates:
     download: https://github.com/c9h-to/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
     sha256: https://github.com/c9h-to/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: b66ca7c4e7ce45b3bbebea381291ec1a5426342d48702a6bc6784ec476abd2cf
-    darwin_arm64: cb50a12a2267d9f2d9a178a83d849a49c8ff06aac579fe80bacc9add3e3c104a
-    linux_amd64: 0d7f7bd8efd2a8db54317a426e9eef7a59465228a86c44812c15a81bebf70fe6
-    linux_arm64: b5f98f57f2b31cd7100626f47a86d6355fb8cd7d6ed222a1bcbddb041543fb6d
+    darwin_amd64: 1d3526baceca1ade0410b1f0837fee1e7ac7889d42f9b90e354c2bbc11483bd7
+    darwin_arm64: 2777b77a11bd98caa9591a17ff15ed52bfca71a6743474b81fcac0d66731f33e
+    linux_amd64: ee70acdbec77c3c18b45def81612d64522b0f6e9a2916e298238ad3aaa243745
+    linux_arm64: 49b31a5fdbd00de9c7f08337f4b9d0dd2286ee66b34de6a6df52b9fa8857f1a5
