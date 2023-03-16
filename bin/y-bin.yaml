@@ -301,12 +301,12 @@ mkcert:
     linux_arm64: b98f2cc69fd9147fe4d405d859c57504571adec0d3611c3eefd04107c7ac00d0
 
 contain:
-  version: 0.1.1
+  version: 0.2.0
   templates:
     download: https://github.com/c9h-to/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
     sha256: https://github.com/c9h-to/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: 1d3526baceca1ade0410b1f0837fee1e7ac7889d42f9b90e354c2bbc11483bd7
-    darwin_arm64: 2777b77a11bd98caa9591a17ff15ed52bfca71a6743474b81fcac0d66731f33e
-    linux_amd64: ee70acdbec77c3c18b45def81612d64522b0f6e9a2916e298238ad3aaa243745
-    linux_arm64: 49b31a5fdbd00de9c7f08337f4b9d0dd2286ee66b34de6a6df52b9fa8857f1a5
+    darwin_amd64: 0da0f674a2e2249f6e0cba276b6f4216502fcd89655c6be124eb9357fb1ef67e
+    darwin_arm64: 14b9e7a6fe074f66ea3f2ed6d63bcb2ae2de6c82cf369520d53f0c3acc56ec74
+    linux_amd64: e11a48215ea927b3285eee65c81e91ba391f89d8a14c47c429ed5634b2ec8430
+    linux_arm64: 75c10608caf5c00d0f5ff78a7f18419bfe69e137124058a665d71b192f39f668
