@@ -101,8 +101,8 @@ kubefwd:
   sha256:
     darwin_amd64: 3e9f59e7f1631acd8a42f22201f6a4a1fa220360db0dd0b6f9e9aed0c17be681
     darwin_arm64: 66eebaffe9bee79a3fe35ce4e7ca916da115e4573ef2edd17ac9b9cad08c5805
-    linux_amd64: 3e9f59e7f1631acd8a42f22201f6a4a1fa220360db0dd0b6f9e9aed0c17be681
-    linux_arm64: 66eebaffe9bee79a3fe35ce4e7ca916da115e4573ef2edd17ac9b9cad08c5805
+    linux_amd64: 234865423b2f7d79cfa897dc058fb322a197bf64d629b9f58618a1c858aca8b8
+    linux_arm64: 55e605643cc247a768e233b3467a36621e23118423145512a28ba5ed0611057f
   archive:
     tool: tar
     path: kubefwd
