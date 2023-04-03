@@ -37,6 +37,7 @@ vault
 jq
 yq
 esbuild
+talosctl
 turbo
 go-turbo
 oauth2l
