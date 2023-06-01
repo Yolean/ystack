@@ -13,7 +13,7 @@ esac
 
 version=$(y-bin-download $YBIN/y-bin.yaml kubefwd)
 
-[ $(id -u) -eq 0 ] || kubectl $ctx cluster-info >/dev/null
+[ $(id -u) -eq 0 ] || kubectl $ctx get pods >/dev/null
 [ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx "$@"
 
 addargs="$ctx"
