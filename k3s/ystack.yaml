@@ -34,8 +34,8 @@ portForwards:
 #   hostIP: "127.0.0.1"
 # - guestPort: 17143
 #   hostIP: "127.0.0.1"
-# - guestPortRange: [31710, 31719]
-#   hostIP: "127.0.0.1"
+- guestPortRange: [31710, 31719]
+  hostIP: "127.0.0.1"
 
 # k3s comes with containerd, disable here
 containerd:
