@@ -20,7 +20,7 @@ yq:
 
 jq:
   version: 1.6
-  template:
+  templates:
     # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
     #download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-${arch}
     download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-amd64
@@ -32,7 +32,7 @@ jq:
 
 kubectl:
   version: 1.26.4
-  template:
+  templates:
     download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
   sha256:
     darwin_amd64: 00e494dc657576d9582eb542aca311f85d4c305de4dc6284a06a60670d7b5e86
@@ -47,7 +47,7 @@ kustomize:
   # TODO with tag from version in ./y-kubectl
   # https://github.com/kubernetes/kubernetes/blob/v1.24.0-beta.0/staging/src/k8s.io/kubectl/go.mod#L45
   version: 5.0.1
-  template:
+  templates:
     download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
     sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${verison}/checksums.txt
   sha256:
@@ -61,7 +61,7 @@ kustomize:
 
 skaffold:
   version: 2.5.0
-  template:
+  templates:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
@@ -159,7 +159,7 @@ container-structure-test:
 
 kubie:
   version: 0.19.3
-  template:
+  templates:
     download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-${os}-${arch}
   sha256:
     darwin_amd64: 721f03ab00c2a56ad2c10ab6eb5f26ec68dd2fa606bb5c034eac54f765f7442f
@@ -169,7 +169,7 @@ kubie:
 
 fzf:
   version: 0.28.0
-  template:
+  templates:
     download: https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-${os}_${arch}.zip
     sha256: https://github.com/junegunn/fzf/releases/download/${version}/fzf_${version}_checksums.txt
   sha256:
@@ -183,7 +183,7 @@ fzf:
 
 oauth2l:
   version: 1.2.2
-  template:
+  templates:
     download: https://github.com/solsson/oauth2l/releases/download/v${version}/${os}_${arch}.tgz
     sha256: https://github.com/solsson/oauth2l/releases/download/v${version}/sha256sum.txt
   sha256:
@@ -197,7 +197,7 @@ oauth2l:
 
 rpk:
   version: 23.1.1
-  template:
+  templates:
     download: https://github.com/vectorizedio/redpanda/releases/download/v${version}/rpk-${os}-${arch}.zip
     sha256: https://github.com/redpanda-data/redpanda/releases/download/v${version}/rpk_${version}_checksums.txt
   sha256:
@@ -211,7 +211,7 @@ rpk:
 
 promtool:
   version: 2.32.1
-  template:
+  templates:
     download: https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.${os}-${arch}.tar.gz
     sha256: https://github.com/prometheus/prometheus/releases/download/v${version}/sha256sums.txt
   sha256:
@@ -225,7 +225,7 @@ promtool:
 
 esbuild:
   version: 0.17.19
-  template:
+  templates:
     download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
   sha256:
     darwin_amd64: 7b27001369dd0144e23d8fab724c64d5c6aa074b8241356cd249f4827b9fdf14
@@ -238,7 +238,7 @@ esbuild:
 
 turbo:
   version: 1.10.3
-  template:
+  templates:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
     darwin_amd64: 99d530b782cf9cb2c84dfc2764da1148d032146b2444cef7450a5f4b0f187210
@@ -251,7 +251,7 @@ turbo:
 # exact copy of turbo except archive path
 go-turbo:
   version: 1.10.3
-  template:
+  templates:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
     darwin_amd64: 99d530b782cf9cb2c84dfc2764da1148d032146b2444cef7450a5f4b0f187210
@@ -264,7 +264,7 @@ go-turbo:
 
 cue:
   version: 0.4.3
-  template:
+  templates:
     download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
   sha256:
     darwin_amd64: 1161254cf38b928b87a7ac1552dc2e12e6c5da298f9ce370d80e5518ddb6513d

@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ $# -eq 0 ] && >&2 echo "First arg must be an y-bin yaml path" && exit 1
+yaml=$1
+
+[ $# -eq 1 ] && >&2 echo "Second arg must be a bin name" && exit 1
+name=$2
+
+[ $# -eq 2 ] && >&2 echo "Third arg must be a version" && exit 1
+version=$3
+
+durl=$(yq e ".$name.templates.download" $yaml)
+sha256url=$(yq e ".$name.templates.sha256" $yaml)
+[ $sha256url != null ] || [ $durl != null ] || echo "Neither sha256 url nor download url found for $name in $yaml"
+[ $sha256url != null ] || [ $durl != null ] || exit 1
+
+echo "$name":
+echo "  version: $version"
+echo "  templates:"
+echo "    download: $durl"
+[ $sha256url = null ] || echo "    sha256: $sha256url"
+echo "  sha256:"
+
+function checksum {
+  check=$(checksum_download)
+  if [ $sha256url != null ]; then
+    url=$(eval echo $sha256url)
+    curl -sLS $url | grep -v $check >/dev/null || exit 1
+  fi
+  echo $check
+}
+
+function checksum_download {
+  url=$(eval echo $durl)
+  curl -sLS $url | sha256sum - | sed 's/  -//'
+}
+
+os=darwin
+arch=amd64
+xarch=x86_64
+osx=osx
+Os=Darwin
+arm=""
+xarm=x
+echo -n "    darwin_amd64: " && checksum
+
+arch=arm64
+xarch=arm64
+arm=arm
+xarm=arm
+echo -n "    darwin_arm64: " && checksum
+
+os=linux
+arch=amd64
+xarch=x86_64
+osx=linux
+Os=Linux
+arm=""
+xarm=x
+echo -n "    linux_amd64: " && checksum
+
+arch=arm64
+xarch=arm64
+arm=arm
+xarm=arm
+echo -n "    linux_arm64: " && checksum
