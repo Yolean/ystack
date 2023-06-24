@@ -48,3 +48,4 @@ git-remote-iap
 shellcheck
 shellspec
 zap-pretty
+act

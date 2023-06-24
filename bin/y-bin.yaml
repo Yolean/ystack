@@ -298,3 +298,16 @@ mkcert:
     darwin_arm64: c8af0df44bce04359794dad8ea28d750437411d632748049d08644ffb66a60c6
     linux_amd64: 6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52
     linux_arm64: b98f2cc69fd9147fe4d405d859c57504571adec0d3611c3eefd04107c7ac00d0
+
+act:
+  version: 0.2.46
+  templates:
+    download: https://github.com/nektos/act/releases/download/v${version}/act_${Os}_${xarch}.tar.gz
+  sha256:
+    darwin_amd64: 503bd4560afa3394fac87c404d4b34d1b422b8bb136b7f4ddaab27d08367700a
+    darwin_arm64: 6e5aae98192747d9430625cf0ac42e9fbcdbd9bc5e2558eb0297d0e2f9f2b2a8
+    linux_amd64: 19d5cdf534f892c1b62c32765c3982e2eb1334d66de4cc7e4a0e568cc0256f44
+    linux_arm64: 06418ca7430df409940812afe343c00118d7df889b11422232ff31a32a32b737
+  archive:
+    tool: tar
+    path: act
