@@ -27,7 +27,7 @@ function checksum {
   check=$(checksum_download)
   if [ $sha256url != null ]; then
     url=$(eval echo $sha256url)
-    curl -sLS $url | grep -v $check >/dev/null || exit 1
+    curl -sLS $url | grep $check >/dev/null || exit 1
   fi
   echo $check
 }
