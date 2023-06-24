@@ -263,14 +263,14 @@ go-turbo:
     path: turbo-${os}-${arm}64/bin/go-turbo
 
 cue:
-  version: 0.4.3
+  version: 0.5.0
   templates:
     download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
   sha256:
-    darwin_amd64: 1161254cf38b928b87a7ac1552dc2e12e6c5da298f9ce370d80e5518ddb6513d
-    darwin_arm64: 3d84b85a7288f94301a4726dcf95b2d92c8ff796c4d45c4733fbdcc04ceaf21d
-    linux_amd64: 5e7ecb614b5926acfc36eb1258800391ab7c6e6e026fa7cacbfe92006bac895c
-    linux_arm64: a8c3f4140d18c324cc69f5de4df0566e529e1636cff340095a42475799bf3fed
+    darwin_amd64: e2cede1965afa66dc52de7c1cd461227f4ff924f7a2adc9791cf1a699485409f
+    darwin_arm64: 00fc991977232240893ae36dc852366af859214d6e1b2b9e03e93b8f9f0991a7
+    linux_amd64: 38c9a2f484076aeafd9f522efdee40538c31337539bd8c80a29f5c4077314e53
+    linux_arm64: 735fa1b9bb02ef0ee79dd40c418760687776b44747f43f2e26c3bca4e1fd96f6
   archive:
     tool: tar
     path: cue
