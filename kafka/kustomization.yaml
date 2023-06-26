@@ -1,4 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
 namespace: kafka
-bases:
-- github.com/Yolean/kubernetes-kafka/variants/dev-small?ref=502d4832ab4684df85bb3815d597adf5a0594173
-- github.com/Yolean/kubernetes-kafka/pixy?ref=502d4832ab4684df85bb3815d597adf5a0594173
+
+resources:
+- redpanda/ystack/redpanda/templates/configmap.yaml
+- redpanda/ystack/redpanda/templates/secrets.yaml
+- redpanda/ystack/redpanda/templates/service.internal.yaml
+- redpanda/ystack/redpanda/templates/statefulset.yaml
