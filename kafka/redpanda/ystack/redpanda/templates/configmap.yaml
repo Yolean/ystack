@@ -1,0 +1,92 @@
+---
+# Source: redpanda/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redpanda
+  namespace: "kafka"
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-4.0.47
+data:
+  bootstrap.yaml: |
+    kafka_enable_authorization: false
+    enable_sasl: false
+    auto_create_topics_enabled: false
+    compacted_log_segment_size: 67108864
+    group_topic_partitions: 16
+    kafka_batch_max_bytes: 1048576
+    kafka_connection_rate_limit: 1000
+    log_segment_size: 134217728
+    log_segment_size_max: 268435456
+    log_segment_size_min: 16777216
+    max_compacted_log_segment_size: 536870912
+    topic_partitions_per_shard: 1000
+    storage_min_free_bytes: 1073741824
+  redpanda.yaml: |
+    config_file: /etc/redpanda/redpanda.yaml
+    redpanda:
+      empty_seed_starts_cluster: false
+      kafka_enable_authorization: false
+      enable_sasl: false
+      auto_create_topics_enabled: false
+      compacted_log_segment_size: 67108864
+      group_topic_partitions: 16
+      kafka_batch_max_bytes: 1048576
+      kafka_connection_rate_limit: 1000
+      log_segment_size: 134217728
+      log_segment_size_max: 268435456
+      log_segment_size_min: 16777216
+      max_compacted_log_segment_size: 536870912
+      topic_partitions_per_shard: 1000
+      storage_min_free_bytes: 1073741824
+      admin:
+        - name: internal
+          address: 0.0.0.0
+          port: 9644
+        - name: default
+          address: 0.0.0.0
+          port: 9645
+      admin_api_tls:
+      kafka_api:
+        - name: internal
+          address: 0.0.0.0
+          port: 9092
+        - name: default
+          address: 0.0.0.0
+          port: 9094
+      kafka_api_tls:
+      rpc_server:
+        address: 0.0.0.0
+        port: 33145
+      seed_servers:
+        - host:
+            address: redpanda-0.redpanda.kafka.svc.cluster.local.
+            port: 33145
+    schema_registry:
+      schema_registry_api:
+        - name: internal
+          address: 0.0.0.0
+          port: 8081
+        - name: default
+          address: 0.0.0.0
+          port: 8084
+      schema_registry_api_tls:
+    pandaproxy:
+      pandaproxy_api:
+        - name: internal
+          address: 0.0.0.0
+          port: 8082
+        - name: default
+          address: 0.0.0.0
+          port: 8083
+      pandaproxy_api_tls:
+
+    rpk:
+      enable_usage_stats: false
+      overprovisioned: false
+      enable_memory_locking: false
+      tune_aio_events: false

@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://github.com/redpanda-data/helm-charts/raw/redpanda-4.0.32/charts/redpanda/values.schema.json
+# unhelm-template-repo: https://charts.redpanda.com
+# unhelm-namespace: kafka
+
+# this is an attempt to disable as much as possible from the chart, except the actual broker
+statefulset:
+  replicas: 1
+  additionalRedpandaCmdFlags:
+  - --overprovisioned
+  sideCars:
+    configWatcher:
+      enabled: false
+tls:
+  enabled: false
+config:
+  cluster:
+    auto_create_topics_enabled: false
+  tunable: {}
+  node: {}
+external:
+  enabled: false
+rbac:
+  enabled: false
+post_install_job:
+  enabled: false
+post_upgrade_job:
+  enabled: false
+console:
+  enabled: false
+logging:
+  logLevel: info
+  usageStats:
+    enabled: false
+tuning:
+  tune_aio_events: false
+# See forwarded ports in ../k3s/ystack.yaml
+# See also https://github.com/redpanda-data/helm-charts/issues/285
+listeners:
+  kafka:
+    port: 9092
+    external:
+      default:
+        advertisedPorts:
+        - 31712
+  http:
+    port: 8082
+    external:
+      default:
+        advertisedPorts:
+        - 31713

@@ -1,0 +1,6 @@
+
+# ./unhelm.sh output that we don't need
+helm
+redpanda/ystack/kustomization.yaml
+redpanda/ystack/redpanda/templates/poddisruptionbudget.yaml
+redpanda/ystack/redpanda/templates/tests
