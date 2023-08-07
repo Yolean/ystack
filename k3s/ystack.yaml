@@ -13,7 +13,7 @@ memory: "8GiB"
 disk: "20GiB"
 
 env:
-  INSTALL_K3S_VERSION: v1.26.6+k3s1
+  INSTALL_K3S_VERSION: v1.26.7+k3s1
   INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
   K3S_NODE_NAME: ystack-master
 
