@@ -7,4 +7,4 @@ resources:
 - deployment.yaml
 - service-account.yaml
 - service.yaml
-- kube-state-metrics-podmonitor.yaml
+- kube-state-metrics-servicemonitor.yaml
