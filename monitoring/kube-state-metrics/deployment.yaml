@@ -6,7 +6,6 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/version: 2.9.2
   name: kube-state-metrics
-  namespace: kube-system
 spec:
   replicas: 1
   selector:
