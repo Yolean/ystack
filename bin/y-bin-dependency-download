@@ -6,6 +6,7 @@ YBIN="$(dirname $0)"
 SHA256SUM="sha256sum"
 
 [ -n "$bin_tar_path" ] || bin_tar_path=$bin_tgz_path
+bin_tar_extract=$bin_tar_path
 [ -n "$bin_tar_compression" ] || bin_tar_compression=z
 
 platform="$(uname -s)"
@@ -22,7 +23,7 @@ case "$platform" in
       */*/*) ;;
       */*)
         set -o noglob
-        bin_tar_path="--wildcards */$(basename $bin_tar_path)"
+        bin_tar_extract="--wildcards */$(basename $bin_tar_path)"
         ;;
       *) ;;
     esac
@@ -47,7 +48,7 @@ bin_link=$YBIN/$bin_name
   if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then $SHA256SUM $bin_file && rm $bin_file && exit 1; fi
   if [ ! -z "$bin_tar_path" ]; then
     tmp=$(mktemp -d)
-    (cd $tmp; tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_path)
+    (cd $tmp; tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_extract)
     mv "$tmp/$(basename $bin_tar_path)" $bin_file
   fi
   if [ ! -z "$bin_zip_path" ]; then
