@@ -11,3 +11,4 @@ spec:
       app.kubernetes.io/name: kube-state-metrics
   endpoints:
   - port: http-metrics
+    honorLabels: false
