@@ -4,10 +4,10 @@ kind: Kustomization
 images:
 - name: docker:dind
   newName: docker
-  newTag: 23.0.1-dind
+  newTag: 24.0.5-dind@sha256:020562d22f11c27997e00da910ed6b580d93094bc25841cb87aacab4ced4a882
 - name: docker:dind-rootless
   newName: docker
-  newTag: 23.0.1-dind-rootless
+  newTag: 24.0.5-dind-rootless@sha256:62c79dfadeb3009faaeef114a9856046cfff956a425949b9ed9a13422e062571
 
 resources:
 - dockerd-service.yaml
