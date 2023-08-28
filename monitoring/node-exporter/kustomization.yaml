@@ -1,0 +1,7 @@
+resources:
+- node-exporter-serviceAccount.yaml
+- node-exporter-clusterRole.yaml
+- node-exporter-clusterRoleBinding.yaml
+- node-exporter-daemonset.yaml
+- node-exporter-podmonitor.yaml
+- example-rules.yaml

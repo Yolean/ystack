@@ -13,7 +13,7 @@ memory: "8GiB"
 disk: "20GiB"
 
 env:
-  INSTALL_K3S_VERSION: v1.26.5+k3s1
+  INSTALL_K3S_VERSION: v1.26.7+k3s1
   INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
   K3S_NODE_NAME: ystack-master
 
@@ -34,8 +34,8 @@ portForwards:
 #   hostIP: "127.0.0.1"
 # - guestPort: 17143
 #   hostIP: "127.0.0.1"
-# - guestPortRange: [31710, 31719]
-#   hostIP: "127.0.0.1"
+- guestPortRange: [31710, 31719]
+  hostIP: "127.0.0.1"
 
 # k3s comes with containerd, disable here
 containerd:

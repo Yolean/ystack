@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topic
+  labels:
+    yolean.se/converge-mode: replace
+spec:
+  template:
+    metadata:
+      annotations:
+        yolean.se/kafka-bootstrap: bootstrap.kafka:9092
+        yolean.se/kafka-topic-name: ""
+        yolean.se/kafka-topic-config: max.message.bytes=524288,retention.bytes=-1,retention.ms=-1
+        yolean.se/kafka-topic-partitions: "1"
+        yolean.se/kafka-topic-replicas: "-1"
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 3600
+      containers:
+      - name: topic
+        image: vectorized/redpanda
+        args:
+        - |
+          [ -n "$KAFKA_BOOTSTRAP" ] || exit 1
+          [ -n "$TOPIC_NAME" ] || exit 1
+          [ -n "$TOPIC_CONFIG" ] || exit 1
+          function config_args {
+            FLAG=$1
+            for C in $(echo "$TOPIC_CONFIG" | tr ',' ' '); do echo -n " $FLAG $C"; done
+            echo ''
+          }
+          until rpk cluster --brokers $KAFKA_BOOTSTRAP info; do sleep 1; done;
+          if rpk topic --brokers $KAFKA_BOOTSTRAP describe "$TOPIC_NAME"; then
+            rpk topic --brokers $KAFKA_BOOTSTRAP alter-config "$TOPIC_NAME" $(config_args --set) | grep OK
+          else
+            rpk topic --brokers $KAFKA_BOOTSTRAP create "$TOPIC_NAME" --partitions "$TOPIC_PARTITIONS" --replicas "$TOPIC_REPLICAS" $(config_args --topic-config)
+          fi
+        command:
+        - /bin/bash
+        - -cex
+        env:
+        - name: KAFKA_BOOTSTRAP
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/kafka-bootstrap']
+        - name: TOPIC_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/kafka-topic-name']
+        - name: TOPIC_CONFIG
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/kafka-topic-config']
+        - name: TOPIC_PARTITIONS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/kafka-topic-partitions']
+        - name: TOPIC_REPLICAS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/kafka-topic-replicas']
+        resources:
+          requests:
+            cpu: 100m
+            memory: 20Mi
+          limits:
+            cpu: 100m
+            memory: 20Mi

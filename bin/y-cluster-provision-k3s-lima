@@ -9,7 +9,7 @@ set -eo pipefail
 # Not reusing y-k3s-install, avoid breaking multipass provision
 K3S_INSTALLER_REVISION=213d7ad499e166290872f51c63d8eaa2f1fe78b3
 
-QEMU_VERSION=$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 | rev)
+QEMU_VERSION="$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 | rev)"
 
 mkdir -p /tmp/lima/ystack/rancher/k3s
 curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh > /tmp/lima/ystack/install.sh
@@ -62,7 +62,20 @@ for base in \
     40-buildkit; do \
   basepath="$YSTACK_HOME/k3s/$base/"
   echo "# Applying $basepath ..."
-  k apply -k $basepath
+  k apply --server-side=true -k $basepath
+done
+
+[ "$MONITORING_ENABLE" != "true" ] || for base in \
+    namespace \
+    prometheus-operator \
+    prometheus-now \
+    alertmanager-main \
+    kube-state-metrics-now \
+    node-exporter-now \
+    ; do \
+  basepath="$YSTACK_HOME/monitoring/$base/"
+  echo "# Applying $basepath ..."
+  k apply --server-side=true -k $basepath
 done
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
