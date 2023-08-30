@@ -3,8 +3,8 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml turbo)
-goversion=$(y-bin-download $YBIN/y-bin.yaml go-turbo)
+version=$(y-bin-download $YBIN/y-bin.runner.yaml turbo)
+goversion=$(y-bin-download $YBIN/y-bin.runner.yaml go-turbo)
 
 WORKDIR="$PWD"
 TURBODIR="$WORKDIR"

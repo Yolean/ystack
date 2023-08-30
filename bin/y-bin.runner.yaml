@@ -1,0 +1,152 @@
+#!/usr/bin/env y-bin-download
+
+# This yaml format has special requirements as it must be parsed on vanilla osx and linux:
+# - version must be the first key per binary name
+# - comments must be separate lines, not after values
+
+
+# NOTE yq must be first in the file because this script depends on it
+yq:
+  version: 4.28.2
+  sha256:
+    darwin_amd64: 6a7960ba6ff179c69855e24d0752edc8bff0432e2cbc0d2c49ede3ce598c4308
+    darwin_arm64: a21ccb54cb05508f9f28f7887256d115bba7d0147505067bd2ec0b639445a150
+    linux_amd64: 7e0d59c65be5054a14ff2a76eb12c2d4ec3e5bc2f1dfa03c7356bb35b50bbf41
+    linux_arm64: 6cd03bf2b94a07ce149a9f388bbded1f85b4a0d4e0418ef2fc7e0f4285178a36
+  templates:
+    download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
+    # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
+    # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
+
+jq:
+  version: 1.6
+  templates:
+    # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
+    #download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-${arch}
+    download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-amd64
+  sha256:
+    darwin_arm64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
+    darwin_amd64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
+    linux_amd64: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
+    linux_arm64: For_jq_arm64_linux_use_a_package_manager
+
+kubectl:
+  version: 1.26.4
+  templates:
+    download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
+  sha256:
+    darwin_amd64: 00e494dc657576d9582eb542aca311f85d4c305de4dc6284a06a60670d7b5e86
+    darwin_arm64: f4ef3bcb18c8a4b12c523914643e6bb12b889f45e85c127a132b91e9578521d6
+    linux_amd64: 21d39782de41b48cb178aeaeb9f9d4a2a10634bdd4d66bbeefc4d7f8e0549907
+    linux_arm64: 3bb3f98349e0990844f4c5d52bc49fff4af2eda11b41160e549c124f9316f72d
+  archive:
+    tool: tar
+    path: kubernetes/client/bin/kubectl
+
+kustomize:
+  # TODO with tag from version in ./y-kubectl
+  # https://github.com/kubernetes/kubernetes/blob/v1.24.0-beta.0/staging/src/k8s.io/kubectl/go.mod#L45
+  version: 5.0.3
+  templates:
+    download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
+    sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/checksums.txt
+  sha256:
+    darwin_amd64: a3300ccc81ed8e7df415f3537b49e70d89f985a28c9ade8a885ebf6f1689b4e0
+    darwin_arm64: ecb15ba64356507f8c73796acbe79b445c17f637963b05be72a905c05f6abfc1
+    linux_amd64: c627b1575c3fecbc7ad1c181c23a7adcacf19732dab627eb57e89a7bc4c1e929
+    linux_arm64: c92e9b4ad3ccd10077566eddddfc58748aa19ccc2b0fe17600fd57f6472b8bfe
+  archive:
+    tool: tar
+    path: kustomize
+
+skaffold:
+  version: 2.6.2
+  templates:
+    download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
+    sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
+  sha256:
+    darwin_amd64: 1df8e4fe768902244e080c85d8be70cbcd48074e72d7515bc754a8fbe4ae4f7f
+    darwin_arm64: 6ac77bd0190f8c07dcc6335f112723fe518a0691c20965cce77c3e5f973d01b0
+    linux_amd64: 73aedfd7e71a6e287bfdc66af92c71d85eadeffdbd2eba53f646ee9187f48c35
+    linux_arm64: e00cd7c1eb4f67050982ba3580d02a1e6725529805a599e6f329b410dca9b0f0
+
+helm:
+  version: 3.12.1
+  templates:
+    download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
+    sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
+  sha256:
+    darwin_amd64: f487b5d8132bd2091378258a3029e33ee10f71575b2167cdfeaf6d0144d20938
+    darwin_arm64: e82e0433589b1b5170807d6fec75baedba40620458510bbd30cdb9d2246415fe
+    linux_amd64: 1a7074f58ef7190f74ce6db5db0b70e355a655e2013c4d5db2317e63fa9e3dea
+    linux_arm64: 50548d4fedef9d8d01d1ed5a2dd5c849271d1017127417dc4c7ef6777ae68f7e
+  archive:
+    tool: tar
+    path: ${os}-${arch}/helm
+
+buildctl:
+  version: 0.12.2
+  templates:
+    download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
+  sha256:
+    darwin_amd64: 4479fa3633584c150841082c322ca968b88e4c7e66815812431b48ffa3cbc0b9
+    darwin_arm64: 38dede777360822ec0a0cf88835f9eda4562775ef60871ff3a43502076e8c98b
+    linux_amd64: c856bb4e6584d75ca6b2a7b6e946b7b14628e82bf1eccb4a43bc731bbc8e67ea
+    linux_arm64: 78846e12435f00e0ee5b9ca0af28ec78691fa712ebe7d2c799ec8a074c791969
+  archive:
+    tool: tar
+    #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
+    path: bin/buildctl
+
+crane:
+  version: 0.15.2
+  templates:
+    download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
+    sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
+  sha256:
+    darwin_amd64: c73a66a19e1cc31d2328fd3b52f319819a9bf6c38a380dff4df4deaba02c1477
+    darwin_arm64: 5cfaae545216bf177a64a852a3f1f123b9580438ce608a0e9cdcb4dae2ba1747
+    linux_amd64: bd5f72ae96373ac640679a6108280b6d76698773ca21f293ae30cc17413e2ad1
+    linux_arm64: afa0bf56d95fa86fe71d5dadb5e03960b7c0586eea84270cca40b41a6d61fbb2
+  archive:
+    tool: tar
+    path: crane
+
+esbuild:
+  version: 0.18.11
+  templates:
+    download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
+  sha256:
+    darwin_amd64: ccd192885fc64eb37cfa32b2952d283f0c5b402c46932b086d9598251fbb8231
+    darwin_arm64: f7d761227adea3681f30cb1c6090f3c3e62b58dc06c66c8dfead21101760c186
+    linux_amd64: 0f55eb7afc652ab020af6bff8836b72c3ec6addc41e015193448d50d9cfc5673
+    linux_arm64: 8260ff6ec282db2e4f387d5173a5385da988da8f542d1e1318a42fe17f20b8f3
+  archive:
+    tool: tar
+    path: package/bin/esbuild
+
+turbo:
+  version: 1.10.12
+  templates:
+    download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
+  sha256:
+    darwin_amd64: 17666ac16740a8fa5995e30b6c75dcd5de5452e06e12300def8fda235721b1b2
+    darwin_arm64: 0fdd99032023bc290e4e8284b7c7c0b4f30cff73f1bf437a0136a3b8b5e7c49c
+    linux_amd64: 69fac5e3f8fcf76b9c02d0ec337cb6de131d48d979a705c91f1ba7d700e4f6a4
+    linux_arm64: b8b98774dd623643472d63d673a4ed1c6f535367f1c164131313492da63a1d62
+  archive:
+    tool: tar
+    path: turbo-${os}-${arm}64/bin/turbo
+# exact copy of turbo except archive path
+go-turbo:
+  version: 1.10.12
+  templates:
+    download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
+  sha256:
+    darwin_amd64: 17666ac16740a8fa5995e30b6c75dcd5de5452e06e12300def8fda235721b1b2
+    darwin_arm64: 0fdd99032023bc290e4e8284b7c7c0b4f30cff73f1bf437a0136a3b8b5e7c49c
+    linux_amd64: 69fac5e3f8fcf76b9c02d0ec337cb6de131d48d979a705c91f1ba7d700e4f6a4
+    linux_arm64: b8b98774dd623643472d63d673a4ed1c6f535367f1c164131313492da63a1d62
+  archive:
+    tool: tar
+    path: turbo-${os}-${arm}64/bin/go-turbo

@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml esbuild)
+version=$(y-bin-download $YBIN/y-bin.runner.yaml esbuild)
 
 y-esbuild-v${version}-bin "$@" || exit $?

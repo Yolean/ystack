@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml rpk)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml rpk)
 
 $YBIN/y-rpk-v${version}-bin "$@" || exit $?

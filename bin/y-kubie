@@ -3,9 +3,9 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml kubie)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml kubie)
 
-command -v fzf > /dev/null || echo "Note that kubie recommends having fzf installed. Try: y-bin-download $YBIN/y-bin.yaml fzf"
+command -v fzf > /dev/null || echo "Note that kubie recommends having fzf installed. Try: y-bin-download $YBIN/y-bin.optional.yaml fzf"
 
 # [ "$1" = "completion" ] && curl -sLS https://github.com/sbstp/kubie/raw/3ebbf728cc52a57dfd9913da120d47a44e783702/completion/kubie.bash && exit 0
 

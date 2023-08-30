@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml container-structure-test)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml container-structure-test)
 
 y-container-structure-test-v${version}-bin "$@" || exit $?

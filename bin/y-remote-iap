@@ -5,6 +5,6 @@ YBIN="$(dirname $0)"
 
 # the binary has to be named git-remote- to work as gitremote helper
 
-version=$(y-bin-download $YBIN/y-bin.yaml git-remote-iap)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml git-remote-iap)
 
 y-git-remote-iap-v${version}-bin "$@" || exit $?

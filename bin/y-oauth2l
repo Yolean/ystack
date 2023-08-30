@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml oauth2l)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml oauth2l)
 
 $YBIN/y-oauth2l-v${version}-bin "$@" || exit $?

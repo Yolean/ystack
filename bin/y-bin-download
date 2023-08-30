@@ -5,8 +5,8 @@ set -e
 
 [ "$1" = "help" ] && echo '
 Manages binaries through the following modes:
-y-bin-download y-bin.yaml           # downloads missing and those with a new version
-y-bin-download y-bin.yaml [name]    # downloads the named binary, if present as key in y-bin.yaml
+y-bin-download y-bin.optional.yaml           # downloads missing and those with a new version
+y-bin-download y-bin.optional.yaml [name]    # downloads the named binary, if present as key in y-bin.optional.yaml
 y-bin-dependency-download           # used in old y-[bin] scripts, deprecated but still working, can be replaced by the previous example
 And yes, we have been looking for an open source impl of this need :)
 ' && exit 0

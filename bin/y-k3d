@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml k3d)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml k3d)
 
 y-k3d-v${version}-bin "$@" || exit $?
