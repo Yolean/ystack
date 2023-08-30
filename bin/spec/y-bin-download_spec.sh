@@ -46,12 +46,12 @@ Describe 'y-bin-download'
     End
 
     It 'extracts the yaml part for the named bin'
-      When call binyaml ./y-bin.yaml yq
+      When call binyaml ./y-bin.runner.yaml yq
       The output should match pattern "  version:*"
     End
 
     It 'extracts the yaml part for the named bin'
-      When call binyaml ./y-bin.yaml k3d
+      When call binyaml ./y-bin.optional.yaml k3d
       The output should match pattern "*sha256sum.txt"
     End
   End
@@ -59,9 +59,9 @@ Describe 'y-bin-download'
   Describe 'names'
 
     It 'lists all bin names'
-      When call names ./y-bin.yaml
+      When call names ./y-bin.optional.yaml
       The output should match pattern "yq*"
-      The output should match pattern "*k3d*"
+      The output should match pattern "*kustomize*"
     End
 
   End

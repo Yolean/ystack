@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml promtool)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml promtool)
 
 y-promtool-v${version}-bin "$@" || exit $?

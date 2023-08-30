@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.yaml helm)
+version=$(y-bin-download $YBIN/y-bin.runner.yaml helm)
 
 y-helm-v${version}-bin "$@" || exit $?

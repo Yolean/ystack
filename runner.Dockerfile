@@ -29,7 +29,7 @@ FROM --platform=$TARGETPLATFORM node:18.17.1-bullseye-slim@sha256:b5846dae07bfe2
 
 FROM base as bin
 
-COPY bin/y-bin.yaml \
+COPY bin/y-bin.runner.yaml \
   bin/y-bin-download \
   bin/y-bin-dependency-download \
   /usr/local/src/ystack/bin/
