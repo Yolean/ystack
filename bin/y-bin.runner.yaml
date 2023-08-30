@@ -60,15 +60,15 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.6.2
+  version: 2.6.3
   templates:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: 1df8e4fe768902244e080c85d8be70cbcd48074e72d7515bc754a8fbe4ae4f7f
-    darwin_arm64: 6ac77bd0190f8c07dcc6335f112723fe518a0691c20965cce77c3e5f973d01b0
-    linux_amd64: 73aedfd7e71a6e287bfdc66af92c71d85eadeffdbd2eba53f646ee9187f48c35
-    linux_arm64: e00cd7c1eb4f67050982ba3580d02a1e6725529805a599e6f329b410dca9b0f0
+    darwin_amd64: 0022b64a5a430db949becbe85efa2f032f3f5acbefb720e5231c5ee927b4f252
+    darwin_arm64: 1f69d86416acdd17a2ecf8977cd429e4e10dc5d95e3515aa321e387febb7df3e
+    linux_amd64: 7bee8f63a061965d8d343fd3aa81a20e712ae47e5f205f4b7c643f85c475e18b
+    linux_arm64: 935fc6fd9192da97c9901dd7ebf4f7253363c7daafdcf6aa581fc4f12563b68e
 
 helm:
   version: 3.12.1
@@ -99,54 +99,54 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.15.2
+  version: 0.16.1
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: c73a66a19e1cc31d2328fd3b52f319819a9bf6c38a380dff4df4deaba02c1477
-    darwin_arm64: 5cfaae545216bf177a64a852a3f1f123b9580438ce608a0e9cdcb4dae2ba1747
-    linux_amd64: bd5f72ae96373ac640679a6108280b6d76698773ca21f293ae30cc17413e2ad1
-    linux_arm64: afa0bf56d95fa86fe71d5dadb5e03960b7c0586eea84270cca40b41a6d61fbb2
+    darwin_amd64: d00ca729315cbb914a145425db2e3d7a816c5c1f8354597188157ae217b2377e
+    darwin_arm64: 3a049f448d9296e1dcd3566c5802e241bcd4e1873f998a122824655e20e0d744
+    linux_amd64: 115dc84d14c5adc89c16e3fa297e94f06a9ec492bb1dc730da624850b77c9be2
+    linux_arm64: 9e226779377a20713f16ac94dec9f6c17f698834ea40c33a6c86f9de8845722b
   archive:
     tool: tar
     path: crane
 
 esbuild:
-  version: 0.18.11
+  version: 0.19.2
   templates:
     download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
   sha256:
-    darwin_amd64: ccd192885fc64eb37cfa32b2952d283f0c5b402c46932b086d9598251fbb8231
-    darwin_arm64: f7d761227adea3681f30cb1c6090f3c3e62b58dc06c66c8dfead21101760c186
-    linux_amd64: 0f55eb7afc652ab020af6bff8836b72c3ec6addc41e015193448d50d9cfc5673
-    linux_arm64: 8260ff6ec282db2e4f387d5173a5385da988da8f542d1e1318a42fe17f20b8f3
+    darwin_amd64: f8dfdb437fd71e3323894a91e4313d456acfcf5550d1d9544942f0e0430ff251
+    darwin_arm64: ddf7fb81cf233f823d52d412ddbdf14d87759e9ba3f6c04635dbdc436aa3a1dd
+    linux_amd64: afb6e0368dee975e5558ff46ecbc1c2bfaba103e8a1e002f354b487ba0878527
+    linux_arm64: 3330b6cf6adb8069ef55e7aec4942b378c089cba19fe21f14a162e4af9059ddc
   archive:
     tool: tar
     path: package/bin/esbuild
 
 turbo:
-  version: 1.10.12
+  version: 1.10.13
   templates:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 17666ac16740a8fa5995e30b6c75dcd5de5452e06e12300def8fda235721b1b2
-    darwin_arm64: 0fdd99032023bc290e4e8284b7c7c0b4f30cff73f1bf437a0136a3b8b5e7c49c
-    linux_amd64: 69fac5e3f8fcf76b9c02d0ec337cb6de131d48d979a705c91f1ba7d700e4f6a4
-    linux_arm64: b8b98774dd623643472d63d673a4ed1c6f535367f1c164131313492da63a1d62
+    darwin_amd64: b323a28a302dc1ce0c208e8376f40a1e625a5701f029b7c6d8d412e2ecb314ba
+    darwin_arm64: 814840d35624d169ded15a4d25aedcd0a2c62708fdb62ffdb45ba6c163229a66
+    linux_amd64: 640365bcbbf067227797994fd2e0d8f4320adf491b470107d19449d1e01139b8
+    linux_arm64: 583ca2ce14f68680843ba7f36b9db030389735918078b5990fff83dbc486ed8b
   archive:
     tool: tar
     path: turbo-${os}-${arm}64/bin/turbo
 # exact copy of turbo except archive path
 go-turbo:
-  version: 1.10.12
+  version: 1.10.13
   templates:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 17666ac16740a8fa5995e30b6c75dcd5de5452e06e12300def8fda235721b1b2
-    darwin_arm64: 0fdd99032023bc290e4e8284b7c7c0b4f30cff73f1bf437a0136a3b8b5e7c49c
-    linux_amd64: 69fac5e3f8fcf76b9c02d0ec337cb6de131d48d979a705c91f1ba7d700e4f6a4
-    linux_arm64: b8b98774dd623643472d63d673a4ed1c6f535367f1c164131313492da63a1d62
+    darwin_amd64: b323a28a302dc1ce0c208e8376f40a1e625a5701f029b7c6d8d412e2ecb314ba
+    darwin_arm64: 814840d35624d169ded15a4d25aedcd0a2c62708fdb62ffdb45ba6c163229a66
+    linux_amd64: 640365bcbbf067227797994fd2e0d8f4320adf491b470107d19449d1e01139b8
+    linux_arm64: 583ca2ce14f68680843ba7f36b9db030389735918078b5990fff83dbc486ed8b
   archive:
     tool: tar
     path: turbo-${os}-${arm}64/bin/go-turbo
