@@ -61,15 +61,15 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.6.3
+  version: 2.7.0
   templates:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: 0022b64a5a430db949becbe85efa2f032f3f5acbefb720e5231c5ee927b4f252
-    darwin_arm64: 1f69d86416acdd17a2ecf8977cd429e4e10dc5d95e3515aa321e387febb7df3e
-    linux_amd64: 7bee8f63a061965d8d343fd3aa81a20e712ae47e5f205f4b7c643f85c475e18b
-    linux_arm64: 935fc6fd9192da97c9901dd7ebf4f7253363c7daafdcf6aa581fc4f12563b68e
+    darwin_amd64: ae55efb3672aee09f987b2b6894219ee34aac40848865d548e253cbb89b978e0
+    darwin_arm64: 85bdf72ec4cb0e1e63daaa023e30f5b827275ecc6667116f86b3e741f5496359
+    linux_amd64: 0117a495b0085718f33f66562ce4f25287ba7b753de6997bc0089f8e24ff9069
+    linux_arm64: 69128f7d10374be0a30049f7e1ea7f1f56cf6d5845676f00e8f7a8258034136e
 
 helm:
   version: 3.12.1
