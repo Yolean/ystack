@@ -178,3 +178,8 @@ dive:
   archive:
     tool: tar
     path: dive
+
+jq: https://github.com/jqlang/jq/releases/tag/jq-1.7
+gron: https://github.com/tomnomnom/gron
+jaq: https://github.com/01mf02/jaq
+mlr: https://github.com/johnkerl/miller
