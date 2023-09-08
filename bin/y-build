@@ -20,10 +20,11 @@ for arg in $BUILDCTL_OPTS; do
   esac
 done
 
-stat $FILENAME >/dev/null
-stat $FILENAME.dockerignore >/dev/null || (echo "Missing .dockerignore for $FILENAME" && exit 1)
-
-DOCKERFILE_SYNTAX="$(head -n 1 $FILENAME)"
+if [ -n "$FILENAME" ]; then
+  stat $FILENAME >/dev/null
+  stat $FILENAME.dockerignore >/dev/null || (echo "Missing .dockerignore for $FILENAME" && exit 1)
+  DOCKERFILE_SYNTAX="$(head -n 1 $FILENAME)"
+fi
 
 case "$DOCKERFILE_SYNTAX" in
   "# syntax=ystack/v1-base:"*)
