@@ -19,3 +19,8 @@ spec:
     protocol: TCP
     targetPort: 9093
     nodePort: 31711
+  - name: grafana
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+    nodePort: 31712

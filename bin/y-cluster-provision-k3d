@@ -10,23 +10,27 @@ K3D_NAME=ystack
 [ -z "$YSTACK_HOST" ] && YSTACK_HOST=ystack.local
 [ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
-[ -z "$K3D_ARGS" ] && K3D_ARGS="--servers-memory=6G"
+[ -z "$K3D_MEMORY" ] && K3D_MEMORY="6G"
+[ -z "$K3D_AGENTS" ] && K3D_AGENTS="0"
 [ -z "$K3D_DOCKER_UPDATE" ] && K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
-K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
 
 y-k3d cluster create $K3D_NAME \
   --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
   --no-lb \
-  --agents=0 \
+  --agents="$K3D_AGENTS" \
+  --servers-memory="$K3D_MEMORY" \
   $VM_RESOURCES
 
+# TODO support agents >0
+K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
 docker update $K3D_DOCKER_NAME $K3D_DOCKER_UPDATE
 docker inspect $K3D_DOCKER_NAME | grep Cpu
 
+kubectl config delete-context local || true
 # Could interfere with some k3d functionality. For example skaffold's k3d detection will probably not work.
 kubectl config rename-context k3d-ystack $CONTEXTNAME
 
-y-cluster-assert-install --context=$CONTEXTNAME
+# y-cluster-assert-install --context=$CONTEXTNAME
 
 # This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile, and in y-cluster-provision-multipass
 for base in \

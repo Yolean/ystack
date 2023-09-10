@@ -5,14 +5,14 @@
 # - comments must be separate lines, not after values
 
 k3d:
-  version: 5.4.9
+  version: 5.6.0
   templates:
     download: https://github.com/rancher/k3d/releases/download/v${version}/k3d-${os}-${arch}
   sha256:
-    darwin_amd64: 6f29c768e789a6910051f08e71120692f82ce83d759582cf81f8775c5b8d13f7
-    darwin_arm64: f514a76a92f182b339633f0c49a2775b8595d20371ed92594d85e83523b78974
-    linux_amd64: 5fd6597668e7b09c126eddbafa79f8e0c33695f2974e35f8c9463ef3462f3113
-    linux_arm64: 7d4d9272ee7fa294ecd817e32566fccf514489d5d9556f0cc471decf5ecefa15
+    darwin_amd64: 0c1e7712b8b63771d3c8c5cbd32da10bded3fd3f89240380bb08c44ff608f345
+    darwin_arm64: 7344bbb41b6ced667d38431076393473b5bcd47c44607685f98818500864f802
+    linux_amd64: c2ca4b90c0c064cd56ae674d586e2003712fe5841748223552e2f8536f741366
+    linux_arm64: 00cdc046f51545ef460fd983773cd053f3d4fb9d2d2c916824e7a819b46791a7
 
 kubefwd:
   version: 1.22.4
