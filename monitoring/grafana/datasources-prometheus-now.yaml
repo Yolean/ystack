@@ -1,0 +1,6 @@
+apiVersion: 1
+datasources:
+- name: Prometheus now
+  type: prometheus
+  url: http://prometheus-now:9090
+  isDefault: true

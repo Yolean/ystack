@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+images:
+- name: grafana/grafana
+  newName: docker.io/grafana/grafana
+  newTag: 9.0.2-ubuntu
+- name: grafana/grafana-image-renderer
+  newName: docker.io/grafana/grafana-image-renderer
+  newTag: 3.4.2
+
+resources:
+- grafana-service.yaml
+- grafana-deployment.yaml
+
+configMapGenerator:
+- name: grafana-provisioning-datasources
+  files:
+  - prometheus-now.yaml=datasources-prometheus-now.yaml
+  - loki.yaml=datasources-loki.yaml
+- name: grafana-provisioning-dashboards
+  files:
+  - kubernetes-mixin.yaml=dashboards-kubernetes-mixin.yaml
+  - imported.yaml=dashboards-imported.yaml
