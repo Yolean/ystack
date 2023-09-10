@@ -14,3 +14,7 @@ spec:
     port: 9093
     protocol: TCP
     targetPort: 9093
+  - name: grafana
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
