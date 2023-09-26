@@ -24,7 +24,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   TURBO_NO_UPDATE_NOTIFIER=1 \
   npm_config_update_notifier=false
 
-FROM --platform=$TARGETPLATFORM node:18.17.1-bullseye-slim@sha256:b5846dae07bfe20bd6863c51b3b8745efc7433671bfc5ac46f98f3ae684f5b1f \
+FROM --platform=$TARGETPLATFORM node:18.18.0-bullseye-slim@sha256:2799dd3bd32deb984133859e6c9dd1ee181968fcafe563f4653e5b3c151af716 \
   as node
 
 FROM base as bin
