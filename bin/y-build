@@ -116,7 +116,7 @@ case "$IMAGE" in
   * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
-OUTPUT="type=image,name=$IMAGE,push=true,registry.insecure=true"
+OUTPUT="type=image,name=$IMAGE,push=true"
 
 BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
 
