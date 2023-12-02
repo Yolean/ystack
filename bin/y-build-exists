@@ -4,8 +4,9 @@ set -eo pipefail
 
 case "$IMAGE" in
   '') echo "y-build-exists missing IMAGE env" && exit 2 ;;
+  *-dirty) echo "y-build-exists won't check -dirty: $IMAGE" && exit 1 ;;
   *':'*) ;;
-  *) echo "y-build-exsits refusing to check untagged: $IMAGE" && exit 3 ;;
+  *) echo "y-build-exists refusing to check untagged: $IMAGE" && exit 3 ;;
 esac
 
 OUT=/dev/null
