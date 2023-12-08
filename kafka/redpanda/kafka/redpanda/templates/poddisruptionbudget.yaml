@@ -1,0 +1,21 @@
+---
+# Source: redpanda/templates/poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redpanda
+  namespace: kafka
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-5.6.60
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: 
+      app.kubernetes.io/name: redpanda
+      app.kubernetes.io/instance: "redpanda"
+      app.kubernetes.io/component: redpanda-statefulset
+      redpanda.com/poddisruptionbudget: redpanda

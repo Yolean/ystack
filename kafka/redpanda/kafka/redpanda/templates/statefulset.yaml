@@ -1,0 +1,251 @@
+---
+# Source: redpanda/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redpanda
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-5.6.60
+spec:
+  selector:
+    matchLabels: 
+      app.kubernetes.io/name: redpanda
+      app.kubernetes.io/instance: "redpanda"
+      app.kubernetes.io/component: redpanda-statefulset
+  serviceName: redpanda
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: "Parallel"
+  template:
+    metadata:
+      labels: 
+        app.kubernetes.io/name: redpanda
+        app.kubernetes.io/instance: "redpanda"
+        app.kubernetes.io/component: redpanda-statefulset
+        redpanda.com/poddisruptionbudget: redpanda
+      annotations:
+        config.redpanda.com/checksum: 685fc87a61cd8c9977a01037f18675ea9fb84faf786c792645501a5ed9dde60f
+    spec:
+      terminationGracePeriodSeconds: 90
+      securityContext: 
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+      serviceAccountName: default
+      initContainers:
+        - name: redpanda-configurator
+          image: docker.redpanda.com/redpandadata/redpanda:v23.2.17
+          command:
+            - /bin/bash
+            - -c
+            - 'trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!'
+          env:
+            - name: CONFIGURATOR_SCRIPT
+              value: /etc/secrets/configurator/scripts/configurator.sh
+            - name: SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: HOST_IP_ADDRESS
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+          securityContext: 
+            runAsUser: 101
+            runAsGroup: 101
+          volumeMounts: 
+            
+            - name: config
+              mountPath: /etc/redpanda
+            - name: redpanda
+              mountPath: /tmp/base-config
+            - name: redpanda-configurator
+              mountPath: /etc/secrets/configurator/scripts/
+      containers:
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:v23.2.17
+          env:
+            - name: SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          # finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/bash
+                  - -c
+                  - |
+                    timeout -v 45 bash -x /var/lifecycle/postStart.sh
+                    true
+            preStop:
+              exec:
+                command:
+                  - /bin/bash
+                  - -c
+                  - |
+                    timeout -v 45 bash -x /var/lifecycle/preStop.sh
+                    true # do not fail and cause the pod to terminate
+          # the startupProbe checks to see that the admin api is listening and that the broker has a node_id assigned. This
+          # check is only used to delay the start of the liveness and readiness probes until it passes.
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  RESULT=$(curl --silent --fail -k  "http://${SERVICE_NAME}.redpanda.kafka.svc.cluster.local.:9644/v1/status/ready")
+                  echo $RESULT
+                  echo $RESULT | grep ready
+            initialDelaySeconds: 1
+            failureThreshold: 120
+            periodSeconds: 10
+          # the livenessProbe just checks to see that the admin api is listening and returning 200s.
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl --silent --fail -k  "http://${SERVICE_NAME}.redpanda.kafka.svc.cluster.local.:9644/v1/status/ready"
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 10
+          # the readiness probe just checks that the cluster is healthy according to rpk cluster health.
+          # It's ok that this cluster-wide check affects all the pods as it's only used for the
+          # PodDisruptionBudget and we don't want to roll any pods if the Redpanda cluster isn't healthy.
+          # https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets
+          # All services set `publishUnreadyAddresses:true` to prevent this from affecting cluster access
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -x
+                  rpk cluster health
+                  rpk cluster health | grep 'Healthy:.*true'
+            initialDelaySeconds: 1
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+          command:
+            - rpk
+            - redpanda
+            - start
+            - "--advertise-rpc-addr=$(SERVICE_NAME).redpanda.kafka.svc.cluster.local.:33145"
+          ports:
+            - name: admin
+              containerPort: 9644
+            - name: admin-default
+              containerPort: 9645
+            - name: http
+              containerPort: 8082
+            - name: http-default
+              containerPort: 8083
+            - name: kafka
+              containerPort: 9092
+            - name: kafka-default
+              containerPort: 9094
+            - name: rpc
+              containerPort: 33145
+            - name: schemaregistry
+              containerPort: 8081
+            - name: schema-default
+              containerPort: 8084
+          securityContext: 
+            runAsUser: 101
+            runAsGroup: 101
+          volumeMounts: 
+            
+            - name: config
+              mountPath: /etc/redpanda
+            - name: redpanda
+              mountPath: /tmp/base-config
+            - name: lifecycle-scripts
+              mountPath: /var/lifecycle
+            - name: datadir
+              mountPath: /var/lib/redpanda/data
+          resources:
+            limits:
+              cpu: 250m
+              memory: 1124Mi
+      volumes: 
+        
+        - name: lifecycle-scripts
+          secret:
+            secretName: redpanda-sts-lifecycle
+            defaultMode: 0o775
+        - name: datadir
+          persistentVolumeClaim:
+            claimName: datadir
+        - name: redpanda
+          configMap:
+            name: redpanda
+        - name: config
+          emptyDir: {}
+        - name: redpanda-configurator
+          secret:
+            secretName: redpanda-configurator
+            defaultMode: 0o775
+        - name: redpanda-config-watcher
+          secret:
+            secretName: redpanda-config-watcher
+            defaultMode: 0o775
+        - name: redpanda-fs-validator
+          secret:
+            secretName: redpanda-fs-validator
+            defaultMode: 0o775
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: 
+              app.kubernetes.io/name: redpanda
+              app.kubernetes.io/instance: "redpanda"
+              app.kubernetes.io/component: redpanda-statefulset
+      nodeSelector:
+        {}
+      affinity:
+        
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels: 
+                app.kubernetes.io/name: redpanda
+                app.kubernetes.io/instance: "redpanda"
+                app.kubernetes.io/component: redpanda-statefulset
+      tolerations:
+        []
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+        labels:
+          app.kubernetes.io/name: redpanda
+          app.kubernetes.io/instance: "redpanda"
+          app.kubernetes.io/component: redpanda
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: "20Gi"
