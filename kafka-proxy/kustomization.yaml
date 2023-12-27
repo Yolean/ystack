@@ -1,3 +1,0 @@
-resources:
-- pixy-proxy-to-namespace-kafka.yaml
-- pixy-service.yaml

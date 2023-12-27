@@ -1,0 +1,46 @@
+---
+# Source: redpanda/templates/service.internal.yaml
+# This service is only used to create the DNS enteries for each pod in
+# the stateful set and allow the serviceMonitor to target the pods.
+# This service should not be used by any client application
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda
+  namespace: "kafka"
+  labels:
+    monitoring.redpanda.com/enabled: "false"
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-5.7.3
+spec:
+  type: ClusterIP
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector: 
+    app.kubernetes.io/name: redpanda
+    app.kubernetes.io/instance: "redpanda"
+    app.kubernetes.io/component: redpanda-statefulset
+  ports:
+    - name: admin
+      protocol: TCP
+      port: 9644
+      targetPort: 9644
+    - name: http
+      protocol: TCP
+      port: 8082
+      targetPort: 8082
+    - name: kafka
+      protocol: TCP
+      port: 9092
+      targetPort: 9092
+    - name: rpc
+      protocol: TCP
+      port: 33145
+      targetPort: 33145
+    - name: schemaregistry
+      protocol: TCP
+      port: 8081
+      targetPort: 8081

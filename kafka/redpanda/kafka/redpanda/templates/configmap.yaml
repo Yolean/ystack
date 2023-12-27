@@ -1,0 +1,135 @@
+---
+# Source: redpanda/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redpanda
+  namespace: "kafka"
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-5.7.3
+data: 
+  
+  bootstrap.yaml: |
+    kafka_enable_authorization: false
+    enable_sasl: false
+    enable_rack_awareness: false
+    auto_create_topics_enabled: false
+    default_topic_partitions: 1
+          
+    default_topic_replications: 1
+    storage_min_free_bytes: 104857600
+    
+    compacted_log_segment_size: 67108864
+    group_topic_partitions: 16
+    kafka_batch_max_bytes: 1048576
+    kafka_connection_rate_limit: 1000
+    log_segment_size: 134217728
+    log_segment_size_max: 268435456
+    log_segment_size_min: 16777216
+    max_compacted_log_segment_size: 536870912
+    topic_partitions_per_shard: 1000
+  
+    audit_enabled: false
+  
+  redpanda.yaml: |
+    config_file: /etc/redpanda/redpanda.yaml
+    redpanda:
+      empty_seed_starts_cluster: false
+      kafka_enable_authorization: false
+      enable_sasl: false
+      auto_create_topics_enabled: false
+      default_topic_partitions: 1
+      default_topic_replications: 1
+      storage_min_free_bytes: 104857600
+      compacted_log_segment_size: 67108864
+      group_topic_partitions: 16
+      kafka_batch_max_bytes: 1048576
+      kafka_connection_rate_limit: 1000
+      log_segment_size: 134217728
+      log_segment_size_max: 268435456
+      log_segment_size_min: 16777216
+      max_compacted_log_segment_size: 536870912
+      topic_partitions_per_shard: 1000
+        
+      crash_loop_limit: "5"
+      audit_enabled: false
+  
+  
+      admin:
+        - name: internal
+          address: 0.0.0.0
+          port: 9644
+        - name: default
+          address: 0.0.0.0
+          port: 9645
+      admin_api_tls:
+      kafka_api:
+        - name: internal
+          address: 0.0.0.0
+          port: 9092
+        - name: default
+          address: 0.0.0.0
+          port: 9094
+      kafka_api_tls:
+      rpc_server:
+        address: 0.0.0.0
+        port: 33145
+      seed_servers: 
+        - host:
+            address: redpanda-0.redpanda.kafka.svc.cluster.local.
+            port: 33145
+  
+    schema_registry_client:
+      brokers:
+      - address: redpanda-0.redpanda.kafka.svc.cluster.local.
+        port: 9092
+    schema_registry:
+      schema_registry_api:
+        - name: internal
+          address: 0.0.0.0
+          port: 8081
+        - name: default
+          address: 0.0.0.0
+          port: 8084
+      schema_registry_api_tls:
+  
+    pandaproxy_client:
+      brokers:
+      - address: redpanda-0.redpanda.kafka.svc.cluster.local.
+        port: 9092
+    pandaproxy:
+      pandaproxy_api:
+        - name: internal
+          address: 0.0.0.0
+          port: 8082
+        - name: default
+          address: 0.0.0.0
+          port: 8083
+      pandaproxy_api_tls:
+  
+    
+    rpk:
+      # redpanda server configuration
+      overprovisioned: true
+      enable_memory_locking: false
+      additional_start_flags:
+        - "--smp=1"
+        - "--memory=1024M"
+        - "--reserve-memory=100M"
+        - "--default-log-level=info"
+      # rpk tune entries
+      tune_aio_events: false
+    
+      # kafka connection configuration
+      kafka_api:
+        brokers: 
+          - redpanda-0.redpanda.kafka.svc.cluster.local.:9092
+        tls:
+      admin_api:
+        addresses: 
+          - redpanda-0.redpanda.kafka.svc.cluster.local.:9644
+        tls:
