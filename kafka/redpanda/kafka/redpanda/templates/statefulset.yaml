@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-5.6.60
+    helm.sh/chart: redpanda-5.7.3
 spec:
   selector:
     matchLabels: 
@@ -29,7 +29,7 @@ spec:
         app.kubernetes.io/component: redpanda-statefulset
         redpanda.com/poddisruptionbudget: redpanda
       annotations:
-        config.redpanda.com/checksum: 685fc87a61cd8c9977a01037f18675ea9fb84faf786c792645501a5ed9dde60f
+        config.redpanda.com/checksum: 952a4b3d8214fc5edac2aecc24131c0e90a7c36230adc7962e07e165594abef3
     spec:
       terminationGracePeriodSeconds: 90
       securityContext: 
@@ -38,7 +38,7 @@ spec:
       serviceAccountName: default
       initContainers:
         - name: redpanda-configurator
-          image: docker.redpanda.com/redpandadata/redpanda:v23.2.17
+          image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
           command:
             - /bin/bash
             - -c
@@ -72,7 +72,7 @@ spec:
               mountPath: /etc/secrets/configurator/scripts/
       containers:
         - name: redpanda
-          image: docker.redpanda.com/redpandadata/redpanda:v23.2.17
+          image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
           env:
             - name: SERVICE_NAME
               valueFrom:
@@ -133,7 +133,7 @@ spec:
           # It's ok that this cluster-wide check affects all the pods as it's only used for the
           # PodDisruptionBudget and we don't want to roll any pods if the Redpanda cluster isn't healthy.
           # https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets
-          # All services set `publishUnreadyAddresses:true` to prevent this from affecting cluster access
+          # All services set `publishNotReadyAddresses:true` to prevent this from affecting cluster access
           readinessProbe:
             exec:
               command:

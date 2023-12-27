@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-5.6.60
+    helm.sh/chart: redpanda-5.7.3
 data: 
   
   bootstrap.yaml: |
@@ -33,6 +33,8 @@ data:
     max_compacted_log_segment_size: 536870912
     topic_partitions_per_shard: 1000
   
+    audit_enabled: false
+  
   redpanda.yaml: |
     config_file: /etc/redpanda/redpanda.yaml
     redpanda:
@@ -54,6 +56,8 @@ data:
       topic_partitions_per_shard: 1000
         
       crash_loop_limit: "5"
+      audit_enabled: false
+  
   
       admin:
         - name: internal
@@ -92,6 +96,7 @@ data:
           address: 0.0.0.0
           port: 8084
       schema_registry_api_tls:
+  
     pandaproxy_client:
       brokers:
       - address: redpanda-0.redpanda.kafka.svc.cluster.local.
