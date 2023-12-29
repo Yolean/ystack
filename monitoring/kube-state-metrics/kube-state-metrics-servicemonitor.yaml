@@ -12,3 +12,10 @@ spec:
   endpoints:
   - port: http-metrics
     honorLabels: true
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: kube_replicaset_status_observed_generation
+      action: drop
+    - sourceLabels: [__name__]
+      regex: .*
+      action: keep
