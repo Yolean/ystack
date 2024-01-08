@@ -10,7 +10,10 @@ spec:
       annotations:
         yolean.se/kafka-bootstrap: bootstrap.kafka:9092
         yolean.se/kafka-topic-name: ""
-        yolean.se/kafka-topic-config: max.message.bytes=524288,retention.bytes=-1,retention.ms=-1
+        yolean.se/kafka-topic-config: >-
+          max.message.bytes=524288,
+          retention.bytes=-1,
+          retention.ms=-1,
         yolean.se/kafka-topic-partitions: "1"
         yolean.se/kafka-topic-replicas: "-1"
     spec:
