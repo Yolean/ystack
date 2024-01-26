@@ -23,6 +23,8 @@ configMapGenerator:
   - disable-creds-init="true"
   - running-in-environment-with-injected-sidecars="false"
   - enable-api-fields="stable"
+  - disable-affinity-assistant="true"
+  - coschedule="disabled"
   options:
     disableNameSuffixHash: true
     labels:
