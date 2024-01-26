@@ -1,19 +1,19 @@
 # https://github.com/lima-vm/lima/blob/master/examples/alpine.yaml
 
 images:
-- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.32/alpine-lima-std-3.18.0-x86_64.iso"
+- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.35/alpine-lima-std-3.19.0-x86_64.iso"
   arch: "x86_64"
-  digest: "sha512:7b00fff78736a27a24e4a7de5f28037e9c7cf0fc539a33ec551c6ac619eb54237b5f25bfa35512fa7233cf23396dc249592710ef9150f619afa15267f9c8cbd4"
-- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.32/alpine-lima-std-3.18.0-aarch64.iso"
+  digest: "sha512:e02599dc7fc4dc279d66d800f6edc68f6f112c4b370d4c74f43040214c53b23ae4c903ce56c7083fd56d5027ec33711d30d1c2e71836c60dc3bf639f76d4fa0e"
+- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.35/alpine-lima-std-3.19.0-aarch64.iso"
   arch: "aarch64"
-  digest: "sha512:bf23a22e05854670eef74d9bfad056caa249832f22d5594eb6bb02fa9aae109d33c764242f862d48de5b6715c4792a3ee29c19888a0711fb27113ba5cf1ccf21"
+  digest: "sha512:13e50601ee65af5d7a6dfd30bb41fd89f8bf806ecdb516c61fe238c3cf3b57cf67469418a99f329bb4c343e3387e6e0fd4fe20501cfd501f031f7244adc67215"
 
 cpus: 4
 memory: "8GiB"
 disk: "20GiB"
 
 env:
-  INSTALL_K3S_VERSION: v1.27.8+k3s2
+  INSTALL_K3S_VERSION: v1.27.9+k3s1
   INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
   K3S_NODE_NAME: ystack-master
 
