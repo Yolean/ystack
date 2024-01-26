@@ -5,4 +5,4 @@ namespace: tekton-pipelines
 
 resources:
 - release.yaml
-- interceptors.yaml
+# - interceptors.yaml
