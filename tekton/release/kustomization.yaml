@@ -17,15 +17,16 @@ patchesJson6902:
       path: /spec/template/spec/containers/0/args/9
       value: gcr.io/distroless/base:debug-nonroot@sha256:2482afe69bed977063bfe29ac52bc3ef1a11b6794e3b28539bc91d7b9c2fcb7d
 
-# To override config add config maps like:
-# configMapGenerator:
-# - name: config-artifact-bucket
-#   literals:
-#   - location=gs://my-actual-bucket
-#   options:
-#     disableNameSuffixHash: true
-#     labels:
-#       app.kubernetes.io/instance: default
-#       app.kubernetes.io/part-of: tekton-pipelines
-#   namespace: tekton-pipelines
-#   behavior: replace
+configMapGenerator:
+- name: feature-flags
+  literals:
+  - disable-creds-init="true"
+  - running-in-environment-with-injected-sidecars="false"
+  - enable-api-fields="stable"
+  options:
+    disableNameSuffixHash: true
+    labels:
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+  namespace: tekton-pipelines
+  behavior: merge
