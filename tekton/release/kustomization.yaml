@@ -1,6 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: tekton-pipelines
+
 resources:
 - release.yaml
 
@@ -12,18 +14,21 @@ patchesJson6902:
   # Note: the args list may change at Tekton upgrade; verify that the debug-nonroot image comes after the -shell-image arg
   patch: |-
     - op: replace
-      path: /spec/template/spec/containers/0/args/15
-      value: gcr.io/distroless/base:debug-nonroot@sha256:868b149a21379205ef3ec237cf8a0c2f30468405829b5fef0b29cc724fe7f34c
+      path: /spec/template/spec/containers/0/args/9
+      value: gcr.io/distroless/base:debug-nonroot@sha256:2482afe69bed977063bfe29ac52bc3ef1a11b6794e3b28539bc91d7b9c2fcb7d
 
-# To override config add config maps like:
-# configMapGenerator:
-# - name: config-artifact-bucket
-#   literals:
-#   - location=gs://my-actual-bucket
-#   options:
-#     disableNameSuffixHash: true
-#     labels:
-#       app.kubernetes.io/instance: default
-#       app.kubernetes.io/part-of: tekton-pipelines
-#   namespace: tekton-pipelines
-#   behavior: replace
+configMapGenerator:
+- name: feature-flags
+  literals:
+  - disable-creds-init="true"
+  - running-in-environment-with-injected-sidecars="false"
+  - enable-api-fields="stable"
+  - disable-affinity-assistant="true"
+  - coschedule="disabled"
+  options:
+    disableNameSuffixHash: true
+    labels:
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+  namespace: tekton-pipelines
+  behavior: merge
