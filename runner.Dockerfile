@@ -59,6 +59,7 @@ COPY bin/y-esbuild /usr/local/src/ystack/bin/
 RUN y-esbuild --version
 
 COPY bin/y-turbo /usr/local/src/ystack/bin/
+ENV DO_NOT_TRACK=1
 RUN y-turbo --version
 
 FROM --platform=$TARGETPLATFORM base
