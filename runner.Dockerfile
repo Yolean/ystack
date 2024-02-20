@@ -22,6 +22,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false \
   TURBO_NO_UPDATE_NOTIFIER=1 \
+  DO_NOT_TRACK=1 \
   npm_config_update_notifier=false
 
 FROM --platform=$TARGETPLATFORM node:20.11.1-bookworm-slim@sha256:474988d2fa8ad6321db19dc941af70202b163fca06a6b4e7f56067eda0c72eb9 \
@@ -59,7 +60,6 @@ COPY bin/y-esbuild /usr/local/src/ystack/bin/
 RUN y-esbuild --version
 
 COPY bin/y-turbo /usr/local/src/ystack/bin/
-ENV DO_NOT_TRACK=1
 RUN y-turbo --version
 
 FROM --platform=$TARGETPLATFORM base
