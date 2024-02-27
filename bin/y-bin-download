@@ -88,6 +88,13 @@ aarch() {
   x=$(uname -m)
   case $x in
     arm64) echo 'aarch64' ;;
+    *) echo $x ;;
+  esac
+}
+
+aarch64() {
+  x=$(aarch)
+  case $x in
     x86_64) echo 'x64' ;;
     *) echo $x ;;
   esac
@@ -134,6 +141,7 @@ run() {
   name=$2
   os=$(os)
   aarch=$(aarch)
+  aarch64=$(aarch64)
   arch=$(arch)
   xarch=$(xarch)
   osx=$(osx)
