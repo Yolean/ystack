@@ -36,7 +36,7 @@ COPY bin/y-bin.runner.yaml \
   /usr/local/src/ystack/bin/
 
 COPY bin/y-kubectl /usr/local/src/ystack/bin/
-RUN y-kubectl version --client=true
+RUN y-kubectl version --client=true --output=json
 
 COPY bin/y-kustomize /usr/local/src/ystack/bin/
 RUN y-kustomize version
