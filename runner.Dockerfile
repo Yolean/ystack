@@ -9,7 +9,7 @@ RUN set -ex; \
   ); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq unzip findutils patch'; \
+  runDeps='ca-certificates curl git jq unzip findutils patch xz-utils'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \

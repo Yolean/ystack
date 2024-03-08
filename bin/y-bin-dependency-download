@@ -48,7 +48,8 @@ bin_link=$YBIN/$bin_name
   if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then $SHA256SUM $bin_file && rm $bin_file && exit 1; fi
   if [ ! -z "$bin_tar_path" ]; then
     tmp=$(mktemp -d)
-    (cd $tmp; tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_extract)
+    (cd $tmp; tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_extract) \
+      || (cd $tmp; tar -tv${bin_tar_compression}f $bin_file; exit 1)
     mv "$tmp/$(basename $bin_tar_path)" $bin_file
   fi
   if [ ! -z "$bin_zip_path" ]; then

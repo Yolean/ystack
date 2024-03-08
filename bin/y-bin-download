@@ -29,6 +29,8 @@ install() {
   archivepath=$6
   # translate to legacy format's variable env names
   archivecompression=z
+  [ "$archivetool" != "tarxz" ] || archivecompression=J
+  [ "$archivetool" != "tarxz" ] || archivetool=tar
   [ "$archivetool" != "tar" ] || bin_tar_path=$archivepath
   [ "$archivetool" != "zip" ] || bin_zip_path=$archivepath
   # the legacy format, reused until phased out, note the mandatory v prefix to version
