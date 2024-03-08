@@ -180,15 +180,14 @@ dive:
     path: dive
 
 shellcheck:
-  # until released with https://github.com/koalaman/shellcheck/issues/2714
-  version: latest
+  version: 0.10.0
   templates:
-    download: https://github.com/koalaman/shellcheck/releases/download/${version}/shellcheck-${version}.${os}.${aarch}.tar.xz
+    download: https://github.com/koalaman/shellcheck/releases/download/v${version}/shellcheck-v${version}.${os}.${aarch}.tar.xz
   sha256:
-    darwin_amd64: b1134a81f5b6590a8ae4f1e4cdfad2d9f4603ec1abc87a860eed88fb0bc91789
-    darwin_arm64: 2e256e12f910d44c1875ac697ce239da6bb4781227c82efcbb9c755f5c88a260
-    linux_amd64: 4eedb8551a91fa1309d1aaf6d14ed1d3aff3c05ac37da23f4d51a163eaa373ad
-    linux_arm64: 9d2fa9edf184ec12b9ec1bd3fca7c9be9f76728994c647e22d96ae13c86db2a7
+    darwin_amd64: ef27684f23279d112d8ad84e0823642e43f838993bbb8c0963db9b58a90464c2
+    darwin_arm64: bbd2f14826328eee7679da7221f2bc3afb011f6a928b848c80c321f6046ddf81
+    linux_amd64: 6c881ab0698e4e6ea235245f22832860544f17ba386442fe7e9d629f8cbedf87
+    linux_arm64: 324a7e89de8fa2aed0d0c28f3dab59cf84c6d74264022c00c22af665ed1a09bb
   archive:
     tool: tar
-    path: shellcheck-${version}/shellcheck
+    path: shellcheck-v${version}/shellcheck
