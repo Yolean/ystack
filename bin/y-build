@@ -116,7 +116,9 @@ case "$IMAGE" in
   * ) echo "Output is restricted to PUSH_REGISTRY=$PUSH_REGISTRY. Got: $IMAGE" && exit 1 ;;
 esac
 
-OUTPUT="type=image,name=$IMAGE,push=true"
+[ -n "$SOURCE_DATE_EPOCH" ] || SOURCE_DATE_EPOCH=0
+
+OUTPUT="type=image,name=$IMAGE,push=true,rewrite-timestamp=true"
 
 BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
 
@@ -141,7 +143,7 @@ OPT_PLATFORM=""
 
 echo "Build command:"
 set -x
-y-buildctl \
+SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" y-buildctl \
   --addr $BUILDKIT_HOST \
   build \
     --frontend dockerfile.v0 \
