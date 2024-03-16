@@ -3,6 +3,6 @@
 set -e
 YBIN="$(dirname $0)"
 
-version=$(y-bin-download $YBIN/y-bin.runner.yaml bun)
+version=$(y-bin-download $YBIN/y-bin.optional.yaml bun)
 
 y-bun-v${version}-bin "$@" || exit $?
