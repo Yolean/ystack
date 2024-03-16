@@ -8,7 +8,8 @@ spec:
       containers:
       - name: redpanda
         resources:
-          # unhelm sets requests=limits, but redpanda config only needs to match limits
+          # Note that limits are set through unhelm (kafka-v3/redpanda.kafka-v3.values.yaml)
+          # and enforced at runtime through redpanda config
           requests:
             cpu: 10m
             memory: 330Mi
