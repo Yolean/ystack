@@ -14,7 +14,7 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-5.7.3
+    helm.sh/chart: redpanda-5.7.34
 spec:
   type: ClusterIP
   publishNotReadyAddresses: true

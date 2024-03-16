@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# some resources from the helm chart don't get namespace
+namespace: kafka
+
+resources:
+- ../redpanda/kafka
+
+patches:
+- path: ./redpanda-resources.yaml

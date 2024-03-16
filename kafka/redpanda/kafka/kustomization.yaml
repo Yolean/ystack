@@ -4,6 +4,7 @@ resources:
 
 - ./redpanda/templates/configmap.yaml
 - ./redpanda/templates/poddisruptionbudget.yaml
+- ./redpanda/templates/rbac.yaml
 - ./redpanda/templates/secrets.yaml
 - ./redpanda/templates/service.internal.yaml
 - ./redpanda/templates/statefulset.yaml

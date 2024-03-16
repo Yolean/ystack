@@ -17,10 +17,12 @@ curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh >
 limactl start --tty=false $YSTACK_HOME/k3s/ystack.yaml
 cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
 
+TOPOLOGY_ZONE="local"
+
 #limactl shell ystack sudo apk add curl
 limactl shell ystack swapoff -a
 limactl shell ystack sudo cp -rv /tmp/lima/ystack/rancher /etc
-limactl shell ystack sh /tmp/lima/ystack/install.sh
+limactl shell ystack sh /tmp/lima/ystack/install.sh --node-label "topology.kubernetes.io/zone=$TOPOLOGY_ZONE"
 limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sleep 1; done; cat /etc/rancher/k3s/k3s.yaml' > "$KUBECONFIG.tmp"
 
 # https://github.com/containerd/nerdctl/blob/master/docs/multi-platform.md
