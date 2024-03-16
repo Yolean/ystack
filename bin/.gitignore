@@ -4,6 +4,7 @@
 # our executables are symlinked to real names
 buildctl
 buildx
+bun
 bunyan
 contain
 container-structure-test
