@@ -140,14 +140,14 @@ turbo:
     path: turbo-${os}-${arm}64/bin/turbo
 
 bun:
-  version: 1.0.24
+  version: 1.0.31
   templates:
     download: https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-${os}-${aarch}.zip
   sha256:
-    darwin_amd64: 1a96bec202a80ca2ae54ef19930b9c06cd727d5c3edf82fc421bf716ec8af20a
-    darwin_arm64: 7a6a74497b9afd776055f6c47a66a145a6e5f4ad4c5761df63f8f88889c252ee
-    linux_amd64: f2e1d3006089e9f67609d37c19449f3ab494caed652145c02fbddecf1ffbb55f
-    linux_arm64: f767a5ed9f34200dfb0897e3f577241b826cb40288fb7e99f3fac0dd282e9198
+    darwin_amd64: da1902808760742888110cce8bf7168b83f04b84a166bdaa4671e7c6c28bf77f
+    darwin_arm64: d30f95a754a46776ebc791c93a9dfabc40f82bf0d63e8e30f3eb588b994780e9
+    linux_amd64: 67c78e162a1d984fd5ad8cbc81e8c96e5064707b29a4e6a68386a47e233fa041
+    linux_arm64: 4c00f8d5395532eb76163968f0518905ff11ecc20c967b6ce514d12ea170bd3e
   archive:
     tool: zip
     path: bun-${os}-${aarch}/bun
