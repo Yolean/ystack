@@ -120,7 +120,8 @@ if [[ ! -z "$YSTACK_GIT_COMMIT" ]]; then
     YSTACK_GIT_COMMIT="$YSTACK_GIT_COMMIT-dirty"
   fi
 fi
-docker buildx build --progress=plain --platform=linux/amd64,linux/arm64/v8 -t yolean/ystack-runner:$YSTACK_GIT_COMMIT -f runner.Dockerfile .
+docker buildx create --use --driver-opt image=moby/buildkit:v0.13.0
+SOURCE_DATE_EPOCH=0 docker buildx build --progress=plain --platform=linux/amd64,linux/arm64/v8 --output type=image,name=yolean/ystack-runner:$YSTACK_GIT_COMMIT,rewrite-timestamp=true,push=false -f runner.Dockerfile .
 ```
 
 Dogfooding build
