@@ -14,7 +14,7 @@ resources:
     overprovisioned: true
   memory:
     container:
-      max: 1124Mi
+      max: 1171Mi
     redpanda:
       memory: 1024Mi
       reserveMemory: 100Mi
