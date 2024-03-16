@@ -38,6 +38,8 @@ function checksum_download {
 }
 
 os=darwin
+aarch=x86_64
+aarch64=x64
 arch=amd64
 xarch=x86_64
 osx=osx
@@ -46,6 +48,8 @@ arm=""
 xarm=x
 echo -n "    darwin_amd64: " && checksum
 
+aarch=aarch64
+aarch64=aarch64
 arch=arm64
 xarch=arm64
 arm=arm
@@ -53,6 +57,8 @@ xarm=arm
 echo -n "    darwin_arm64: " && checksum
 
 os=linux
+aarch=x86_64
+aarch64=x64
 arch=amd64
 xarch=x86_64
 osx=linux
@@ -61,6 +67,8 @@ arm=""
 xarm=x
 echo -n "    linux_amd64: " && checksum
 
+aarch=aarch64
+aarch64=aarch64
 arch=arm64
 xarch=arm64
 arm=arm

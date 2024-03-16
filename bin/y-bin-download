@@ -29,6 +29,8 @@ install() {
   archivepath=$6
   # translate to legacy format's variable env names
   archivecompression=z
+  [ "$archivetool" != "tarxz" ] || archivecompression=J
+  [ "$archivetool" != "tarxz" ] || archivetool=tar
   [ "$archivetool" != "tar" ] || bin_tar_path=$archivepath
   [ "$archivetool" != "zip" ] || bin_zip_path=$archivepath
   # the legacy format, reused until phased out, note the mandatory v prefix to version
@@ -84,6 +86,22 @@ arch() {
   esac
 }
 
+aarch() {
+  x=$(uname -m)
+  case $x in
+    arm64) echo 'aarch64' ;;
+    *) echo $x ;;
+  esac
+}
+
+aarch64() {
+  x=$(aarch)
+  case $x in
+    x86_64) echo 'x64' ;;
+    *) echo $x ;;
+  esac
+}
+
 arm() {
   x=$(xarch)
   case $x in
@@ -124,6 +142,8 @@ run() {
   yaml=$1
   name=$2
   os=$(os)
+  aarch=$(aarch)
+  aarch64=$(aarch64)
   arch=$(arch)
   xarch=$(xarch)
   osx=$(osx)
