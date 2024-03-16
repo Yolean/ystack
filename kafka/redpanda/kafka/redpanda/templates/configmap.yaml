@@ -10,13 +10,13 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-5.7.3
+    helm.sh/chart: redpanda-5.7.34
 data: 
   
   bootstrap.yaml: |
     kafka_enable_authorization: false
     enable_sasl: false
-    enable_rack_awareness: false
+    enable_rack_awareness: true
     auto_create_topics_enabled: false
     default_topic_partitions: 1
           

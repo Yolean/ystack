@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-5.7.3
+    helm.sh/chart: redpanda-5.7.34
 spec:
   selector:
     matchLabels: 
@@ -29,7 +29,7 @@ spec:
         app.kubernetes.io/component: redpanda-statefulset
         redpanda.com/poddisruptionbudget: redpanda
       annotations:
-        config.redpanda.com/checksum: 952a4b3d8214fc5edac2aecc24131c0e90a7c36230adc7962e07e165594abef3
+        config.redpanda.com/checksum: 29d2ef6ce244bdc549b4844170cc6d7dbe853745398749c4756e8bb1d07a2762
     spec:
       terminationGracePeriodSeconds: 90
       securityContext: 
@@ -38,7 +38,7 @@ spec:
       serviceAccountName: default
       initContainers:
         - name: redpanda-configurator
-          image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
+          image: docker.redpanda.com/redpandadata/redpanda:v23.3.7
           command:
             - /bin/bash
             - -c
@@ -72,7 +72,7 @@ spec:
               mountPath: /etc/secrets/configurator/scripts/
       containers:
         - name: redpanda
-          image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
+          image: docker.redpanda.com/redpandadata/redpanda:v23.3.7
           env:
             - name: SERVICE_NAME
               valueFrom:
@@ -113,7 +113,7 @@ spec:
                 - -c
                 - |
                   set -e
-                  RESULT=$(curl --silent --fail -k  "http://${SERVICE_NAME}.redpanda.kafka.svc.cluster.local.:9644/v1/status/ready")
+                  RESULT=$(curl --silent --fail -k -m 5  "http://${SERVICE_NAME}.redpanda.kafka.svc.cluster.local.:9644/v1/status/ready")
                   echo $RESULT
                   echo $RESULT | grep ready
             initialDelaySeconds: 1
@@ -125,7 +125,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - curl --silent --fail -k  "http://${SERVICE_NAME}.redpanda.kafka.svc.cluster.local.:9644/v1/status/ready"
+                - curl --silent --fail -k -m 5  "http://${SERVICE_NAME}.redpanda.kafka.svc.cluster.local.:9644/v1/status/ready"
             initialDelaySeconds: 10
             failureThreshold: 3
             periodSeconds: 10
@@ -141,8 +141,9 @@ spec:
                 - -c
                 - |
                   set -x
-                  rpk cluster health
-                  rpk cluster health | grep 'Healthy:.*true'
+                  RESULT=$(rpk cluster health)
+                  echo $RESULT
+                  echo $RESULT | grep 'Healthy:.*true'
             initialDelaySeconds: 1
             failureThreshold: 3
             periodSeconds: 10
@@ -155,22 +156,14 @@ spec:
           ports:
             - name: admin
               containerPort: 9644
-            - name: admin-default
-              containerPort: 9645
             - name: http
               containerPort: 8082
-            - name: http-default
-              containerPort: 8083
             - name: kafka
               containerPort: 9092
-            - name: kafka-default
-              containerPort: 9094
             - name: rpc
               containerPort: 33145
             - name: schemaregistry
               containerPort: 8081
-            - name: schema-default
-              containerPort: 8084
           securityContext: 
             runAsUser: 101
             runAsGroup: 101
