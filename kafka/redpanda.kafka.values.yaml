@@ -33,7 +33,12 @@ tls:
 external:
   enabled: false
 rbac:
-  enabled: false
+  enabled: true
+  annotations: {}
+rackAwareness:
+  enabled: true
+  # this is a label, not an annotation, but https://github.com/redpanda-data/helm-charts/blob/redpanda-5.7.34/charts/redpanda/templates/secrets.yaml#L349 is a grep so that might work
+  nodeAnnotation: topology.kubernetes.io/zone
 post_install_job:
   enabled: false
 post_upgrade_job:
