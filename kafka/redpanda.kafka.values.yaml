@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://github.com/redpanda-data/helm-charts/raw/redpanda-5.6.60/charts/redpanda/values.schema.json
+# yaml-language-server: $schema=https://github.com/redpanda-data/helm-charts/raw/redpanda-5.7.34/charts/redpanda/values.schema.json
 # unhelm-template-repo: https://charts.redpanda.com
 # unhelm-namespace: kafka
 
@@ -26,6 +26,8 @@ config:
     default_topic_replications: 1
     default_topic_partitions: 1
     storage_min_free_bytes: 104857600
+tuning:
+  tune_aio_events: false
 tls:
   enabled: false
 external:
@@ -42,8 +44,6 @@ logging:
   logLevel: info
   usageStats:
     enabled: false
-tuning:
-  tune_aio_events: false
 # See forwarded ports in ../k3s/ystack.yaml
 # See also https://github.com/redpanda-data/helm-charts/issues/285
 listeners:
