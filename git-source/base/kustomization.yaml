@@ -1,14 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: ystack # install's app_url depends on namespace
-
 resources:
 - git-service.yaml
 - gitea-statefulset-service.yaml
 - gitea-statefulset.yaml
-
 images:
 - name: gitea/gitea
   newName: docker.io/gitea/gitea
-  newTag: 1.21.5@sha256:a2095ce71c414c0c6a79192f3933e668a595f7fa7706324edd0aa25c8728f00f
+  newTag: 1.21.9@sha256:12ebefc4be5b93551296854a93a8eaa3cbd0c119a71c2079d2c8dd9ac5842a39
