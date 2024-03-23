@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ -z "$BUMP_INCLUDE" ] && BUMP_INCLUDE='--include=*.yaml'
+
+[ "$1" = "help" ] && echo "adsf
+Adds digests to kustomize images.
+Usage: update newTag with the desired tags, then run the script.
+BUMP_INCLUDE='$BUMP_INCLUDE'
+" && exit 0
+
+SRC=$1
+[ -z "$SRC" ] && echo "First arg must be a path like . or ./my/kustomization.yaml" && exit 1
+
+[ -f "$SRC" ] || (echo "non-file input $SRC is currently unsupported" && exit 1)
+FILE="$SRC"
+
+for img in $(yq e '.images.[] | .name + "=" + (.newName // .name) + ":" + .newTag' $FILE); do
+  name=$(echo "$img" | cut -d= -f1)
+  ref=$(echo "$img" | cut -d= -f2 | cut -d@ -f1)
+  tag=$(echo "$ref" | cut -d: -f2)
+  echo "# $name -> $tag ..."
+  y-image-bump "$name" "$tag" "$FILE"
+done
