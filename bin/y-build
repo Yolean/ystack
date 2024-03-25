@@ -118,7 +118,10 @@ esac
 
 [ -n "$SOURCE_DATE_EPOCH" ] || SOURCE_DATE_EPOCH=0
 
-OUTPUT="type=image,name=$IMAGE,push=true,rewrite-timestamp=true"
+OUTPUT="type=image,name=$IMAGE,push=true"
+
+[ "$REWRITE_TIMESTAMP" != "true" ] || OUTPUT="$OUTPUT,rewrite-timestamp=true"
+[ "$SOURCE_DATE_EPOCH" != "-1" ] || SOURCE_DATE_EPOCH=""
 
 BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
 
