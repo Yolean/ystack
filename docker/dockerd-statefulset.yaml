@@ -64,8 +64,6 @@ spec:
         env:
         - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
           value: "-p 0.0.0.0:2376:2376/tcp"
-        - name: SOURCE_DATE_EPOCH
-          value: "0"
         - name: STORAGE_DRIVER
           valueFrom:
             fieldRef:
