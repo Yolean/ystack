@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile:1.7
+# syntax=docker.io/docker/dockerfile:1.7.1
 FROM --platform=$TARGETPLATFORM ubuntu:22.04@sha256:f9d633ff6640178c2d0525017174a688e2c1aef28f0a0130b26bd5554491f0da \
   as base
 
