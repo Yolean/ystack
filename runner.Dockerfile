@@ -22,6 +22,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   SKAFFOLD_INSECURE_REGISTRY='builds-registry.ystack.svc.cluster.local,prod-registry.ystack.svc.cluster.local' \
   SKAFFOLD_UPDATE_CHECK=false \
   TURBO_NO_UPDATE_NOTIFIER=1 \
+  TURBO_GLOBAL_WARNING_DISABLED=1 \
   DO_NOT_TRACK=1 \
   npm_config_update_notifier=false
 
