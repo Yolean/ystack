@@ -41,3 +41,13 @@ jobs:
         push: true
         cache-from: type=gha
         cache-to: type=gha,mode=max
+    -
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.22
+    -
+      uses: imjasonh/setup-crane@v0.3
+    -
+      run: |
+        TAG_BUILDKIT=v0.14.1-rootless
+        crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
