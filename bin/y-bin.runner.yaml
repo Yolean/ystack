@@ -31,21 +31,21 @@ jq:
     linux_arm64: For_jq_arm64_linux_use_a_package_manager
 
 kubectl:
-  version: 1.27.11
+  version: 1.29.6
   templates:
     download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: f2f28f9b2526c20f95deb92ba807fe1dc11f9a2094a5cf5bf703cc274b0217dd
-    darwin_arm64: 5a55fa758d054e63025e903e2a66c2702dd4e653d008278832fe52dd18cd35bd
-    linux_amd64: fe293a91002753d3e74aa424e020987c18e198438f120b9439cb5d6ba7381b43
-    linux_arm64: 420df2d2a050d2e060057dd714fd4db71321a7d6458e92e37903605b3a8bcaf7
+    darwin_amd64: 046ce191ddd8c8336fe4656ad4289c331ab7f0b8adcd8220cdcfe8608ff2e3b8
+    darwin_arm64: 6271ad06c3ed498a290df2894324719997073cf5d0bf2d853baaaef2f03bdf38
+    linux_amd64: 8b7679f2857fa685c0623aa02c2e89fc0fd52e3eb89684ac26da89afe36941f8
+    linux_arm64: ae7923a5ff2d6d58f8ba3dbd20aca721d6af56e40760b49b4773f5dcfac13de3
   archive:
     tool: tar
     path: kubernetes/client/bin/kubectl
 
 kustomize:
   # TODO with tag from version in ./y-kubectl
-  # https://github.com/kubernetes/kubernetes/blob/v1.27.5/staging/src/k8s.io/kubectl/go.mod#L44
+  # https://github.com/kubernetes/kubernetes/blob/v1.29.6/staging/src/k8s.io/kubectl/go.mod#L44
   # - 5.1.0 changes so that "Components are now applied after generators" which means that kubectl -k and kustomize build would behave differently
   version: 5.0.3
   templates:
