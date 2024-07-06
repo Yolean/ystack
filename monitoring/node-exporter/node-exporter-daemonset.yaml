@@ -34,7 +34,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: quay.io/prometheus/node-exporter:v1.5.0@sha256:39c642b2b337e38c18e80266fb14383754178202f40103646337722a594d984c
+        image: quay.io/prometheus/node-exporter:v1.8.1@sha256:fa7fa12a57eff607176d5c363d8bb08dfbf636b36ac3cb5613a202f3c61a6631
         name: node-exporter
         ports:
         - name: web
