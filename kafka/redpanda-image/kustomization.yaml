@@ -3,5 +3,5 @@ kind: Component
 
 images:
 - name: vectorized/redpanda
-  newName: docker.io/vectorized/redpanda
-  newTag: v23.3.7@sha256:539fdb8fabfe0b6de7826f1a8d168705454853cbc65464e098593c6d64fbbda2
+  newName: docker.redpanda.com/redpandadata/redpanda
+  newTag: v24.1.9@sha256:85a30e0084f3d479098c327575e3eb27b729ec31f7d72cd1b2ef1098dc1e3b85
