@@ -32,7 +32,7 @@ spec:
             for C in $(echo "$TOPIC_CONFIG" | tr ',' ' '); do echo -n " $FLAG $C"; done
             echo ''
           }
-          until rpk cluster --brokers $KAFKA_BOOTSTRAP info; do sleep 1; done;
+          until rpk cluster --brokers $KAFKA_BOOTSTRAP info -b -c; do sleep 1; done;
           if rpk topic --brokers $KAFKA_BOOTSTRAP describe "$TOPIC_NAME"; then
             rpk topic --brokers $KAFKA_BOOTSTRAP alter-config "$TOPIC_NAME" $(config_args --set) | grep OK
           else
@@ -65,7 +65,7 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 20Mi
+            memory: 50Mi
           limits:
             cpu: 100m
-            memory: 20Mi
+            memory: 50Mi
