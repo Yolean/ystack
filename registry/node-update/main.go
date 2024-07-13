@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/containerd/nstools"
+	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/txn2/txeh"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +67,7 @@ func main() {
 	fmt.Printf("containerd config updated\n")
 
 	fmt.Printf("containerd restart\n")
-	if err = nstools.WithNamespaces(containerdTargetPid, func() error {
+	if err = ns.WithNetNSPath(fmt.Sprintf("/proc/%d/ns/mnt", containerdTargetPid), func(_ ns.NetNS) error {
 		// Code to run inside the namespace
 		cmd := exec.Command("systemctl", "restart", "containerd")
 		cmd.Stdin = os.Stdin
