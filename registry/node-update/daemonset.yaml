@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://github.com/yannh/kubernetes-json-schema/raw/master/v1.27.9/daemonset.json
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: containerd-config
+spec:
+  selector:
+    matchLabels:
+      app: containerd-config
+  template:
+    metadata:
+      labels:
+        app: containerd-config
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      hostPID: true
+      hostNetwork: true
+      restartPolicy: Never
+      containers:
+      - name: init-container-did-the-work
+        image: k8s.gcr.io/pause:3.6@sha256:3d380ca8864549e74af4b29c10f9cb0956236dfb01c40ca076fb6c37253234db
+        imagePullPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: etc-containerd
+        hostPath:
+          path: /etc/containerd
