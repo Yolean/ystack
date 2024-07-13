@@ -19,11 +19,16 @@ spec:
         operator: Exists
       hostPID: true
       hostNetwork: true
-      restartPolicy: Never
+      securityContext:
+        runAsUser: 0
       containers:
-      - name: init-container-did-the-work
-        image: k8s.gcr.io/pause:3.6@sha256:3d380ca8864549e74af4b29c10f9cb0956236dfb01c40ca076fb6c37253234db
+      - name: config
+        image: ghcr.io/yolean/ystack-registry-node-update:latest
         imagePullPolicy: Always
+        volumeMounts:
+        - name: etc-containerd
+          mountPath: /etc/containerd
+          readOnly: false
       terminationGracePeriodSeconds: 30
       volumes:
       - name: etc-containerd
