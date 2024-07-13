@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - main
+    - registry-config-image
 
 jobs:
   docker:
@@ -27,20 +28,20 @@ jobs:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    -
-      name: Build and push runner
-      uses: docker/build-push-action@v5
-      env:
-        SOURCE_DATE_EPOCH: 0
-      with:
-        context: .
-        file: runner.Dockerfile
-        tags: |
-          ghcr.io/yolean/ystack-runner:${{ github.sha }}
-        platforms: linux/amd64,linux/arm64/v8
-        push: true
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+    # -
+    #   name: Build and push runner
+    #   uses: docker/build-push-action@v5
+    #   env:
+    #     SOURCE_DATE_EPOCH: 0
+    #   with:
+    #     context: .
+    #     file: runner.Dockerfile
+    #     tags: |
+    #       ghcr.io/yolean/ystack-runner:${{ github.sha }}
+    #     platforms: linux/amd64,linux/arm64/v8
+    #     push: true
+    #     cache-from: type=gha
+    #     cache-to: type=gha,mode=max
     -
       name: Build and push registry node-update
       uses: docker/build-push-action@v5
@@ -54,13 +55,13 @@ jobs:
         push: true
         cache-from: type=gha
         cache-to: type=gha,mode=max
-    -
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22
-    -
-      uses: imjasonh/setup-crane@v0.3
-    -
-      run: |
-        TAG_BUILDKIT=v0.14.1-rootless
-        crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
+    # -
+    #   uses: actions/setup-go@v5
+    #   with:
+    #     go-version: 1.22
+    # -
+    #   uses: imjasonh/setup-crane@v0.3
+    # -
+    #   run: |
+    #     TAG_BUILDKIT=v0.14.1-rootless
+    #     crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
