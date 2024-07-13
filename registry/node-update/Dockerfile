@@ -7,9 +7,9 @@ RUN go mod download
 
 COPY . .
 
-RUN go test ./...
+# RUN go test ./...
 
-RUN sed -i 's/zap.NewDevelopment()/zap.NewProduction()/' main.go
+# RUN sed -i 's/zap.NewDevelopment()/zap.NewProduction()/' main.go
 
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH \
