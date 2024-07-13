@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/txn2/txeh"
 
@@ -36,11 +37,12 @@ func main() {
 	}
 	hosts.AddHost(buildsRegistryIp, buildsRegistryHost)
 	hosts.AddHost(prodRegistryIp, prodRegistryHost)
+	hosts.AddHost("127.99.99.99", "ystack-temp-test-host")
 	hosts.Save()
 	fmt.Printf("host added %s %s\n", buildsRegistryIp, buildsRegistryHost)
 	fmt.Printf("host added %s %s\n", prodRegistryIp, prodRegistryHost)
 
-	config, err := os.OpenFile(containerdConfigPath, os.O_APPEND, 0644)
+	config, err := os.OpenFile(containerdConfigPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err.Error())
 	}
