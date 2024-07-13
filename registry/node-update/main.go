@@ -96,4 +96,6 @@ func main() {
 	// TODO
 	// nsenter --mount=/proc/1/ns/mnt -- containerd config dump
 
+	// TODO initcontainer or not?
+	time.Sleep(10 * time.Hour)
 }
