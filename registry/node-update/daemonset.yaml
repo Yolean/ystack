@@ -19,12 +19,13 @@ spec:
         operator: Exists
       hostPID: true
       hostNetwork: true
-      securityContext:
-        runAsUser: 0
       containers:
       - name: config
         image: ghcr.io/yolean/ystack-registry-node-update:latest
         imagePullPolicy: Always
+        securityContext:
+          runAsUser: 0
+          privileged: true
         volumeMounts:
         - name: etc-containerd
           mountPath: /etc/containerd

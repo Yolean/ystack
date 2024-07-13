@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"syscall"
 	"time"
 
-	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/txn2/txeh"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,20 +67,33 @@ func main() {
 	fmt.Printf("containerd config updated\n")
 
 	fmt.Printf("containerd restart\n")
-	if err = ns.WithNetNSPath(fmt.Sprintf("/proc/%d/ns/mnt", containerdTargetPid), func(_ ns.NetNS) error {
-		// Code to run inside the namespace
-		cmd := exec.Command("systemctl", "restart", "containerd")
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			log.Fatalf("Failed to run command in namespace: %v", err)
-		}
-		return nil
-	}); err != nil {
-		log.Fatalf("Failed to enter namespaces: %v", err)
+	nsPath := fmt.Sprintf("/proc/%d/ns/mnt", containerdTargetPid)
+	nsFile, err := os.Open(nsPath)
+	if err != nil {
+		log.Fatalf("Failed to open namespace file: %v", err)
 	}
+	defer nsFile.Close()
+
+	// probably AMD64 only
+	const SYS_SETNS = 308
+	const CLONE_NEWNS = 0x00020000
+	if _, _, err := syscall.RawSyscall(SYS_SETNS, uintptr(nsFile.Fd()), uintptr(CLONE_NEWNS), 0); err != 0 {
+		fmt.Printf("Failed to set new namespace: %v\n", err)
+		return
+	}
+
+	cmd := exec.Command("systemctl", "restart", "containerd")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to run command in namespace: %v", err)
+	}
+
 	fmt.Printf("containerd restarted\n")
+
+	// TODO initcontainer or not?
+	time.Sleep(10 * time.Hour)
 
 	clientconfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -106,7 +119,4 @@ func main() {
 
 	// TODO
 	// nsenter --mount=/proc/1/ns/mnt -- containerd config dump
-
-	// TODO initcontainer or not?
-	time.Sleep(10 * time.Hour)
 }
