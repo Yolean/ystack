@@ -64,8 +64,8 @@ spec:
               fieldPath: metadata.annotations['yolean.se/kafka-topic-replicas']
         resources:
           requests:
-            cpu: 100m
+            cpu: 250m
             memory: 100Mi
           limits:
-            cpu: 100m
+            cpu: 250m
             memory: 100Mi
