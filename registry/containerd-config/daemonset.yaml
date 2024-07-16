@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://github.com/yannh/kubernetes-json-schema/raw/master/v1.27.9/daemonset.json
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: containerd-config
+spec:
+  selector:
+    matchLabels:
+      app: containerd-config
+  template:
+    metadata:
+      labels:
+        app: containerd-config
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - name: init-container-did-the-work
+        image: registry.k8s.io/pause:3.9@sha256:7031c1b283388d2c2e09b57badb803c05ebed362dc88d84b480cc47f72a21097
+      initContainers:
+      - name: config
+        image: ghcr.io/yolean/busybox:1.36.1-glibc@sha256:25e9fcbd3799fce9c0ec978303d35dbb18a6ffb1fc76fc9b181dd4e657e2cd13
+        command:
+        - sh
+        #to troubleshoot use: - -cex
+        - -ce
+        - |
+          echo "" | tee -a /host-etc/hosts
+          grep builds-registry.ystack.svc.cluster.local /host-etc/hosts || \
+            echo "$BUILDS_REGISTRY_PORT_80_TCP_ADDR builds-registry.ystack.svc.cluster.local" | tee -a /host-etc/hosts
+          grep prod-registry.ystack.svc.cluster.local /host-etc/hosts || \
+            echo "$PROD_REGISTRY_PORT_80_TCP_ADDR prod-registry.ystack.svc.cluster.local" | tee -a /host-etc/hosts
+
+          CONFIG_PATH=/etc/containerd/config.toml
+          CRI_PLUGIN='plugins."io.containerd.grpc.v1.cri"'
+          if ! grep builds-registry.ystack.svc.cluster.local $CONFIG_PATH; then
+            echo "[$CRI_PLUGIN.registry.mirrors.\"builds-registry.ystack.svc.cluster.local\"]" >> $CONFIG_PATH
+            echo '  endpoint = ["http://builds-registry.ystack.svc.cluster.local"]'            >> $CONFIG_PATH
+            touch /results/config-updated
+          fi
+          if ! grep prod-registry.ystack.svc.cluster.local $CONFIG_PATH; then
+            echo "[$CRI_PLUGIN.registry.mirrors.\"prod-registry.ystack.svc.cluster.local\"]"   >> $CONFIG_PATH
+            echo '  endpoint = ["http://prod-registry.ystack.svc.cluster.local"]'              >> $CONFIG_PATH
+            touch /results/config-updated
+          fi
+          if [ -f /results/config-updated ]; then
+            echo "Configuration has been updated; restarting containerd (not expecting any output) ..."
+            nsenter --mount=/proc/1/ns/mnt -- systemctl restart containerd
+            echo "Restart triggered"
+          else
+            echo "No configration change"
+          fi
+          echo "----------------------- /etc/hosts ------------------------"
+          cat /host-etc/hosts
+          echo "-------------------- containerd config --------------------"
+          nsenter --mount=/proc/1/ns/mnt -- containerd config dump
+          echo "-------------------------- done ---------------------------"
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+        - name: etc-hosts
+          mountPath: /host-etc/hosts
+          readOnly: false
+        - name: etc-containerd
+          mountPath: /etc/containerd
+          readOnly: false
+        - name: results
+          mountPath: /results
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: etc-hosts
+        hostPath:
+          path: /etc/hosts
+      - name: etc-containerd
+        hostPath:
+          path: /etc/containerd
+      - name: results
+        emptyDir: {}
