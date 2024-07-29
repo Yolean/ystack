@@ -48,6 +48,17 @@ jobs:
     -
       uses: imjasonh/setup-crane@v0.3
     -
+      name: Get registry image tag
+      id: imageRegistryTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[0].newTag' registry/generic/kustomization.yaml
+    -
+      name: Mirror registry image from hub
+      run: |
+        TAG_REGISTRY=${{ steps.imageRegistryTag.outputs.result }}
+        crane cp registry:$TAG_REGISTRY ghcr.io/yolean/registry:$TAG_REGISTRY
+    -
       name: Get buildkit image tag
       id: imageBuildkitTag
       uses: mikefarah/yq@v4.44.1

@@ -1,9 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+- name: registry
+  newName: ghcr.io/yolean/registry
+  newTag: 2.8.3@sha256:12a6ddd56d2de5611ff0d9735ac0ac1d1e44073c7d042477329e589c46867e4e
+
 resources:
 - deployment.yaml
+
 configMapGenerator:
 - name: registry-config
   files:
   - config.yml
+
 secretGenerator:
 - name: registry
   literals:
