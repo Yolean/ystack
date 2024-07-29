@@ -48,6 +48,13 @@ jobs:
     -
       uses: imjasonh/setup-crane@v0.3
     -
+      name: Get buildkit image tag
+      id: imageBuildkitTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[0].newTag' buildkit/kustomization.yaml
+    -
+      name: Mirror buildkit image from hub
       run: |
-        TAG_BUILDKIT=v0.14.1-rootless
+        TAG_BUILDKIT=${{ steps.imageBuildkitTag.outputs.result }}
         crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
