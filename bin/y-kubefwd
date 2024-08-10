@@ -9,7 +9,7 @@ case $ctx in
   *) echo "Initial arg must be --context=" && exit 1 ;;
 esac
 
-[ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
+[ "$YSTACK_BUILDKIT_REQUIRE" != "true" ] || [ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
 
 version=$(y-bin-download $YBIN/y-bin.optional.yaml kubefwd)
 
