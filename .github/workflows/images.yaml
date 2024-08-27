@@ -69,3 +69,25 @@ jobs:
       run: |
         TAG_BUILDKIT=${{ steps.imageBuildkitTag.outputs.result }}
         crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
+    -
+      name: Get grafana image tag
+      id: imageGrafanaTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[0].newTag' monitoring/grafana/kustomization.yaml
+    -
+      name: Mirror grafana image from hub
+      run: |
+        TAG_GRAFANA=${{ steps.imageGrafanaTag.outputs.result }}
+        crane cp docker.io/grafana/grafana:$TAG_GRAFANA ghcr.io/yolean/grafana:$TAG_GRAFANA
+    -
+      name: Get grafana-image-renderer image tag
+      id: imageGrafanaImageRendererTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[1].newTag' monitoring/grafana/kustomization.yaml
+    -
+      name: Mirror grafana-image-renderer image from hub
+      run: |
+        TAG_GRAFANAIMG=${{ steps.imageGrafanaImageRendererTag.outputs.result }}
+        crane cp docker.io/grafana/grafana-image-renderer:$TAG_GRAFANAIMG ghcr.io/yolean/grafana-image-renderer:$TAG_GRAFANAIMG

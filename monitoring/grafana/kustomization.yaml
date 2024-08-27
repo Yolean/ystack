@@ -5,11 +5,11 @@ namespace: monitoring
 
 images:
 - name: grafana/grafana
-  newName: docker.io/grafana/grafana
-  newTag: 10.2.3-ubuntu@sha256:d292a458726385a81fcf71c8fd4a67b6976f527585fc82cb6e24825d01c5797a
+  newName: ghcr.io/yolean/grafana
+  newTag: 11.1.4-ubuntu@sha256:8e74fb7eed4d59fb5595acd0576c21411167f6b6401426ae29f2e8f9f71b68f6
 - name: grafana/grafana-image-renderer
-  newName: docker.io/grafana/grafana-image-renderer
-  newTag: 3.9.0@sha256:656ca4dddc020f067239428e2a15bc7100d8ce4918db1618b45d53d0c8c4d273
+  newName: ghcr.io/yolean/grafana-image-renderer
+  newTag: 3.11.3@sha256:6de5a28a29328f972ed538b6172f07b2ff9204ee76c7f0bf32fd6da1d60956d4
 
 resources:
 - grafana-service.yaml
