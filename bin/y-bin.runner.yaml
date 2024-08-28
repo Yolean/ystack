@@ -125,14 +125,14 @@ esbuild:
     path: package/bin/esbuild
 
 turbo:
-  version: 2.0.14
+  version: 2.1.0
   templates:
     download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
   sha256:
-    darwin_amd64: 634f36af1e437fe85c994a96314d12a0bfb76ea043576f05085486ffa1cc42ba
-    darwin_arm64: c1bf87aabd889783b556a2f78eca7491043ccba295c20b2074054163156a9330
-    linux_amd64: d075f9d62c484924da132a83a372f559998276e34605796521bd6f7eb8efa386
-    linux_arm64: 3659474dd163187b6284d28a728eaf1c941f8248ed7cb33da487d70b21095290
+    darwin_amd64: a83000d8e30c019902990d75c0d2931bec6a4109069ec3a4a269a6f50ffb3d99
+    darwin_arm64: f50b66523ec7faab63aff31e2fe950a6e180e5810966ef00a91a204909fa6c94
+    linux_amd64: 0e202ed720cffee4382e6d2c53e99eec26fa775add37b01efb227a4791dc88ae
+    linux_arm64: 4f6e4c8bdc7aa9d6192f42d3fc9c09ccd84a474620e5789df4e04247fd24d473
   archive:
     tool: tar
     path: turbo-${os}-${arm}64/bin/turbo
