@@ -43,15 +43,20 @@ aarch64=x64
 arch=amd64
 xarch=x86_64
 osx=osx
+osmac=macos
 Os=Darwin
 arm=""
 xarm=x
 echo -n "    darwin_amd64: " && checksum
 
+os=darwin
 aarch=aarch64
 aarch64=aarch64
 arch=arm64
 xarch=arm64
+osx=osx
+osmac=macos
+Os=Darwin
 arm=arm
 xarm=arm
 echo -n "    darwin_arm64: " && checksum
@@ -62,15 +67,20 @@ aarch64=x64
 arch=amd64
 xarch=x86_64
 osx=linux
+osmac=linux
 Os=Linux
 arm=""
 xarm=x
 echo -n "    linux_amd64: " && checksum
 
+os=linux
 aarch=aarch64
 aarch64=aarch64
 arch=arm64
 xarch=arm64
+osx=linux
+osmac=linux
+Os=Linux
 arm=arm
 xarm=arm
 echo -n "    linux_arm64: " && checksum

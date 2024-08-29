@@ -66,6 +66,14 @@ osx() {
   esac
 }
 
+osmac() {
+  os=$(os)
+  case $os in
+    darwin) echo 'macos' ;;
+    *) echo "$os" ;;
+  esac
+}
+
 Os() {
   uname -s
 }
@@ -147,6 +155,7 @@ run() {
   arch=$(arch)
   xarch=$(xarch)
   osx=$(osx)
+  osmac=$(osmac)
   Os=$(Os)
   arm=$(arm)
   xarm=$(xarm)
@@ -159,6 +168,7 @@ run() {
 
 [ $# -eq 0 ] && >&2 echo "First arg must be an y-bin yaml path" && exit 1
 yaml=$1
+stat $yaml >/dev/null
 if [ $# -eq 1 ]; then
   for name in $(names $1); do
     run $yaml $name

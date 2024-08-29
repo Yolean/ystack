@@ -7,28 +7,26 @@
 
 # NOTE yq must be first in the file because this script depends on it
 yq:
-  version: 4.44.2
+  version: 4.44.3
   sha256:
-    darwin_amd64: 6d3360c8c11cae7854069c832349acc50253d89b9d00b06700c7f99c8702d6ad
-    darwin_arm64: 6cfa3c2c3a44356d0da42d8204fc85730cea999a779058d94d3a5b96d83f1030
-    linux_amd64: 246b781828353a59fb04ffaada241f78a8f3f25c623047b40306def1f6806e71
-    linux_arm64: d05d9dae44503433e668d097143bfeb102ee7e2d486773ae23aaf81256ed54fd
+    darwin_amd64: 216ddfa03e7ba0e5aba00b236ec78324b5bfc49b610db254fe92310878baea20
+    darwin_arm64: 559a594ef7a6ebc5b81a67b7717fb3accedd266d8fa7d8352da7fec9e463f48b
+    linux_amd64: a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7
+    linux_arm64: 0e7e1524f68d91b3ff9b089872d185940ab0fa020a5a9052046ef10547023156
   templates:
     download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
     # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
 
 jq:
-  version: 1.6
+  version: 1.7.1
   templates:
-    # current release has no darwin-arm64 builds, let's rely on rosetta 2 (which we need for docker anyway)
-    #download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-${arch}
-    download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osx}-amd64
+    download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osmac}-${arch}
   sha256:
-    darwin_arm64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
-    darwin_amd64: 5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef
-    linux_amd64: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
-    linux_arm64: For_jq_arm64_linux_use_a_package_manager
+    darwin_amd64: 4155822bbf5ea90f5c79cf254665975eb4274d426d0709770c21774de5407443
+    darwin_arm64: 0bbe619e663e0de2c550be2fe0d240d076799d6f8a652b70fa04aea8a8362e8a
+    linux_amd64: 5942c9b0934e510ee61eb3e30273f1b3fe2590df93933a93d7c58b81d19c8ff5
+    linux_arm64: 4dd2d8a0661df0b22f1bb9a1f9830f06b6f3b8f7d91211a1ef5d7c4f06a8b4a5
 
 kubectl:
   version: 1.31.0
