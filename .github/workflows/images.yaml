@@ -70,6 +70,17 @@ jobs:
         TAG_BUILDKIT=${{ steps.imageBuildkitTag.outputs.result }}
         crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
     -
+      name: Get gitea image tag
+      id: imageGiteaTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[0].newTag' git-source/base/kustomization.yaml
+    -
+      name: Mirror gitea image from hub
+      run: |
+        TAG_GITEA=${{ steps.imageGiteaTag.outputs.result }}
+        crane cp docker.io/gitea/gitea:$TAG_GITEA ghcr.io/yolean/gitea:$TAG_GITEA
+    -
       name: Get grafana image tag
       id: imageGrafanaTag
       uses: mikefarah/yq@v4.44.1

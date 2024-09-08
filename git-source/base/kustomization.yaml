@@ -7,5 +7,5 @@ resources:
 - gitea-statefulset.yaml
 images:
 - name: gitea/gitea
-  newName: docker.io/gitea/gitea
-  newTag: 1.21.10@sha256:8e43a60b211bf01f7819ff6be8bf4f48081086b02098a5d8152d12a6339d1eb3
+  newName: ghcr.io/yolean/gitea
+  newTag: 1.22.2@sha256:f4740095d43d8af73ac5d96eec83d4a795023f221aa3de854455c43e86c1b06b
