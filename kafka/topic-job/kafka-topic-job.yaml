@@ -11,9 +11,9 @@ spec:
         yolean.se/kafka-bootstrap: bootstrap.kafka:9092
         yolean.se/kafka-topic-name: ""
         yolean.se/kafka-topic-config: >-
-          max.message.bytes=524288,
-          retention.bytes=-1,
-          retention.ms=-1,
+          max.message.bytes=524288
+          retention.bytes=-1
+          retention.ms=-1
         yolean.se/kafka-topic-partitions: "1"
         yolean.se/kafka-topic-replicas: "-1"
     spec:
@@ -29,7 +29,7 @@ spec:
           [ -n "$TOPIC_CONFIG" ] || exit 1
           function config_args {
             FLAG=$1
-            for C in $(echo "$TOPIC_CONFIG" | tr ',' ' '); do echo -n " $FLAG $C"; done
+            for C in $TOPIC_CONFIG; do echo -n " $FLAG $C"; done
             echo ''
           }
           until rpk cluster --brokers $KAFKA_BOOTSTRAP info -b -c; do sleep 1; done;
