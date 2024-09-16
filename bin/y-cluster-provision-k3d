@@ -38,7 +38,6 @@ for base in \
     10-minio \
     20-builds-registry \
     21-prod-registry \
-    30-y-assert-support \
     40-buildkit; do \
   basepath="$YSTACK_HOME/k3s/$base/"
   echo "# Applying $basepath ..."
