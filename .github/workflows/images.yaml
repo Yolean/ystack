@@ -102,3 +102,14 @@ jobs:
       run: |
         TAG_GRAFANAIMG=${{ steps.imageGrafanaImageRendererTag.outputs.result }}
         crane cp docker.io/grafana/grafana-image-renderer:$TAG_GRAFANAIMG ghcr.io/yolean/grafana-image-renderer:$TAG_GRAFANAIMG
+    -
+      name: Get redpanda image tag
+      id: imageRedpandaTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[0].newTag' kafka/redpanda-image/kustomization.yaml
+    -
+      name: Mirror redpanda image
+      run: |
+        TAG_REDPANDA=${{ steps.imageRedpandaTag.outputs.result }}
+        crane cp docker.redpanda.com/redpandadata/redpanda:$TAG_REDPANDA ghcr.io/yolean/redpanda:$TAG_REDPANDA
