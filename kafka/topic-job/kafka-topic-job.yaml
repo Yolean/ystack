@@ -21,7 +21,7 @@ spec:
       activeDeadlineSeconds: 3600
       containers:
       - name: topic
-        image: vectorized/redpanda
+        image: redpandadata/redpanda
         args:
         - |
           [ -n "$KAFKA_BOOTSTRAP" ] || exit 1

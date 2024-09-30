@@ -2,6 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 
 images:
-- name: vectorized/redpanda
-  newName: docker.redpanda.com/redpandadata/redpanda
+- name: redpandadata/redpanda
+  newName: ghcr.io/yolean/redpanda
   newTag: v24.2.5@sha256:466fc98a54479af27a97c47a322f6a4ba9094bdd3b1b6a9e784fc36de56e84d0
