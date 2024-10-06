@@ -74,6 +74,14 @@ osmac() {
   esac
 }
 
+osmac_() {
+  os=$(os)
+  case $os in
+    darwin) echo 'macos-' ;;
+    *) echo "" ;;
+  esac
+}
+
 Os() {
   uname -s
 }

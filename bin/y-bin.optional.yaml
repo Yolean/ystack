@@ -217,3 +217,13 @@ watchexec:
   archive:
     tool: tarxz
     path: watchexec-${version}-${aarch}-apple-${os}/watchexec
+
+clickhouse:
+  version: master
+  templates:
+    download: https://builds.clickhouse.com/${version}/${osmac_}${aarch64}/clickhouse
+  sha256:
+    darwin_amd64: 6e39b2d5d1c0bd42e3330144dcd56a8c778607b5bbf27baa1cbea5dda0e506e3
+    darwin_arm64: b68184f50d98fbb58481c35c170e2c498cce793511ccb229f02610c936e25166
+    linux_amd64: dd94744a3e9b6b4e2d873ecf8de050cc01c4a59bffb3b2911c709ec23913c362
+    linux_arm64: 472351e92e1914625778b7b02acf7aae6398c1fcfd017c0ebae8e4b69cf0788e
