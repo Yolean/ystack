@@ -68,15 +68,15 @@ skaffold:
     linux_arm64: df3ca1d83a4be9b7f4795de4470c8274a8420563d2d0d40fbcafbc92bd1b6c8e
 
 helm:
-  version: 3.12.3
+  version: 3.16.1
   templates:
     download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
   sha256:
-    darwin_amd64: 1bdbbeec5a12dd0c1cd4efd8948a156d33e1e2f51140e2a51e1e5e7b11b81d47
-    darwin_arm64: 240b0a7da9cae208000eff3d3fb95e0fa1f4903d95be62c3f276f7630b12dae1
-    linux_amd64: 1b2313cd198d45eab00cc37c38f6b1ca0a948ba279c29e322bdf426d406129b5
-    linux_arm64: 79ef06935fb47e432c0c91bdefd140e5b543ec46376007ca14a52e5ed3023088
+    darwin_amd64: 1b194824e36da3e3889920960a93868b541c7888c905a06757e88666cfb562c9
+    darwin_arm64: 405a3b13f0e194180f7b84010dfe86689d7703e80612729882ad71e2a4ef3504
+    linux_amd64: e57e826410269d72be3113333dbfaac0d8dfdd1b0cc4e9cb08bdf97722731ca9
+    linux_arm64: 780b5b86f0db5546769b3e9f0204713bbdd2f6696dfdaac122fbe7f2f31541d2
   archive:
     tool: tar
     path: ${os}-${arch}/helm
