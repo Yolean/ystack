@@ -1,19 +1,19 @@
 # https://github.com/lima-vm/lima/blob/master/examples/alpine.yaml
 
 images:
-- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.37/alpine-lima-std-3.19.0-x86_64.iso"
+- location: "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.2-x86_64-uefi-cloudinit-r0.qcow2"
   arch: "x86_64"
-  digest: "sha512:568852df405e6b9858e678171a9894c058f483df0b0570c22cf33fc75f349ba6cc5bb3d50188180d8c31faaf53400fe884ca3e5f949961b03b2bf53e65de88d7"
-- location: "https://github.com/lima-vm/alpine-lima/releases/download/v0.2.37/alpine-lima-std-3.19.0-aarch64.iso"
+  digest: "sha512:5828254c27c948824c4c6d4fb88c4d96ee9b5b58ae455036b1571bb037a5b5de124e1d55f00386b9e711cef7771146278bd5eb1036a2f8db6fa34611393ebec1"
+- location: "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.2-aarch64-uefi-cloudinit-r0.qcow2"
   arch: "aarch64"
-  digest: "sha512:3a4bd5ad0201f503e9bb9f3b812aa0df292e2e099148c0323d23244046ad199a2946ef9e0619fec28726bfdcc528233f43c3b4b036c9e06e92ac730d579f0ca3"
+  digest: "sha512:76eeef3cb1b38b3a0c2e745d8108558645220355cd870cba3a88198bcd0036485a0a683d8469f8405251918e972d24c461d418a30112e92efe44b460e4cba7ba"
 
 cpus: 4
 memory: "8GiB"
 disk: "20GiB"
 
 env:
-  INSTALL_K3S_VERSION: v1.27.11+k3s1
+  INSTALL_K3S_VERSION: v1.30.5+k3s1
   INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
   K3S_NODE_NAME: ystack-master
 
