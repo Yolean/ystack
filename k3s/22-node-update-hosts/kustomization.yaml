@@ -4,4 +4,4 @@ kind: Kustomization
 namespace: ystack
 
 resources:
-- ../../registry/node-update-hosts
+- ../../registry/containerd-config

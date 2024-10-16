@@ -53,7 +53,7 @@ for base in \
   KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME apply -k $basepath
 done
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/node-update-hosts/
+KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
