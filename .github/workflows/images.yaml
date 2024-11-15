@@ -52,7 +52,7 @@ jobs:
       id: imageRegistryTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[0].newTag' registry/generic/kustomization.yaml
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' registry/generic/kustomization.yaml
     -
       name: Mirror registry image from hub
       run: |
@@ -63,7 +63,7 @@ jobs:
       id: imageBuildkitTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[0].newTag' buildkit/kustomization.yaml
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' buildkit/kustomization.yaml
     -
       name: Mirror buildkit image from hub
       run: |
@@ -74,7 +74,7 @@ jobs:
       id: imageGiteaTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[0].newTag' git-source/base/kustomization.yaml
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' git-source/base/kustomization.yaml
     -
       name: Mirror gitea image from hub
       run: |
@@ -85,7 +85,7 @@ jobs:
       id: imageGrafanaTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[0].newTag' monitoring/grafana/kustomization.yaml
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' monitoring/grafana/kustomization.yaml
     -
       name: Mirror grafana image from hub
       run: |
@@ -96,7 +96,7 @@ jobs:
       id: imageGrafanaImageRendererTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[1].newTag' monitoring/grafana/kustomization.yaml
+        cmd: yq '.images[1].newTag | sub("(.*)@.*", "${1}")' monitoring/grafana/kustomization.yaml
     -
       name: Mirror grafana-image-renderer image from hub
       run: |
@@ -107,7 +107,7 @@ jobs:
       id: imageRedpandaTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[0].newTag' kafka/redpanda-image/kustomization.yaml
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' kafka/redpanda-image/kustomization.yaml
     -
       name: Mirror redpanda image
       run: |
