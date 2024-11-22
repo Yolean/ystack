@@ -80,6 +80,7 @@ jobs:
       run: |
         TAG_GITEA=${{ steps.imageGiteaTag.outputs.result }}
         crane cp docker.io/gitea/gitea:$TAG_GITEA ghcr.io/yolean/gitea:$TAG_GITEA
+        crane cp docker.io/gitea/gitea:$TAG_GITEA-rootless ghcr.io/yolean/gitea:$TAG_GITEA-rootless
     -
       name: Get grafana image tag
       id: imageGrafanaTag
