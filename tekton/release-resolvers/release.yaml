@@ -56,7 +56,7 @@ rules:
     verbs: ["get", "list"]
   # Read-only access to these.
   - apiGroups: [""]
-    resources: ["secrets"]
+    resources: ["secrets", "serviceaccounts"]
     verbs: ["get", "list", "watch"]
 
 ---
@@ -208,6 +208,8 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
 data:
+  # the default service account name to use for bundle requests.
+  default-service-account: "default"
   # The default layer kind in the bundle image.
   default-kind: "task"
 
@@ -583,12 +585,12 @@ metadata:
     app.kubernetes.io/name: resolvers
     app.kubernetes.io/component: resolvers
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.56.0"
+    app.kubernetes.io/version: "v0.65.2"
     app.kubernetes.io/part-of: tekton-pipelines
     # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-    pipeline.tekton.dev/release: "v0.56.0"
+    pipeline.tekton.dev/release: "v0.65.2"
     # labels below are related to istio and should not be used for resource lookup
-    version: "v0.56.0"
+    version: "v0.65.2"
 spec:
   replicas: 1
   selector:
@@ -603,13 +605,13 @@ spec:
         app.kubernetes.io/name: resolvers
         app.kubernetes.io/component: resolvers
         app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "v0.56.0"
+        app.kubernetes.io/version: "v0.65.2"
         app.kubernetes.io/part-of: tekton-pipelines
         # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-        pipeline.tekton.dev/release: "v0.56.0"
+        pipeline.tekton.dev/release: "v0.65.2"
         # labels below are related to istio and should not be used for resource lookup
         app: tekton-pipelines-resolvers
-        version: "v0.56.0"
+        version: "v0.65.2"
     spec:
       affinity:
         podAntiAffinity:
@@ -626,7 +628,7 @@ spec:
       serviceAccountName: tekton-pipelines-resolvers
       containers:
         - name: controller
-          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/resolvers:v0.56.0@sha256:8c0598a04420caa0ee3aeb6fef7521f93f4c41f7308ccb0c616167dc1d5fa00a
+          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v0.65.2@sha256:02a8c277174284468d17be2f79fa7d1a2fb5abfcfb262e7fcd8fadebe64efd7c
           resources:
             requests:
               cpu: 100m
@@ -698,13 +700,13 @@ metadata:
     app.kubernetes.io/name: resolvers
     app.kubernetes.io/component: resolvers
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.56.0"
+    app.kubernetes.io/version: "v0.65.2"
     app.kubernetes.io/part-of: tekton-pipelines
     # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-    pipeline.tekton.dev/release: "v0.56.0"
+    pipeline.tekton.dev/release: "v0.65.2"
     # labels below are related to istio and should not be used for resource lookup
     app: tekton-pipelines-remote-resolvers
-    version: "v0.56.0"
+    version: "v0.65.2"
   name: tekton-pipelines-remote-resolvers
   namespace: tekton-pipelines-resolvers
 spec:
