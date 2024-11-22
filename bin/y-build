@@ -80,8 +80,9 @@ DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
 [ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
 [ -z "$BUILDKIT_HOST" ] && BUILDKIT_HOST=tcp://buildkitd.ystack.svc.cluster.local:8547
+[ -z "$REGISTRY_PROBE_CONNECT_TIMEOUT" ] && REGISTRY_PROBE_CONNECT_TIMEOUT=3
 
-if [ "$(curl -s --connect-timeout 3 http://$BUILDS_REGISTRY/v2/)" != "{}" ]
+if [ "$(curl -s --connect-timeout "$REGISTRY_PROBE_CONNECT_TIMEOUT" http://$BUILDS_REGISTRY/v2/)" != "{}" ]
 then
   echo "ERROR Skaffold need local access to the builds registry for digest lookup"
   echo "Registry: $BUILDS_REGISTRY"

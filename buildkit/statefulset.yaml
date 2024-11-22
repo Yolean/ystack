@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.31.3/statefulset.json
 # https://github.com/moby/buildkit/blob/master/examples/kube-consistent-hash/buildkitd-rootless-statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -15,14 +16,7 @@ spec:
       labels:
         app: buildkitd
         status: accepts-new-builds
-      annotations:
-        container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
     spec:
-      securityContext:
-        seccompProfile:
-          type: Unconfined
-        runAsUser: 1000
-        runAsGroup: 1000
       containers:
       - name: buildkitd
         image: moby/buildkit:rootless
@@ -53,6 +47,10 @@ spec:
         securityContext:
           runAsUser: 1000
           runAsGroup: 1000
+          seccompProfile:
+            type: Unconfined
+          appArmorProfile:
+            type: Unconfined
         volumeMounts:
         - name: etc-buildkit
           mountPath: /home/user/.config/buildkit
