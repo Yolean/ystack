@@ -227,3 +227,16 @@ clickhouse:
     darwin_arm64: b68184f50d98fbb58481c35c170e2c498cce793511ccb229f02610c936e25166
     linux_amd64: dd94744a3e9b6b4e2d873ecf8de050cc01c4a59bffb3b2911c709ec23913c362
     linux_arm64: 472351e92e1914625778b7b02acf7aae6398c1fcfd017c0ebae8e4b69cf0788e
+
+deno:
+  version: 2.1.1
+  templates:
+    download: https://github.com/denoland/deno/releases/download/v${version}/deno-${aarch}-apple-${os}.zip
+  sha256:
+    darwin_amd64: 475e7d0d91ba2e6916a00ccf60368cb4d6b122a6757938dda045a10a2bdfa846
+    darwin_arm64: 91a95616381f9f5d1a7108dac5957221bbbc10a7af13bac67e718bdd2500fff7
+    linux_amd64: For_deno_on_linux_use_a_package_manager
+    linux_arm64: For_deno_on_linux_use_a_package_manager
+  archive:
+    tool: zip
+    path: deno
