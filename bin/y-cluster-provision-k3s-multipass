@@ -37,8 +37,6 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl -n kube-system apply -f $YSTACK_HOME/emulation/binfmt-daemonset.yaml
-
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
 
 # This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
