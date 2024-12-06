@@ -14,7 +14,8 @@ then
   echo "Y-stack appears to be running already" && exit
 fi
 
-multipass launch -n "$VM_NAME" $VM_RESOURCES
+# "jammy 22.04.." is currently the version our nodes run. Remove "jammy" to get the latest LTS
+multipass launch jammy -n "$VM_NAME" $VM_RESOURCES
 
 # https://medium.com/@mattiaperi/kubernetes-cluster-with-k3s-and-multipass-7532361affa3
 K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $2}')"
@@ -36,8 +37,6 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl -n kube-system apply -f $YSTACK_HOME/emulation/binfmt-daemonset.yaml
-
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
 
 # This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
@@ -46,11 +45,25 @@ for base in \
     10-minio \
     20-builds-registry \
     21-prod-registry \
-    30-y-assert-support \
+    22-node-update-hosts \
+    30-monitoring-nodeport \
     40-buildkit; do \
   basepath="$YSTACK_HOME/k3s/$base/"
   echo "# Applying $basepath ..."
   KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME apply -k $basepath
+done
+
+[ "$MONITORING_ENABLE" != "true" ] || for base in \
+    namespace \
+    prometheus-operator \
+    prometheus-now \
+    alertmanager-main \
+    kube-state-metrics-now \
+    node-exporter-now \
+    ; do \
+  basepath="$YSTACK_HOME/monitoring/$base/"
+  echo "# Applying $basepath ..."
+  k apply --server-side=true -k $basepath
 done
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
