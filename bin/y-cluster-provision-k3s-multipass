@@ -53,6 +53,19 @@ for base in \
   KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME apply -k $basepath
 done
 
+[ "$MONITORING_ENABLE" != "true" ] || for base in \
+    namespace \
+    prometheus-operator \
+    prometheus-now \
+    alertmanager-main \
+    kube-state-metrics-now \
+    node-exporter-now \
+    ; do \
+  basepath="$YSTACK_HOME/monitoring/$base/"
+  echo "# Applying $basepath ..."
+  k apply --server-side=true -k $basepath
+done
+
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
