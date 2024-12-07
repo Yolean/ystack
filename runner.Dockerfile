@@ -9,7 +9,7 @@ RUN set -ex; \
   ); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq unzip findutils patch xz-utils gpg apt-transport-https'; \
+  runDeps='ca-certificates curl git jq unzip findutils patch xz-utils'; \
   buildDeps=''; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
@@ -43,15 +43,7 @@ COPY bin/y-kustomize /usr/local/src/ystack/bin/
 RUN y-kustomize version
 
 COPY bin/y-helm /usr/local/src/ystack/bin/
-# RUN y-helm version --client=true
-RUN curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | tee /usr/share/keyrings/helm.gpg > /dev/null \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list \
-  && apt-get update \
-  && apt-get install helm \
-  && helm version --client=true \
-  && ln -s $(which helm) /usr/local/src/ystack/bin/helm \
-  && ln -s $(which helm) /usr/local/src/ystack/bin/y-helm-v3.16.2-bin \
-  && y-helm version --client=true
+RUN y-helm version --client=true
 
 COPY bin/y-buildctl /usr/local/src/ystack/bin/
 RUN y-buildctl --version
