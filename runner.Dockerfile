@@ -10,10 +10,18 @@ RUN set -ex; \
   \
   export DEBIAN_FRONTEND=noninteractive; \
   runDeps='ca-certificates curl git jq unzip findutils patch xz-utils'; \
-  buildDeps=''; \
+  buildDeps='gpg apt-transport-https'; \
   apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
-  echo disabled: apt-get purge -y --auto-remove $buildDeps; \
+  echo "workaround for y-helm failing in github actions due to get.helm.sh SSL error"; \
+  curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | tee /usr/share/keyrings/helm.gpg > /dev/null; \
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list; \
+  apt-get update && apt-get install -y helm --no-install-recommends; \
+  apt_helm_version=$(/usr/bin/helm version --template '{{.Version}}'); \
+  mkdir -p /usr/local/src/ystack/bin && cp -av /usr/bin/helm /usr/local/src/ystack/bin/y-helm-${apt_helm_version}-bin; \
+  ln -s /usr/local/src/ystack/bin/y-helm-${apt_helm_version}-bin /usr/local/src/ystack/bin/helm; \
+  \
+  apt-get purge -y --auto-remove $buildDeps helm; \
   rm -rf /var/lib/apt/lists/*; \
   rm -rf /var/log/dpkg.log /var/log/alternatives.log /var/log/apt /root/.gnupg
 
