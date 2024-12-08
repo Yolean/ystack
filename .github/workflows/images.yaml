@@ -70,6 +70,18 @@ jobs:
         TAG_BUILDKIT=${{ steps.imageBuildkitTag.outputs.result }}
         crane cp docker.io/moby/buildkit:$TAG_BUILDKIT ghcr.io/yolean/buildkit:$TAG_BUILDKIT
     -
+      name: Get dockerd image tag
+      id: imageDockerdTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' docker/kustomization.yaml
+    -
+      name: Mirror dockerd image from hub
+      run: |
+        TAG_DOCKERD=${{ steps.imageDockerdTag.outputs.result }}
+        crane cp docker:$TAG_DOCKERD ghcr.io/yolean/dockerd:$TAG_DOCKERD
+        crane cp docker:$TAG_DOCKERD-rootless ghcr.io/yolean/dockerd:$TAG_DOCKERD-rootless
+    -
       name: Get gitea image tag
       id: imageGiteaTag
       uses: mikefarah/yq@v4.44.1
