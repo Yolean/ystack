@@ -240,3 +240,15 @@ deno:
   archive:
     tool: zip
     path: deno
+
+parquet-tools:
+  version: 1.25.4
+  templates:
+    download: https://github.com/hangxie/parquet-tools/releases/download/v${version}/parquet-tools-v${version}-${os}-${arch}.gz
+  sha256:
+    darwin_amd64: cd3b56717a5dbb6f65be5db5a16913ce3bc1c31e9268ec8f5565f97a52ce9d47
+    darwin_arm64: 5c12d0ac8450cb2ff38f06538f4b637e75f7ee338d48b87a923b0caa999fc190
+    linux_amd64: 0ffb333ed4ef1d190340a38e3fafcd1c1bbfa0fc6da6dba187f774219f053817
+    linux_arm64: 3d1c792e9028464d92f98ef108dccfde1bf978687fb3cfc337bff2aac71b6bfc
+  archive:
+    tool: gunzip

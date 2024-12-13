@@ -43,7 +43,10 @@ bin_link=$YBIN/$bin_name
   [ -z "$YSTACK_BIN_DOWNLOAD_CACHE" ] || bin_cache="$YSTACK_BIN_DOWNLOAD_CACHE/$bin_uniq"
   [ -z "$bin_cache" ] || [ ! -f "$bin_cache" ] || url="file://$bin_cache"
   echo "Missing $bin_name binary. Downloading a known version from $url ..." 1>&2
-
+  case "$url" in
+    *.tar.gz) ;;
+    *.gz) bin_file=$bin_file.gz ;;
+  esac
   curl -o $bin_file -L -f $url
   if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then $SHA256SUM $bin_file && rm $bin_file && exit 1; fi
   if [ ! -z "$bin_tar_path" ]; then
@@ -57,6 +60,10 @@ bin_link=$YBIN/$bin_name
     (cd $tmp; unzip $bin_file)
     mv "$tmp/$bin_zip_path" $bin_file
   fi
+  case "$url" in
+    *.tar.gz) ;;
+    *.gz) gunzip $bin_file && bin_file=$(echo $bin_file | sed 's/\.gz$//g') ;;
+  esac
   [ -z "$bin_cache" ] || [ -f "$bin_cache" ] || cp -v $bin_file $bin_cache 1>&2
   chmod a+x $bin_file
 }

@@ -50,3 +50,4 @@ shellcheck
 shellspec
 zap-pretty
 act
+parquet-tools
