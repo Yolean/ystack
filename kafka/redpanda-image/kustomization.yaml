@@ -4,4 +4,4 @@ kind: Component
 images:
 - name: redpandadata/redpanda
   newName: ghcr.io/yolean/redpanda
-  newTag: v24.2.10@sha256:6d627e3ebdc05438d1e8e3b55695ac1a7a0f79e7d5ca90b3b0f12dc984633e83
+  newTag: v24.2.14@sha256:a91cddd8a93181b85107a3cde0beebb5fcdc765d10b010af398e0dcad18d4dbf
