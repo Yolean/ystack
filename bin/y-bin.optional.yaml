@@ -102,15 +102,15 @@ rpk:
     path: rpk
 
 promtool:
-  version: 2.32.1
+  version: 3.0.1
   templates:
     download: https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-${version}.${os}-${arch}.tar.gz
     sha256: https://github.com/prometheus/prometheus/releases/download/v${version}/sha256sums.txt
   sha256:
-    darwin_amd64: 7fb849fa03cad447a28592d205adb9e5a0ad4d8026118344bff77146563cd7cb
-    darwin_arm64: eeeeffc93654204ac3752ec4d5a3a7b73e85d63c5160a5272fbd90593ebbe27c
-    linux_amd64: f08e96d73330a9ee7e6922a9f5b72ea188988a083bbfa9932359339fcf504a74
-    linux_arm64: 2d185a8ed46161babeaaac8ce00ef1efdeccf3ef4ed234cd181eac6cad1ae4b2
+    darwin_amd64: d45a9dab9ee9f40a27f2b7dde227843753d6f648ccf2d2c8477b9c7ffd75c0a0
+    darwin_arm64: 803d1ae747d39a4637ad33df254854f2a76663a6dd4ade0066b7f25617feba3d
+    linux_amd64: 43f6f228ef59e0c2f6994e489c5c76c6671553eaa99ded0aea1cd31366222916
+    linux_arm64: 58e8d4f3ab633528fa784740409c529f4a434f8a0e3cf4d2f56e75ce2db69aa8
   archive:
     tool: tar
     path: prometheus-${version}.${os}-${arch}/promtool
