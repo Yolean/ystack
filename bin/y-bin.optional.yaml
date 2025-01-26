@@ -195,12 +195,12 @@ bun:
     path: bun-${os}-${aarch64}/bun
 
 watchexec:
-  version: 1.25.1
+  version: 2.2.1
   templates:
-    download: https://github.com/watchexec/watchexec/releases/download/v1.25.1/watchexec-${version}-${aarch}-apple-${os}.tar.xz
+    download: https://github.com/watchexec/watchexec/releases/download/v${version}/watchexec-${version}-${aarch}-apple-${os}.tar.xz
   sha256:
-    darwin_amd64: 54e53992d4b50709ed22b1f041d744128d0acc2759046bc12f606bed76064afe
-    darwin_arm64: 01c40c459ef09ec18fb36650b0812ecea59d69c89d39edde4f9c37f98c6725d2
+    darwin_amd64: 2728f16bf287d7ed9545762c8c70925174e264dae4c229e7a85a2b5310b66b2b
+    darwin_arm64: ac9db54f84d76763709b5526c699c46e99286976341be2cd999ce4e2c98d9998
     linux_amd64: darwin-only-for-now
     linux_arm64: darwin-only-for-now
   archive:
