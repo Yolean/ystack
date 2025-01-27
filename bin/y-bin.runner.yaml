@@ -96,15 +96,15 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.19.1
+  version: 0.20.3
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: f163d9ee3bd856ce851dec82305bb608826bd6fbb47e92ee4d4749436850ad69
-    darwin_arm64: 19b95d9e5354131a2e5a8cfeefdf915123a2ee2b8e2f9c9070c8fa8c062f8c1d
-    linux_amd64: 5f2b43c32a901adaaabaa78755d56cea71183954de7547cb4c4bc64b9ac6b2ff
-    linux_arm64: 9118c29cdf2197441c4a934cf517df76c021ba12a70edc14ee9dc4dc08226680
+    darwin_amd64: 03e520639a1898ceee815f88a07e41f2bd810e16d4f70506d7c399d925476bb6
+    darwin_arm64: 7a46898cf7ba8b995ae8eed3a6c29d7038058b409d92ead456ff12b47a9dde37
+    linux_amd64: 36c67a932f489b3f2724b64af90b599a8ef2aa7b004872597373c0ad694dc059
+    linux_arm64: d2235f7779cd39c6e40f43701d2512c997409f629fb53e621ede0d57d3f995e2
   archive:
     tool: tar
     path: crane
