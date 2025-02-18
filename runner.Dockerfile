@@ -1,5 +1,5 @@
 # syntax=docker.io/docker/dockerfile:1.7.1
-FROM --platform=$TARGETPLATFORM ubuntu:24.04@sha256:80dd3c3b9c6cecb9f1667e9290b3bc61b78c2678c02cbdae5f0fea92cc6734ab \
+FROM --platform=$TARGETPLATFORM ubuntu:24.04@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782 \
   as base
 
 RUN set -ex; \
@@ -34,7 +34,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   DO_NOT_TRACK=1 \
   npm_config_update_notifier=false
 
-FROM --platform=$TARGETPLATFORM node:22.13.1-bookworm-slim@sha256:d6d1b3a6f21a25e43d765816281b4a86e5f1ebf843cfae1b14dd0f1c28257cc7 \
+FROM --platform=$TARGETPLATFORM node:22.14.0-bookworm-slim@sha256:91be66fb4214c9449836550cf4c3524489816fcc29455bf42d968e8e87cfa5f2 \
   as node
 
 FROM base as bin
