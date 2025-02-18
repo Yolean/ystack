@@ -133,4 +133,4 @@ turbo:
     linux_arm64: 8271a1eb63de4c0ab1532dc3393b6fc2bf1087175dd2095a7bb03f0a34308b33
   archive:
     tool: tar
-    path: turbo-${os}-${arm}64/bin/turbo
+    path: turbo-${os}-${xarm}64/bin/turbo
