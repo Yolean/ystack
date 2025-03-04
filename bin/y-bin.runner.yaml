@@ -29,29 +29,29 @@ jq:
     linux_arm64: 4dd2d8a0661df0b22f1bb9a1f9830f06b6f3b8f7d91211a1ef5d7c4f06a8b4a5
 
 kubectl:
-  version: 1.31.5
+  version: 1.32.2
   templates:
     download: https://dl.k8s.io/v${version}/kubernetes-client-${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: 7200cc7ddd8a4cdc5499360ba731a61654e403c18656300f39810611203fd950
-    darwin_arm64: d660f02665b27ea62a4438fbcd65141a0db48760483ab3bfa07552d4ecacae81
-    linux_amd64: ca2473a3e5549e55d2dcdb78da866c5e4559447b4315e6c23727e7b2822ee1d0
-    linux_arm64: f833772c9e6105fb79716b955556d36f22624babb48ef87610b481818b30c1b8
+    darwin_amd64: d9ace7692ca5fd3f6e86c2e2af606c8d3ad2b4e2cd8330e0b9063a1527621598
+    darwin_arm64: 18753c4298dad0f67fecbbb3c10940569ab6ff4540a372024a5b1765438d04ba
+    linux_amd64: 1f0bd17c6339e6e5347289ac3a2820fad1b7eb775f75248894e84087f1d3e9bb
+    linux_arm64: f5a7e30c77914eabee1091f26c87617ce0628011c78e23b37f08e0595f17695a
   archive:
     tool: tar
     path: kubernetes/client/bin/kubectl
 
 kustomize:
-  # https://github.com/kubernetes/kubernetes/blob/v1.31.5/staging/src/k8s.io/kubectl/go.mod#L43
-  version: 5.4.2
+  # https://github.com/kubernetes/kubernetes/blob/v1.32.2/staging/src/k8s.io/kubectl/go.mod#L45
+  version: 5.5.0
   templates:
     download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
     sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/checksums.txt
   sha256:
-    darwin_amd64: d1dadf6d51058cdda6470344c95767e1c283cc5a36d5019eb32f8e43e63bd0df
-    darwin_arm64: 9b7da623cb40542f2dd220fa31d906d9254759b4e27583706e4e846fccba9fab
-    linux_amd64: 881c6e9007c7ea2b9ecc214d13f4cdd1f837635dcf4db49ce4479898f7d911a3
-    linux_arm64: 175af88af8a7d8d7d6b1f26659060950f0764d00b9979b4e11b61b8b212b7c22
+    darwin_amd64: 874224e75229821b1e571aefa45703789b77336302a34692eac65adbe0dc1cee
+    darwin_arm64: 5baa407bdaee51b97626ef1fca3292e1a1c846357d3028db826057ecceed7178
+    linux_amd64: 6703a3a70a0c47cf0b37694030b54f1175a9dfeb17b3818b623ed58b9dbc2a77
+    linux_arm64: b4170d1acb8cfacace9f72884bef957ff56efdcd4813b66e7604aabc8b57e93d
   archive:
     tool: tar
     path: kustomize
