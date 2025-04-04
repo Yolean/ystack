@@ -15,14 +15,14 @@ k3d:
     linux_arm64: 0b8110f2229631af7402fb828259330985918b08fefd38b7f1b788a1c8687216
 
 kubefwd:
-  version: 1.22.4
+  version: 1.22.5
   templates:
     download: https://github.com/txn2/kubefwd/releases/download/${version}/kubefwd_${Os}_${xarch}.tar.gz
   sha256:
-    darwin_amd64: 3e9f59e7f1631acd8a42f22201f6a4a1fa220360db0dd0b6f9e9aed0c17be681
-    darwin_arm64: 66eebaffe9bee79a3fe35ce4e7ca916da115e4573ef2edd17ac9b9cad08c5805
-    linux_amd64: 234865423b2f7d79cfa897dc058fb322a197bf64d629b9f58618a1c858aca8b8
-    linux_arm64: 55e605643cc247a768e233b3467a36621e23118423145512a28ba5ed0611057f
+    darwin_amd64: 8ecc2d6d40920c50bb5b3d9e754fb2884c636c6bc297d47c22250c20fc5fcf26
+    darwin_arm64: 2c95fa7a2540314534a5b8e196c242050783bd8171fbc362c162280a5a890fa0
+    linux_amd64: 45284187e0f30cc5484d62b1664ab6de7cf68487f271ba8c246f4889cae752a6
+    linux_arm64: 673ba55700025f196db26890c649881c59cf55888affb25852a37e70e159058c
   archive:
     tool: tar
     path: kubefwd
@@ -39,14 +39,14 @@ container-structure-test:
     linux_arm64: 5a77d3d9fddec7187265a4a45ec7a04cfee454dbc56c59df468a3d2e9e61e683
 
 kubie:
-  version: 0.24.1
+  version: 0.25.1
   templates:
     download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-${os}-${arch}
   sha256:
-    darwin_amd64: 03763534cc442e90833b1a5e4ef98dd2f85cb81a7e6a366d7d77e95806eed1d9
-    darwin_arm64: b485539a2fe2cd97c498f14f29a158e059880b330774c029d5668bc19acd2e39
-    linux_amd64: 5135683bd544284468d46951ba91febfea55d19db914863c479b9c0fcc9b8da1
-    linux_arm64: 7c1855ceb4938b4bbc0a7a05795ef919ef426d71714b237705e8372e768c884c
+    darwin_amd64: 98d44cb0b920167709de74d1bbe3d5327ac0e6965cb559d15e28b04f3e5cbbbe
+    darwin_arm64: 63a9ecebb7d7453c302eb2d915ddd8b62e89103d56503e5fc5339bc5fc66c6de
+    linux_amd64: bfda2327d045da96408a1b3e02a201eaefbb208852e3e89cb114b2bdf640478c
+    linux_arm64: 20280f60451878b8534af13521a243ae3d4e735829f78e76e33e6e002e6fe12b
 
 fzf:
   version: 0.28.0
