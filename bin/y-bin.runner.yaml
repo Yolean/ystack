@@ -57,39 +57,39 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.14.0
+  version: 2.14.2
   templates:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: e27e2f2428224ab593818463b52703a1309ff939676850049ab55d2b0aed7998
-    darwin_arm64: 00b8555c0a88d97a03a90305e4d11f3dc813895fac6c3eb0d582ce090a2b20ec
-    linux_amd64: f4ce7a11ffb38ea6a5d3a655a4fbf2bda0e2db503b2de61a73e9e6cc014ae06f
-    linux_arm64: 7d6bc3c9cdf365550efa1cc19a37d81516404c8e95f66bd93f8b7c54aa6a95cc
+    darwin_amd64: c34704b8cc40572eaae15fc4f6c1a1f4f410aee62d49575fa51c4afb8ae99629
+    darwin_arm64: 125cd6126c1e25de0716dc149b484deaabbd00c38c4a9d2581bdd1a6ca4d13c3
+    linux_amd64: 2209463bafd0e021907c1efe72063d6b9ca3244a72b437a51aff061b0b97087a
+    linux_arm64: 7e4a2756e010224b7ec12023269b71ee863e9fff9d136eb8179e556436774f34
 
 helm:
-  version: 3.17.1
+  version: 3.17.2
   templates:
     download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
   sha256:
-    darwin_amd64: aba59ba9511971a71943b5c76f15d52ace1681197bb3f71ed1f0b15caceacb2c
-    darwin_arm64: b823a213d8d7937222becc63d9c7bb3d15a090e7ecd1f70f3a583ed39657e21b
-    linux_amd64: 3b66f3cd28409f29832b1b35b43d9922959a32d795003149707fea84cbcd4469
-    linux_arm64: c86c9b23602d4abbfae39d9634e25ab1d0ea6c4c16c5b154113efe316a402547
+    darwin_amd64: 3e240238c7a3a10efd37b8e16615b28e94ba5db5957247bb42009ba6d52f76e9
+    darwin_arm64: b843cebcbebc9eccb1e43aba9cca7693d32e9f2c4a35344990e3b7b381933948
+    linux_amd64: 90c28792a1eb5fb0b50028e39ebf826531ebfcf73f599050dbd79bab2f277241
+    linux_arm64: d78d76ec7625a94991e887ac049d93f44bd70e4876200b945f813c9e1ed1df7c
   archive:
     tool: tar
     path: ${os}-${arch}/helm
 
 buildctl:
-  version: 0.20.0
+  version: 0.20.2
   templates:
     download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: 2475075cbb62b7a52341cd0fe0207a3e07839997565a9594e743907292bcf03b
-    darwin_arm64: 138c6741aeb985bc82cce6fd79d3585778e3eeb149622839643767622d288327
-    linux_amd64: f87f7485722920843840e6205828155e5084c965d6457672ad258297addca4c5
-    linux_arm64: 0324688288d2d9cd00af50144f41023377fed5822c3f9e4d01609934cf6b00cc
+    darwin_amd64: e8adaed5771de86ca5e59a7f9e14d0e4018549e00cf893ee0f2976538669eb0c
+    darwin_arm64: a00f54d2bf36e4fb25dc3258c91ca09cd164a6c38bff10f72be04d0041730520
+    linux_amd64: f64589601e0f06164041dc6be45ed259cffb67539130e434d236551d63ab6030
+    linux_arm64: 6181f3a287da05a6092940d0f44672b2200ec81fdc30104eeb923ff134b72cec
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
