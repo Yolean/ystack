@@ -241,3 +241,16 @@ parquet-tools:
     linux_arm64: 3d1c792e9028464d92f98ef108dccfde1bf978687fb3cfc337bff2aac71b6bfc
   archive:
     tool: gunzip
+
+stern:
+  version: 1.32.0
+  templates:
+    download: https://github.com/stern/stern/releases/download/v${version}/stern_${version}_${os}_${arch}.tar.gz
+  sha256:
+    darwin_amd64: 4ec11280b21cdc46134f2b10349891fa5a37678dea9c199a133403dab3dca6e9
+    darwin_arm64: 18da4740662ef0b6192d889d15bef4dcd4f212036fc8de306aec1d086a598638
+    linux_amd64: 4733268b0e7fea48426c594d186be8cbcdb863858e08910451ebe3b1c8286f44
+    linux_arm64: 10b7ce269996547b08b524226d9c7678985b525232539e6e943ebe8475521615
+  archive:
+    tool: tar
+    path: stern
