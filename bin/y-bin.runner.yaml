@@ -7,12 +7,12 @@
 
 # NOTE yq must be first in the file because this script depends on it
 yq:
-  version: 4.44.6
+  version: 4.45.4
   sha256:
-    darwin_amd64: 71813c67f87766a532a072d9ef9c24dd5615f6b7d2e49b2a56cd26cf3de021e1
-    darwin_arm64: 164e10e5f7df62990e4f3823205e7ea42ba5660523a428df07c7386c0b62e3d9
-    linux_amd64: 0c2b24e645b57d8e7c0566d18643a6d4f5580feeea3878127354a46f2a1e4598
-    linux_arm64: 9477ac3cc447b6c083986129e35af8122eb2b938fe55c9c3e40436fb966e5813
+    darwin_amd64: 5580ff2c1fc80dd91f248b3e19af2431f1c95767ad0949a60176601ca5140318
+    darwin_arm64: 602dbbc116af9eb8a91d2239d0ec286eb9c90b94e76676d5268ab6ca184719b6
+    linux_amd64: b96de04645707e14a12f52c37e6266832e03c29e95b9b139cddcae7314466e69
+    linux_arm64: a02cc637409db44a9f9cb55ea92c40019582ba88083c4d930a727ec4b59ed439
   templates:
     download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
