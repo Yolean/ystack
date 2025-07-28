@@ -585,12 +585,12 @@ metadata:
     app.kubernetes.io/name: resolvers
     app.kubernetes.io/component: resolvers
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.69.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/part-of: tekton-pipelines
     # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-    pipeline.tekton.dev/release: "v0.69.0"
+    pipeline.tekton.dev/release: "v1.2.0"
     # labels below are related to istio and should not be used for resource lookup
-    version: "v0.69.0"
+    version: "v1.2.0"
 spec:
   replicas: 1
   selector:
@@ -605,13 +605,13 @@ spec:
         app.kubernetes.io/name: resolvers
         app.kubernetes.io/component: resolvers
         app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "v0.69.0"
+        app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/part-of: tekton-pipelines
         # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-        pipeline.tekton.dev/release: "v0.69.0"
+        pipeline.tekton.dev/release: "v1.2.0"
         # labels below are related to istio and should not be used for resource lookup
         app: tekton-pipelines-resolvers
-        version: "v0.69.0"
+        version: "v1.2.0"
     spec:
       affinity:
         podAntiAffinity:
@@ -628,7 +628,7 @@ spec:
       serviceAccountName: tekton-pipelines-resolvers
       containers:
         - name: controller
-          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v0.69.0@sha256:9a05e45464c87744963b13bd1e086be941249571805f692e2c39548593033f3c
+          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.2.0@sha256:939102e67d09d277bdf19bc83b5fbc45ed3cbcf840017956b71995c3e68ed289
           resources:
             requests:
               cpu: 100m
@@ -671,6 +671,9 @@ spec:
               value: "https://artifacthub.io/"
             - name: TEKTON_HUB_API
               value: "https://api.hub.tekton.dev/"
+          volumeMounts:
+            - name: tmp-clone-volume
+              mountPath: "/tmp"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -680,6 +683,10 @@ spec:
                 - "ALL"
             seccompProfile:
               type: RuntimeDefault
+      volumes:
+        - name: tmp-clone-volume
+          emptyDir:
+            sizeLimit: 4Gi
 
 ---
 # Copyright 2023 The Tekton Authors
@@ -702,13 +709,13 @@ metadata:
     app.kubernetes.io/name: resolvers
     app.kubernetes.io/component: resolvers
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v0.69.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/part-of: tekton-pipelines
     # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-    pipeline.tekton.dev/release: "v0.69.0"
+    pipeline.tekton.dev/release: "v1.2.0"
     # labels below are related to istio and should not be used for resource lookup
     app: tekton-pipelines-remote-resolvers
-    version: "v0.69.0"
+    version: "v1.2.0"
   name: tekton-pipelines-remote-resolvers
   namespace: tekton-pipelines-resolvers
 spec:
