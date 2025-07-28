@@ -14,7 +14,7 @@ QEMU_VERSION="$(qemu-system-aarch64 --version | head -n 1 | rev | cut -d' ' -f1 
 mkdir -p /tmp/lima/ystack/rancher/k3s
 curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh > /tmp/lima/ystack/install.sh
 
-limactl start --tty=false $YSTACK_HOME/k3s/ystack.yaml
+limactl start --tty=false --vm-type=vz --rosetta $YSTACK_HOME/k3s/ystack.yaml
 cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
 
 TOPOLOGY_ZONE="local"
