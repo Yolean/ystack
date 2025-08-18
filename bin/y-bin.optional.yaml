@@ -254,3 +254,13 @@ stern:
   archive:
     tool: tar
     path: stern
+
+osv-scanner:
+  version: 2.2.1
+  templates:
+    download: https://github.com/google/osv-scanner/releases/download/v${version}/osv-scanner_${os}_${arch}
+  sha256:
+    darwin_amd64: e8b802665e8db98207944bb90ee0cfa49a47bd0365c9234bf700d6baf860bab7
+    darwin_arm64: c43b0ec62d0208be61d1080b0df34f0f5ebd8e02ef93cfa84ea7cbd29effd3a7
+    linux_amd64: 59e3bbd49f964265efc495b7ff896bff3c725b14c9fcce2e82088e053af98e7b
+    linux_arm64: cd62c3f13d73fe454ba0518e9c738fdedc8e5e37203bdb4f6b7eaefc7d137878
