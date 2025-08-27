@@ -32,6 +32,9 @@ spec:
         - containerPort: 80
           name: registry
           protocol: TCP
+        - containerPort: 5001
+          name: debug
+          protocol: TCP
         env:
         - name: REGISTRY_HTTP_SECRET
           valueFrom:

@@ -8,6 +8,8 @@ storage:
 http:
   headers:
     X-Content-Type-Options: [nosniff]
+  debug:
+    addr: 0.0.0.0:5001
 health:
   storagedriver:
     enabled: true
