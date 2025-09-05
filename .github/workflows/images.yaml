@@ -29,9 +29,11 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     -
       name: Build and push runner
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       env:
         SOURCE_DATE_EPOCH: 0
+        BUILDKIT_PROGRESS: plain
+        DOCKER_BUILDKIT: 1
       with:
         context: .
         file: runner.Dockerfile
@@ -39,8 +41,12 @@ jobs:
           ghcr.io/yolean/ystack-runner:${{ github.sha }}
         platforms: linux/amd64,linux/arm64/v8
         push: true
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: |
+          type=gha,scope=runner-latest
+          type=gha,scope=runner
+        cache-to: type=gha,mode=max,scope=runner-latest
+      continue-on-error: false
+      timeout-minutes: 45
     -
       uses: actions/setup-go@v5
       with:
