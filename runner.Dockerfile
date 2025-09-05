@@ -11,7 +11,8 @@ RUN set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   runDeps='ca-certificates curl git jq unzip findutils patch xz-utils'; \
   buildDeps='gpg apt-transport-https'; \
-  apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
+  apt-get update -o APT::Update::Error-Mode=any; \
+  apt-get install -y $runDeps $buildDeps --no-install-recommends; \
   \
   echo "workaround for y-helm failing in github actions due to get.helm.sh SSL error"; \
   curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | tee /usr/share/keyrings/helm.gpg > /dev/null; \
