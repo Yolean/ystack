@@ -41,9 +41,7 @@ jobs:
           ghcr.io/yolean/ystack-runner:${{ github.sha }}
         platforms: linux/amd64,linux/arm64/v8
         push: true
-        cache-from: |
-          type=gha,scope=runner-latest
-          type=gha,scope=runner
+        cache-from: type=gha,scope=runner-latest
         cache-to: type=gha,mode=max,scope=runner-latest
       continue-on-error: false
       timeout-minutes: 45
