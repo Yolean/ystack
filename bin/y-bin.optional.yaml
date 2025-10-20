@@ -235,10 +235,10 @@ parquet-tools:
   templates:
     download: https://github.com/hangxie/parquet-tools/releases/download/v${version}/parquet-tools-v${version}-${os}-${arch}.gz
   sha256:
-    darwin_amd64: 83179bb05c2ce025122db421b78b81d10a0e6ab793cd9765dc1fa6f43337daa9
-    darwin_arm64: 8519cf6381a115bf3e0c44336e3e68e405f3eeb0d279879fe00e875e35ac808b
-    linux_amd64: 2a1e20adebc3a5ea32ba1cfb2855739e80e42ac1dcaed8c24dcf4c2a6729755a
-    linux_arm64: 1a9129beda21f81490d7c8a4c9927534e23fb4a54e1f1bd992159b1f9d375173
+    darwin_amd64: d858c17a73ddac416b16a10f661c743f857c00bfc4639b6e446848a2b676522f
+    darwin_arm64: 7cf36ebfff6bbb4307c99b7fc59256a277f72ef46ac43bfaa0b8c47a5294e344
+    linux_amd64: d39755ffa0b055d952f37a29e03779f00c52c6c8d24010956338f6b9d52fd8f7
+    linux_arm64: 95da208b2454cd2c456a57f17618ef8cebaa9d9ae279bade9add5a26a83e74df
   archive:
     tool: gunzip
 
