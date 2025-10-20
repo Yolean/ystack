@@ -155,15 +155,15 @@ act:
     path: act
 
 dive:
-  version: 0.12.0
+  version: 0.13.1
   templates:
     download: https://github.com/wagoodman/dive/releases/download/v${version}/dive_${version}_${os}_${arch}.tar.gz
     sha256: https://github.com/wagoodman/dive/releases/download/v${version}/dive_${version}_checksums.txt
   sha256:
-    darwin_amd64: 2f7d0a7f970e09618b87f286c6ccae6a7423331372c6ced15760a5c9d6f27704
-    darwin_arm64: 8ead7ce468f230ffce45b679dd1421945d6e4276654b0d90d389e357af2f4151
-    linux_amd64: 20a7966523a0905f950c4fbf26471734420d6788cfffcd4a8c4bc972fded3e96
-    linux_arm64: a2a1470302cdfa367a48f80b67bbf11c0cd8039af9211e39515bd2bbbda58fea
+    darwin_amd64: 04e4c1bac21be3aef99799cf0e470149a072ea4786be50718aa846cd13746523
+    darwin_arm64: 38b7fa95a13e7f4d0b3060c875fe7427c2a0613ecff674bb45156eb34bca0b09
+    linux_amd64: 0970549eb4a306f8825a84145a2534153badb4d7dcf3febd1967c706367c3d0e
+    linux_arm64: 2fcd2cf20f634ccdb41efac44048b204bfc867c115641f37a7420693ed480a18
   archive:
     tool: tar
     path: dive
