@@ -15,7 +15,7 @@ patchesJson6902:
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/args/9
-      value: gcr.io/distroless/base:debug-nonroot@sha256:2482afe69bed977063bfe29ac52bc3ef1a11b6794e3b28539bc91d7b9c2fcb7d
+      value: gcr.io/distroless/base:debug-nonroot@sha256:a5f66d6504deadf6d4c865a64a3a434b5bc1fae0811ed3e93e476a53b8335840
 
 configMapGenerator:
 - name: feature-flags
