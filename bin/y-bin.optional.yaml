@@ -49,18 +49,16 @@ kubie:
     linux_arm64: 20280f60451878b8534af13521a243ae3d4e735829f78e76e33e6e002e6fe12b
 
 fzf:
-  version: 0.28.0
+  version: 0.66.1
   templates:
-    download: https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-${os}_${arch}.zip
-    sha256: https://github.com/junegunn/fzf/releases/download/${version}/fzf_${version}_checksums.txt
+    download: https://github.com/junegunn/fzf/releases/download/v${version}/fzf-${version}-${os}_${arch}.tar.gz
   sha256:
-    darwin_amd64: 21f9feddfa773ce092dec02acb033cfd88a71b531c93e046d32f187ee6ccc31a
-    darwin_arm64: 78c5b032801c0cbc04b1a667f01a57789fac8e3701a697001efff056e45d981b
-    linux_amd64: For_fzf_on_linux_use_a_package_manager
-    linux_arm64: For_fzf_on_linux_use_a_package_manager
+    darwin_amd64: 655aeaa4ab44926ee1b712c95107ba486eb4a1137539200180c08d21f92fc7fa
+    darwin_arm64: 0f44db428cb65a0b646e99a506422a59f4b2fc3d3973b35387f78bba48c79c16
+    linux_amd64: eca8d793061283122d79ff81baf996535c0bfbf7058253142aaf2578e56943ef
+    linux_arm64: b099ee8468d91d12c0feef1801409d441d0e0cd44ec47e0c265952aa14e4fc0f
   archive:
-    tool: zip
-    path: fzf
+    tool: tar
 
 oauth2l:
   version: 1.2.2
