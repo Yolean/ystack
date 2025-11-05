@@ -8,4 +8,4 @@ resources:
 images:
 - name: gitea/gitea
   newName: ghcr.io/yolean/gitea
-  newTag: 1.24.3@sha256:ce9ab318a2dab6a4411dd5533496bb9eb2092c9384c7ab30344662617952fef9
+  newTag: 1.25.1@sha256:b3aee0f6fa4ff3271180a2388bb796be5cced8828685b968a310d70e881fcbb3
