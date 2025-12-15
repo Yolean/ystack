@@ -1,0 +1,48 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+YBIN="$(dirname $0)"
+PACKAGE_NAME="chrome-devtools-mcp"
+VERSION="latest"
+
+if ! command -v npm &> /dev/null; then
+  echo "npm is required but not installed" 1>&2
+  exit 1
+fi
+
+# Get the package version info
+if [ "$VERSION" = "latest" ]; then
+  ACTUAL_VERSION=$(cd $YBIN; npm view $PACKAGE_NAME version)
+else
+  ACTUAL_VERSION=$VERSION
+fi
+
+BIN_DIR="$YBIN/y-$PACKAGE_NAME-$ACTUAL_VERSION-bin"
+
+# Download and install if not already cached
+if [ ! -d "$BIN_DIR" ]; then
+  echo "Installing $PACKAGE_NAME@$ACTUAL_VERSION..." 1>&2
+
+  TEMP_DIR=$(mktemp -d)
+  trap "rm -rf $TEMP_DIR" EXIT
+
+  cd "$TEMP_DIR"
+  npm install "$PACKAGE_NAME@$ACTUAL_VERSION" --prefix . --no-save --omit=dev --ignore-scripts
+
+  # Move the installed package to cache
+  mv "$TEMP_DIR/node_modules/$PACKAGE_NAME" "$BIN_DIR"
+fi
+
+# Installed, now run with our rules
+
+if echo "$@" | grep -q "\-\-help"; then
+  true
+elif echo "$@" | grep -q "\-\-version"; then
+  true
+elif ! echo "$@" | grep -q "\-\-isolated"; then
+  echo "Error: $0 requires --isolated" 1>&2
+  [ "DEVTOOLS_MCP_ALLOW_NON_ISOLATED" = "1" ] && echo "Overriding due to DEVTOOLS_MCP_ALLOW_NON_ISOLATED=$DEVTOOLS_MCP_ALLOW_NON_ISOLATED" 1>&2 || exit 1
+fi
+
+/usr/bin/env node $BIN_DIR/build/src/index.js "$@"
