@@ -3,7 +3,7 @@
 set -e
 
 YBIN="$(dirname $0)"
-PACKAGE_NAME="chrome-devtools-mcp"
+PACKAGE_NAME="@openai/codex"
 VERSION="latest"
 
 if ! command -v npm &> /dev/null; then
@@ -34,15 +34,4 @@ if [ ! -d "$BIN_DIR" ]; then
   mv "$TEMP_DIR/node_modules/$PACKAGE_NAME" "$BIN_DIR"
 fi
 
-# Installed, now run with our rules
-
-if echo "$@" | grep -q "\-\-help"; then
-  true
-elif echo "$@" | grep -q "\-\-version"; then
-  true
-elif ! echo "$@" | grep -q "\-\-isolated"; then
-  echo "Error: $0 requires --isolated" 1>&2
-  [ "DEVTOOLS_MCP_ALLOW_NON_ISOLATED" = "1" ] && echo "Overriding due to DEVTOOLS_MCP_ALLOW_NON_ISOLATED=$DEVTOOLS_MCP_ALLOW_NON_ISOLATED" 1>&2 || exit 1
-fi
-
-/usr/bin/env node $BIN_DIR/build/src/index.js "$@"
+/usr/bin/env node $BIN_DIR/bin/codex.js "$@"
