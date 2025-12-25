@@ -16,7 +16,7 @@ Add the following to env:
 
 ```
 export YSTACK_HOME=/Users/me/Yolean/ystack
-export PATH=$PATH:$YSTACK_HOME/bin
+export PATH=$YSTACK_HOME/bin:$PATH
 ```
 
 Note that ystach should be after system path entries because it contains fallback impls for MacOS such as `basepath` and `sha256sum`.
