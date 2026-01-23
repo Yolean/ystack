@@ -4,7 +4,7 @@ kind: Kustomization
 images:
 - name: moby/buildkit:rootless
   newName: ghcr.io/yolean/buildkit
-  newTag: v0.26.0-rootless@sha256:2846ca21f8cadf9c949ab0c04cfe3619e111d6c527f4194d6e5b098abf6aeaff
+  newTag: v0.27.0-rootless@sha256:586cf37ba4bafd151058aa9c857fe06036942a2a765d7dc5630098cf31834200
 
 resources:
 - service.yaml
