@@ -201,7 +201,7 @@ subjects:
 ---
 apiVersion: v1
 data:
-  version: v0.62.0
+  version: v0.65.0
 kind: ConfigMap
 metadata:
   labels:
@@ -219,9 +219,9 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.62.0
-    dashboard.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    app.kubernetes.io/version: v0.65.0
+    dashboard.tekton.dev/release: v0.65.0
+    version: v0.65.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -245,9 +245,9 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.62.0
-    dashboard.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    app.kubernetes.io/version: v0.65.0
+    dashboard.tekton.dev/release: v0.65.0
+    version: v0.65.0
   name: tekton-dashboard
   namespace: tekton-pipelines
 spec:
@@ -266,7 +266,7 @@ spec:
         app.kubernetes.io/instance: default
         app.kubernetes.io/name: dashboard
         app.kubernetes.io/part-of: tekton-dashboard
-        app.kubernetes.io/version: v0.62.0
+        app.kubernetes.io/version: v0.65.0
       name: tekton-dashboard
     spec:
       affinity:
@@ -307,7 +307,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: ghcr.io/tektoncd/dashboard/dashboard-9623576a202fe86c8b7d1bc489905f86:v0.62.0@sha256:b122e3027ea12b7d3cb99931385116babf4df7d934b74b30355f4bba845ef6c2
+          image: ghcr.io/tektoncd/dashboard/dashboard-9623576a202fe86c8b7d1bc489905f86:v0.65.0@sha256:d79099ebc32fcfce3f408935e3fd3f8e17df987a101db93a768e3e18c7bf7826
           livenessProbe:
             httpGet:
               path: /health
