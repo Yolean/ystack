@@ -10,8 +10,8 @@ RUN set -ex; \
   mkdir -p /var/lib/rancher/k3s/server/manifests; \
   for base in \
       00-ystack-namespace \
-      10-minio \
-      20-builds-registry \
+      10-versitygw \
+      20-builds-registry-versitygw \
       21-prod-registry \
       30-y-assert-support \
       40-buildkit; do \
