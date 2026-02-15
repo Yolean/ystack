@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bucket-create-ystack-builds
+spec:
+  template:
+    spec:
+      containers:
+      - name: aws-cli
+        image: amazon/aws-cli:2.22.35
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: accesskey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: secretkey
+        - name: AWS_DEFAULT_REGION
+          value: us-east-1
+        - name: BUCKET_NAME
+          value: ystack-builds-registry
+        - name: S3_ENDPOINT
+          value: http://blobs-versitygw
+        command:
+        - sh
+        - -ce
+        - |
+          sleep 30
+          aws --endpoint-url $S3_ENDPOINT s3 mb s3://$BUCKET_NAME --region $AWS_DEFAULT_REGION || true
+      restartPolicy: Never
+  backoffLimit: 10

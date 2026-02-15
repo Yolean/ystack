@@ -1,0 +1,7 @@
+bases:
+- ../../versitygw/defaultsecret
+- ../generic
+resources:
+- bucket-create-ystack-builds.yaml
+patchesStrategicMerge:
+- deployment.yaml

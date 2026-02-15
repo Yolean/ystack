@@ -35,8 +35,8 @@ kubectl config rename-context k3d-ystack $CONTEXTNAME
 # This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile, and in y-cluster-provision-multipass
 for base in \
     00-ystack-namespace \
-    10-minio \
-    20-builds-registry \
+    10-versitygw \
+    20-builds-registry-versitygw \
     21-prod-registry \
     40-buildkit; do \
   basepath="$YSTACK_HOME/k3s/$base/"
