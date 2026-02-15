@@ -102,7 +102,7 @@ services:
       kubectl get nodes
 
       echo "Our ystack-proxy image should install ystack essentials ..."
-      kubectl-waitretry --for=condition=Ready -n ystack pod -l app=minio
+      kubectl-waitretry --for=condition=Available -n ystack deployment versitygw
       kubectl-waitretry --for=condition=Ready -n ystack pod -l ystack-builds-registry=http
       kubectl-waitretry --for=condition=Ready -n ystack pod -l app=buildkitd
       curl -f --retry 5 http://builds-registry.ystack.svc.cluster.local/v2/
