@@ -6,8 +6,8 @@ spec:
   template:
     spec:
       containers:
-      - name: aws-cli
-        image: amazon/aws-cli:2.22.35
+      - name: mc
+        image: minio/mc:RELEASE.2025-02-08T13-51-10Z
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -19,8 +19,6 @@ spec:
             secretKeyRef:
               name: minio
               key: secretkey
-        - name: AWS_DEFAULT_REGION
-          value: us-east-1
         - name: BUCKET_NAME
           value: ystack-builds-registry
         - name: S3_ENDPOINT
@@ -30,6 +28,7 @@ spec:
         - -ce
         - |
           sleep 30
-          aws --endpoint-url $S3_ENDPOINT s3 mb s3://$BUCKET_NAME --region $AWS_DEFAULT_REGION || true
+          mc alias set s3 $S3_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
+          mc mb --ignore-existing s3/$BUCKET_NAME
       restartPolicy: Never
   backoffLimit: 10
