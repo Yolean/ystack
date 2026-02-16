@@ -42,6 +42,7 @@ KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
 # This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
 for base in \
     00-ystack-namespace \
+    05-gateway-api \
     10-minio \
     20-builds-registry \
     21-prod-registry \
