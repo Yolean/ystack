@@ -10,8 +10,8 @@ export K3S_NODE_NAME=ystack-master
 # For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
 export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0 ${INSTALL_K3S_EXEC}"
 
-INSTALLER_REVISION=bd04941a294793ec92e8703d5e5da14107902e88
-export INSTALL_K3S_VERSION=v1.30.5+k3s1
+INSTALLER_REVISION=3552cfc26032474faad53ee617fde32ac0c1a222
+export INSTALL_K3S_VERSION=v1.33.8+k3s1
 curl -sfL https://github.com/k3s-io/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start
