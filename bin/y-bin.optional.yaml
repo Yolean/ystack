@@ -4,6 +4,16 @@
 # - version must be the first key per binary name
 # - comments must be separate lines, not after values
 
+k8s-ingress-hosts:
+  version: 0.3.2
+  templates:
+    download: https://github.com/solsson/k8s-ingress-hosts/releases/download/v${version}/k8s-ingress-hosts-${os}-${arch}
+  sha256:
+    darwin_amd64: 2531a19c33b525be6efdf52056137500e823c4c2480054b1c858fd53dbd28e7a
+    darwin_arm64: TODO_no_arm64_binary_available
+    linux_amd64: 3bbd0380d2a7007c0eb066ce80959b4624f9435664e22a61a02e558b3da02031
+    linux_arm64: TODO_no_arm64_binary_available
+
 k3d:
   version: 5.8.3
   templates:

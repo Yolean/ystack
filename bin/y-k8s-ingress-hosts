@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+YBIN="$(dirname $0)"
+
+[ -z "$KUBECONFIG" ] && echo "This script requires a KUBECONFIG" && exit 1
+
+version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
+
+[ $(id -u) -ne 0 ] && echo "su privileges required for k8s-ingress-hosts" && exec sudo -E $0 "$@"
+
+$YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$KUBECONFIG" "$@" || exit $?

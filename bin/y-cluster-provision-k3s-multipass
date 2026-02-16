@@ -14,8 +14,8 @@ then
   echo "Y-stack appears to be running already" && exit
 fi
 
-# "jammy 22.04.." is currently the version our nodes run. Remove "jammy" to get the latest LTS
-multipass launch jammy -n "$VM_NAME" $VM_RESOURCES
+# "noble 24.04.." is currently the version our nodes run
+multipass launch noble -n "$VM_NAME" $VM_RESOURCES
 
 # https://medium.com/@mattiaperi/kubernetes-cluster-with-k3s-and-multipass-7532361affa3
 K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $2}')"
