@@ -13,6 +13,15 @@ esac
 
 version=$(y-bin-download $YBIN/y-bin.optional.yaml kubefwd)
 
+# Fail early if there's already a kubefwd process running
+# corrupt /etc/hosts and cause DNS resolution failures
+if [ $(id -u) -ne 0 ] && pgrep -f "y-kubefwd-v.*-bin" >/dev/null 2>&1; then
+  echo "ERROR: An existing kubefwd process is already running:"
+  pgrep -la "y-kubefwd-v.*-bin"
+  echo "Kill it first: sudo pkill -f 'y-kubefwd-v.*-bin'"
+  exit 1
+fi
+
 [ $(id -u) -eq 0 ] || kubectl $ctx get pods >/dev/null
 [ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx "$@"
 
