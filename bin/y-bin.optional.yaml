@@ -253,6 +253,19 @@ stern:
     tool: tar
     path: stern
 
+static-web-server:
+  version: 2.40.1
+  templates:
+    download: https://github.com/static-web-server/static-web-server/releases/download/v${version}/static-web-server-v${version}-${aarch}-$([ ${os} = darwin ] && echo apple-darwin || echo unknown-linux-gnu).tar.gz
+  sha256:
+    darwin_amd64: fbdb678ab2e7886ef20719bde2a929c49ec1b24dc4900f409bd377e49a85dd32
+    darwin_arm64: 58370cc01799c826fc5d3398762c2e6acb5440ab0ec9a289ab9b709e76cff242
+    linux_amd64: 0330cd4a6265a96fac4be6620abfd2a892e9ff32f3b8e2de0630b09cb3236f67
+    linux_arm64: f3db363fdb41898a40d9aaba0714e06d0a03513d2cacacf7ee6066222b422f7f
+  archive:
+    tool: tar
+    path: static-web-server-v${version}-${aarch}-apple-${os}/static-web-server
+
 osv-scanner:
   version: 2.2.1
   templates:

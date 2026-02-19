@@ -130,3 +130,14 @@ jobs:
       run: |
         TAG_REDPANDA=${{ steps.imageRedpandaTag.outputs.result }}
         crane cp docker.redpanda.com/redpandadata/redpanda:$TAG_REDPANDA ghcr.io/yolean/redpanda:$TAG_REDPANDA
+    -
+      name: Get static-web-server image tag
+      id: imageStaticWebServerTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '."static-web-server".version' bin/y-bin.optional.yaml
+    -
+      name: Mirror static-web-server image from hub
+      run: |
+        TAG_SWS=${{ steps.imageStaticWebServerTag.outputs.result }}
+        crane cp docker.io/joseluisq/static-web-server:$TAG_SWS ghcr.io/yolean/static-web-server:$TAG_SWS
