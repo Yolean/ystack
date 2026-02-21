@@ -254,14 +254,14 @@ stern:
     path: stern
 
 static-web-server:
-  version: 2.40.1
+  version: 2.41.0
   templates:
     download: https://github.com/static-web-server/static-web-server/releases/download/v${version}/static-web-server-v${version}-${aarch}-$([ ${os} = darwin ] && echo apple-darwin || echo unknown-linux-gnu).tar.gz
   sha256:
-    darwin_amd64: fbdb678ab2e7886ef20719bde2a929c49ec1b24dc4900f409bd377e49a85dd32
-    darwin_arm64: 58370cc01799c826fc5d3398762c2e6acb5440ab0ec9a289ab9b709e76cff242
-    linux_amd64: 0330cd4a6265a96fac4be6620abfd2a892e9ff32f3b8e2de0630b09cb3236f67
-    linux_arm64: f3db363fdb41898a40d9aaba0714e06d0a03513d2cacacf7ee6066222b422f7f
+    darwin_amd64: c1c5472f6a188e4f6ba5d6b7869e0fef1b1c5f21354832af95537aaa4530c04c
+    darwin_arm64: 33551713e7a3d6906fe54bd27e8a47761e198c35238dc15850630d83a44c2ac0
+    linux_amd64: 57f9784e6b07da6aa563772c39edeac24e5f7bb8b5b610ad8a28d422def33702
+    linux_arm64: 2840501b8f6257869dc80bb4d42306481bb0479ef062fea98ea1e6c90e4f3455
   archive:
     tool: tar
     path: static-web-server-v${version}-${aarch}-apple-${os}/static-web-server
