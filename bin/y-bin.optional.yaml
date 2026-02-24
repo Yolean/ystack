@@ -5,14 +5,14 @@
 # - comments must be separate lines, not after values
 
 k8s-ingress-hosts:
-  version: 0.3.2
+  version: 0.4.0
   templates:
-    download: https://github.com/solsson/k8s-ingress-hosts/releases/download/v${version}/k8s-ingress-hosts-${os}-${arch}
+    download: https://github.com/solsson/k8s-ingress-hosts/releases/download/v${version}/k8s-ingress-hosts_${version}_${os}_${arch}
   sha256:
-    darwin_amd64: 2531a19c33b525be6efdf52056137500e823c4c2480054b1c858fd53dbd28e7a
-    darwin_arm64: TODO_no_arm64_binary_available
-    linux_amd64: 3bbd0380d2a7007c0eb066ce80959b4624f9435664e22a61a02e558b3da02031
-    linux_arm64: TODO_no_arm64_binary_available
+    darwin_amd64: 9c490e39f6fcd0e9e7cee06dd86efdda3b8de44ac75d4d5dca03e3d3aedf8dcf
+    darwin_arm64: b11e5ee309d20e26ab48c12cb21799fc54f3dbda283eaedc91f0f16d274f28e4
+    linux_amd64: 05a43b1342446f855e1394794bab33a6016487dc8f5637809c0363d92d715bef
+    linux_arm64: d1306dca94e3bd67aed14ff1a0715d7c48386f90e54cc272b23e526ada8de283
 
 k3d:
   version: 5.8.3
