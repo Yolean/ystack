@@ -7,6 +7,6 @@ YBIN="$(dirname $0)"
 
 version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
 
-[ $(id -u) -ne 0 ] && echo "su privileges required for k8s-ingress-hosts" && exec sudo -E $0 "$@"
+[ $(id -u) -ne 0 ] && exec sudo -E $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$KUBECONFIG" "$@"
 
 $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$KUBECONFIG" "$@" || exit $?
