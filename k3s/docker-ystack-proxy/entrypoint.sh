@@ -11,10 +11,10 @@ set -e
 cat /admin/.kube/kubeconfig.yaml | sed 's|127.0.0.1|master1|' > ~/.kube/config
 kubectl-waitretry --for=condition=Ready node --all
 
-# Might speed up provision, due to the dependency minio -> registry -> builds, but should't be necessary
+# Might speed up provision, due to the dependency versitygw -> registry -> builds, but shouldn't be necessary
 kubectl apply -f /var/lib/rancher/k3s/server/manifests/ystack-00-ystack-namespace.yaml
-kubectl apply -f /var/lib/rancher/k3s/server/manifests/ystack-10-minio.yaml
-kubectl-waitretry -n ystack --for=condition=Ready pod minio-0
+kubectl apply -f /var/lib/rancher/k3s/server/manifests/ystack-10-versitygw.yaml
+kubectl-waitretry -n ystack --for=condition=Available deployment versitygw
 
 kubectl apply -f /var/lib/rancher/k3s/server/manifests/
 

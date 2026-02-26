@@ -1,7 +1,7 @@
 namespace: ystack
 bases:
 - ../../buildkit
-- ../../minio/standalone,defaultsecret
+- ../../versitygw/standalone,defaultsecret
 resources:
 - buildkitd-nodeport-service.yaml
 patchesStrategicMerge:
