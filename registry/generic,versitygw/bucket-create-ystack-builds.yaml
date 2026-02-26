@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
       - name: mc
-        image: minio/mc:RELEASE.2025-02-08T13-51-10Z
+        image: minio/mc:RELEASE.2025-02-08T19-14-21Z
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
