@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
       - name: mc
-        image: minio/mc:RELEASE.2025-02-08T19-14-21Z
+        image: minio/mc:RELEASE.2025-08-13T08-35-41Z
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -27,8 +27,9 @@ spec:
         - sh
         - -ce
         - |
-          sleep 30
-          mc alias set s3 $S3_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
+          until mc alias set s3 $S3_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY 2>/dev/null; do
+            sleep 2
+          done
           mc mb --ignore-existing s3/$BUCKET_NAME
       restartPolicy: Never
   backoffLimit: 10

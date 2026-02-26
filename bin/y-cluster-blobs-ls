@@ -11,7 +11,7 @@ esac
 
 [ -z "$NAMESPACE" ] && NAMESPACE=ystack
 [ -z "$BLOBS_SERVICE" ] && BLOBS_SERVICE=blobs-versitygw
-[ -z "$MC_IMAGE" ] && MC_IMAGE=minio/mc:RELEASE.2025-02-08T19-14-21Z
+[ -z "$MC_IMAGE" ] && MC_IMAGE=minio/mc:RELEASE.2025-08-13T08-35-41Z
 
 BUCKET="${1:-}"
 
