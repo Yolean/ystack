@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: builds-registry
+spec:
+  type: NodePort
+  clusterIP: 10.43.0.50

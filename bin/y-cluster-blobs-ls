@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+ctx=$1
+case $ctx in
+  "--context=local") shift 1 ;;
+  "--context="*) echo "Only --context=local is supported" && exit 1 ;;
+  *) echo "Initial arg must be --context=local" && exit 1 ;;
+esac
+
+[ -z "$NAMESPACE" ] && NAMESPACE=ystack
+[ -z "$BLOBS_SERVICE" ] && BLOBS_SERVICE=blobs-versitygw
+[ -z "$MC_IMAGE" ] && MC_IMAGE=minio/mc:RELEASE.2025-08-13T08-35-41Z
+
+BUCKET="${1:-}"
+
+ACCESS_KEY=$(kubectl $ctx -n $NAMESPACE get secret minio -o jsonpath='{.data.accesskey}' | base64 -d)
+SECRET_KEY=$(kubectl $ctx -n $NAMESPACE get secret minio -o jsonpath='{.data.secretkey}' | base64 -d)
+
+POD_NAME="y-blobs-ls-$(date +%s)"
+
+if [ -z "$BUCKET" ]; then
+  echo "Usage: y-cluster-blobs-ls --context=local [bucket-name]"
+  echo "Without a bucket name, lists all buckets:"
+  echo ""
+  kubectl $ctx -n $NAMESPACE run --rm -i $POD_NAME \
+    --image=$MC_IMAGE \
+    --restart=Never \
+    --env="ACCESS_KEY=$ACCESS_KEY" \
+    --env="SECRET_KEY=$SECRET_KEY" \
+    --env="BLOBS_SERVICE=$BLOBS_SERVICE" \
+    --command -- /bin/sh -c '
+      mc alias set s3 http://$BLOBS_SERVICE $ACCESS_KEY $SECRET_KEY >/dev/null 2>&1
+      mc ls s3/
+    '
+else
+  kubectl $ctx -n $NAMESPACE run --rm -i $POD_NAME \
+    --image=$MC_IMAGE \
+    --restart=Never \
+    --env="ACCESS_KEY=$ACCESS_KEY" \
+    --env="SECRET_KEY=$SECRET_KEY" \
+    --env="BLOBS_SERVICE=$BLOBS_SERVICE" \
+    --env="BUCKET=$BUCKET" \
+    --command -- /bin/sh -c '
+      mc alias set s3 http://$BLOBS_SERVICE $ACCESS_KEY $SECRET_KEY >/dev/null 2>&1
+      mc ls --recursive s3/$BUCKET
+    '
+fi
