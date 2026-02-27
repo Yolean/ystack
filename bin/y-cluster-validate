@@ -75,6 +75,11 @@ else
   report "prod-registry clusterIP" "got '$PROD_IP', expected 10.43.0.51"
 fi
 
+# 7.5 Buildkitd GRPCRoute
+k -n ystack get grpcroute buildkitd >/dev/null 2>&1 \
+  && report "grpcroute buildkitd" "ok" \
+  || report "grpcroute buildkitd" "not found"
+
 # 8. buildkitd statefulset
 k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
   && report "buildkitd statefulset" "ok" \

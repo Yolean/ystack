@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildkitd-gateway-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buildkitd-gateway-proxy
+  template:
+    metadata:
+      labels:
+        app: buildkitd-gateway-proxy
+    spec:
+      containers:
+      - name: envoy
+        image: ghcr.io/yolean/envoy:distroless-v1.37.0
+        args:
+        - -c
+        - /etc/envoy/envoy.yaml
+        ports:
+        - containerPort: 8547
+        volumeMounts:
+        - name: config
+          mountPath: /etc/envoy
+      volumes:
+      - name: config
+        configMap:
+          name: buildkitd-gateway-proxy
