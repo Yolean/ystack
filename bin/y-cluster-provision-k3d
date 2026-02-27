@@ -50,7 +50,7 @@ PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o
 docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
-y-k8s-ingress-hosts --context=$CTX
+y-k8s-ingress-hosts -write
 y-mkcert-after-k8s-ingress-hosts
 
 echo "# Final validation: crane catalog"

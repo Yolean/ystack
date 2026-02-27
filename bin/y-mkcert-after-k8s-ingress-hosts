@@ -5,13 +5,14 @@ set -eo pipefail
 # Parse /etc/hosts between k8s-ingress-hosts markers and generate mkcert certs
 
 HOSTS_FILE="/etc/hosts"
-START_MARKER="# Begin k8s-ingress-hosts"
-END_MARKER="# End k8s-ingress-hosts"
+START_MARKER="# generated using k8s-ingress-hosts start #"
+END_MARKER="# generated using k8s-ingress-hosts end #"
 
 # Extract hostnames between markers
 HOSTNAMES=$(sed -n "/$START_MARKER/,/$END_MARKER/p" "$HOSTS_FILE" \
   | grep -v "^#" \
-  | awk '{for(i=2;i<=NF;i++) print $i}' \
+  | sed 's/#.*//' \
+  | awk 'NF>=2 {for(i=2;i<=NF;i++) print $i}' \
   | sort -u \
   | tr '\n' ' ')
 
