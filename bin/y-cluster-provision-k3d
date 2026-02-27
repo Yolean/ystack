@@ -53,5 +53,4 @@ docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry
 y-k8s-ingress-hosts -write
 y-mkcert-after-k8s-ingress-hosts
 
-echo "# Final validation: crane catalog"
-y-crane catalog builds-registry.ystack.svc.cluster.local
+y-cluster-validate --context=$CTX

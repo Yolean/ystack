@@ -72,4 +72,6 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack apply -k $YSTACK_H
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
+
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"

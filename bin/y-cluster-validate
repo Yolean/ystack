@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+CONTEXT=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CONTEXT="${1#*=}"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-validate --context=<name>" && exit 1
+
+k() {
+  kubectl --context="$CONTEXT" "$@"
+}
+
+PASS=0
+FAIL=0
+report() {
+  local name="$1"
+  local result="$2"
+  if [ "$result" = "ok" ]; then
+    PASS=$((PASS + 1))
+    echo "  PASS  $name"
+  else
+    FAIL=$((FAIL + 1))
+    echo "  FAIL  $name - $result"
+  fi
+}
+
+echo "=== Dev Cluster Validation: context=$CONTEXT ==="
+echo ""
+
+# 1. Namespace
+k get ns ystack >/dev/null 2>&1 \
+  && report "namespace ystack" "ok" \
+  || report "namespace ystack" "not found"
+
+# 2. Gateway API CRDs
+k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1 \
+  && report "gateway-api CRDs" "ok" \
+  || report "gateway-api CRDs" "not installed"
+
+# 3. Gateway
+k -n ystack get gateway ystack >/dev/null 2>&1 \
+  && report "gateway ystack" "ok" \
+  || report "gateway ystack" "not found"
+
+# 4. versitygw
+ROLLOUT=$(k -n ystack rollout status deploy/versitygw --timeout=5s 2>&1) \
+  && report "versitygw rollout" "ok" \
+  || report "versitygw rollout" "$ROLLOUT"
+
+# 5. builds-registry service + clusterIP
+CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
+if [ "$CLUSTER_IP" = "10.43.0.50" ]; then
+  report "builds-registry clusterIP" "ok"
+else
+  report "builds-registry clusterIP" "got '$CLUSTER_IP', expected 10.43.0.50"
+fi
+
+# 6. HTTPRoute
+k -n ystack get httproute builds-registry >/dev/null 2>&1 \
+  && report "httproute builds-registry" "ok" \
+  || report "httproute builds-registry" "not found"
+
+# 7. prod-registry service
+PROD_IP=$(k -n ystack get svc prod-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
+if [ "$PROD_IP" = "10.43.0.51" ]; then
+  report "prod-registry clusterIP" "ok"
+else
+  report "prod-registry clusterIP" "got '$PROD_IP', expected 10.43.0.51"
+fi
+
+# 8. buildkitd statefulset
+k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
+  && report "buildkitd statefulset" "ok" \
+  || report "buildkitd statefulset" "not found"
+
+# 9. Registry pod running
+READY=$(k -n ystack get deploy registry -o=jsonpath='{.status.readyReplicas}' 2>/dev/null)
+if [ "$READY" = "1" ]; then
+  report "registry pod ready" "ok"
+else
+  report "registry pod ready" "readyReplicas=$READY"
+fi
+
+# 10. bucket-create job completed
+SUCCEEDED=$(k -n ystack get job bucket-create-ystack-builds -o=jsonpath='{.status.succeeded}' 2>/dev/null)
+if [ "$SUCCEEDED" = "1" ]; then
+  report "bucket-create job" "ok"
+else
+  report "bucket-create job" "succeeded=$SUCCEEDED"
+fi
+
+# 11. In-cluster registry access via crane port-forward
+echo ""
+echo "--- Registry access (in-cluster curl) ---"
+REGISTRY_POD=$(k -n ystack get pod -l app=registry -o=jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+if [ -n "$REGISTRY_POD" ]; then
+  CATALOG=$(k -n ystack exec "$REGISTRY_POD" -- wget -q -O- http://localhost:5000/v2/_catalog 2>/dev/null)
+  if echo "$CATALOG" | grep -q "repositories"; then
+    report "in-cluster registry v2 API" "ok"
+  else
+    report "in-cluster registry v2 API" "no response"
+  fi
+else
+  report "in-cluster registry v2 API" "no registry pod"
+fi
+
+echo ""
+echo "=== Results: $PASS passed, $FAIL failed ==="
+
+if [ "$FAIL" -gt 0 ]; then
+  exit 1
+fi

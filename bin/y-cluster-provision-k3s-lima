@@ -81,4 +81,6 @@ KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
   k apply --server-side=true -k $basepath
 done
 
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
+
 y-kubeconfig-import "$KUBECONFIG.tmp"
