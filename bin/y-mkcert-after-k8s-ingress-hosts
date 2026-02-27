@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+# Parse /etc/hosts between k8s-ingress-hosts markers and generate mkcert certs
+
+HOSTS_FILE="/etc/hosts"
+START_MARKER="# Begin k8s-ingress-hosts"
+END_MARKER="# End k8s-ingress-hosts"
+
+# Extract hostnames between markers
+HOSTNAMES=$(sed -n "/$START_MARKER/,/$END_MARKER/p" "$HOSTS_FILE" \
+  | grep -v "^#" \
+  | awk '{for(i=2;i<=NF;i++) print $i}' \
+  | sort -u \
+  | tr '\n' ' ')
+
+if [ -z "$HOSTNAMES" ]; then
+  echo "ERROR: No hostnames found between k8s-ingress-hosts markers in $HOSTS_FILE" >&2
+  exit 1
+fi
+
+echo "# Found hostnames: $HOSTNAMES"
+
+# Idempotent CA install
+y-mkcert -install
+
+# Generate certs for all hosts
+echo "# Generating certs for: $HOSTNAMES"
+y-mkcert $HOSTNAMES

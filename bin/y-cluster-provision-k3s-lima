@@ -2,9 +2,20 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
-[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+CTX=local
+MONITORING=false
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CTX="${1#*=}"; shift ;;
+    --monitoring) MONITORING=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
 
 # Not reusing y-k3s-install, avoid breaking multipass provision
 K3S_INSTALLER_REVISION=b43a365f27d8372336fea7b0984a571109d742ca
@@ -30,9 +41,9 @@ limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sle
 # But we do LIMA_INSTALL_BINFMT_MISC=true in https://github.com/solsson/alpine-lima/blob/ystack-test/edition/ystack
 #limactl shell ystack sudo nerdctl run --privileged --rm tonistiigi/binfmt --install all
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CTX
 k() {
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME $@
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX "$@"
 }
 
 until k -n kube-system get pods 2>/dev/null; do
@@ -51,23 +62,13 @@ while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v
 k delete --wait=false pod amd64test
 
 # TODO fix node-exporter pod failing on: Error: failed to generate container "..." spec: path "/" is mounted on "/" but it is not a shared or slave mount
-# KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
+# KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CTX
 
-# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
-for base in \
-    00-ystack-namespace \
-    10-minio \
-    20-builds-registry \
-    21-prod-registry \
-    22-node-update-hosts \
-    30-monitoring-nodeport \
-    40-buildkit; do \
-  basepath="$YSTACK_HOME/k3s/$base/"
-  echo "# Applying $basepath ..."
-  k apply --server-side=true -k $basepath
-done
+CONVERGE_FLAGS="--context=$CTX --server-side"
+[ "$MONITORING" = true ] && CONVERGE_FLAGS="$CONVERGE_FLAGS --monitoring"
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
-[ "$MONITORING_ENABLE" != "true" ] || for base in \
+[ "$MONITORING" != true ] || for base in \
     namespace \
     prometheus-operator \
     prometheus-now \

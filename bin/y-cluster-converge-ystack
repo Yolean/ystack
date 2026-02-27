@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
+CONTEXT=""
+MONITORING=false
+SERVER_SIDE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CONTEXT="${1#*=}"; shift ;;
+    --monitoring) MONITORING=true; shift ;;
+    --server-side) SERVER_SIDE="--server-side=true"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--monitoring] [--server-side]" && exit 1
+
+k() {
+  kubectl --context="$CONTEXT" "$@"
+}
+
+apply_base() {
+  local base="$1"
+  local basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying $basepath ..."
+  k apply $SERVER_SIDE -k "$basepath"
+}
+
+# 1. Namespace
+apply_base 00-ystack-namespace
+k get ns ystack
+echo "# Validated: namespace ystack exists"
+
+# 2. Gateway API CRDs
+apply_base 05-gateway-api
+k get crd gateways.gateway.networking.k8s.io
+echo "# Validated: Gateway API CRDs installed"
+
+# 3. Gateway
+apply_base 06-gateway
+k -n ystack get gateway ystack
+echo "# Validated: gateway ystack exists"
+
+# 4. Versitygw
+apply_base 10-versitygw
+k -n ystack rollout status deploy/versitygw --timeout=120s
+echo "# Validated: versitygw rollout complete"
+
+# 5. Builds registry
+apply_base 20-builds-registry-versitygw
+k -n ystack get svc builds-registry
+CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}')
+if [ "$CLUSTER_IP" != "10.43.0.50" ]; then
+  echo "ERROR: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
+  exit 1
+fi
+echo "# Validated: builds-registry clusterIP=10.43.0.50"
+
+# 6. Builds registry HTTPRoute
+apply_base 07-builds-registry-httproute
+k -n ystack get httproute builds-registry
+echo "# Validated: httproute builds-registry exists"
+
+# 7. Prod registry
+apply_base 21-prod-registry
+k -n ystack get svc prod-registry
+echo "# Validated: prod-registry service exists"
+
+# 8. Node update hosts
+apply_base 22-node-update-hosts
+echo "# Applied: node-update-hosts"
+
+# 9. Buildkit
+apply_base 40-buildkit
+k -n ystack get statefulset buildkitd
+echo "# Validated: buildkitd statefulset exists"
+
+# 10. Monitoring (optional)
+if [ "$MONITORING" = true ]; then
+  apply_base 30-monitoring-nodeport
+  k -n ystack get svc monitoring-nodeport
+  echo "# Validated: monitoring-nodeport service exists"
+fi
+
+echo "# y-cluster-converge-ystack: all steps completed successfully"

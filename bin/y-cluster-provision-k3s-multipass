@@ -2,12 +2,24 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
-[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+CTX=local
+VM_NAME="ystack-master"
+VM_RESOURCES="-m 8G -d 40G -c 4"
+MONITORING=false
 
-[ -z "$VM_NAME" ] && VM_NAME="ystack-master"
-[ -z "$VM_RESOURCES" ] && VM_RESOURCES="-m 8G -d 40G -c 4"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CTX="${1#*=}"; shift ;;
+    --vm-name=*) VM_NAME="${1#*=}"; shift ;;
+    --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
+    --monitoring) MONITORING=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
 
 if multipass list | grep "$VM_NAME"
 then
@@ -35,26 +47,15 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
   | sed "s|127.0.0.1|$K3S_NODEIP_MASTER|" \
   > "$KUBECONFIG.tmp"
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CONTEXTNAME
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CTX
 
-KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CONTEXTNAME
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CTX
 
-# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile
-for base in \
-    00-ystack-namespace \
-    05-gateway-api \
-    10-minio \
-    20-builds-registry \
-    21-prod-registry \
-    22-node-update-hosts \
-    30-monitoring-nodeport \
-    40-buildkit; do \
-  basepath="$YSTACK_HOME/k3s/$base/"
-  echo "# Applying $basepath ..."
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME apply -k $basepath
-done
+CONVERGE_FLAGS="--context=$CTX"
+[ "$MONITORING" = true ] && CONVERGE_FLAGS="$CONVERGE_FLAGS --monitoring"
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
-[ "$MONITORING_ENABLE" != "true" ] || for base in \
+[ "$MONITORING" != true ] || for base in \
     namespace \
     prometheus-operator \
     prometheus-now \
@@ -64,10 +65,10 @@ done
     ; do \
   basepath="$YSTACK_HOME/monitoring/$base/"
   echo "# Applying $basepath ..."
-  k apply --server-side=true -k $basepath
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX apply --server-side=true -k $basepath
 done
 
-KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CONTEXTNAME -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
+KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 

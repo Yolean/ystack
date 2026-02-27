@@ -2,49 +2,56 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
-[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+CTX=local
 K3D_NAME=ystack
+YSTACK_HOST=ystack.local
+K3D_MEMORY="6G"
+K3D_AGENTS="0"
+K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
 
-[ -z "$YSTACK_HOST" ] && YSTACK_HOST=ystack.local
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CTX="${1#*=}"; shift ;;
+    --memory=*) K3D_MEMORY="${1#*=}"; shift ;;
+    --agents=*) K3D_AGENTS="${1#*=}"; shift ;;
+    --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
+    --host=*) YSTACK_HOST="${1#*=}"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
 [ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
-[ -z "$K3D_MEMORY" ] && K3D_MEMORY="6G"
-[ -z "$K3D_AGENTS" ] && K3D_AGENTS="0"
-[ -z "$K3D_DOCKER_UPDATE" ] && K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
 
 y-k3d cluster create $K3D_NAME \
   --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
   --no-lb \
   --agents="$K3D_AGENTS" \
-  --servers-memory="$K3D_MEMORY" \
-  $VM_RESOURCES
+  --servers-memory="$K3D_MEMORY"
 
 # TODO support agents >0
 K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
 docker update $K3D_DOCKER_NAME $K3D_DOCKER_UPDATE
 docker inspect $K3D_DOCKER_NAME | grep Cpu
 
-kubectl config delete-context local || true
+kubectl config delete-context $CTX || true
 # Could interfere with some k3d functionality. For example skaffold's k3d detection will probably not work.
-kubectl config rename-context k3d-ystack $CONTEXTNAME
+kubectl config rename-context k3d-ystack $CTX
 
-# y-cluster-assert-install --context=$CONTEXTNAME
+y-cluster-converge-ystack --context=$CTX
 
-# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile, and in y-cluster-provision-multipass
-for base in \
-    00-ystack-namespace \
-    10-versitygw \
-    20-builds-registry-versitygw \
-    21-prod-registry \
-    40-buildkit; do \
-  basepath="$YSTACK_HOME/k3s/$base/"
-  echo "# Applying $basepath ..."
-  kubectl --context=$CONTEXTNAME apply -k $basepath
-done
-
-BUILDS_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
-PROD_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+# k3d-specific: update node /etc/hosts for registry access
+BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
 docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
+
+y-k8s-ingress-hosts --context=$CTX
+y-mkcert-after-k8s-ingress-hosts
+
+echo "# Final validation: crane catalog"
+y-crane catalog builds-registry.ystack.svc.cluster.local
