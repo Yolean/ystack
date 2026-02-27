@@ -80,28 +80,22 @@ k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
   && report "buildkitd statefulset" "ok" \
   || report "buildkitd statefulset" "not found"
 
-# 9. Registry pod running
-READY=$(k -n ystack get deploy registry -o=jsonpath='{.status.readyReplicas}' 2>/dev/null)
-if [ "$READY" = "1" ]; then
-  report "registry pod ready" "ok"
-else
-  report "registry pod ready" "readyReplicas=$READY"
-fi
+# 9. Registry pod running (wait for rollout)
+ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=60s 2>&1) \
+  && report "registry rollout" "ok" \
+  || report "registry rollout" "$ROLLOUT_REG"
 
-# 10. bucket-create job completed
-SUCCEEDED=$(k -n ystack get job bucket-create-ystack-builds -o=jsonpath='{.status.succeeded}' 2>/dev/null)
-if [ "$SUCCEEDED" = "1" ]; then
-  report "bucket-create job" "ok"
-else
-  report "bucket-create job" "succeeded=$SUCCEEDED"
-fi
+# 10. bucket-create job completed (wait up to 60s)
+k -n ystack wait --for=condition=complete job/bucket-create-ystack-builds --timeout=60s >/dev/null 2>&1 \
+  && report "bucket-create job" "ok" \
+  || report "bucket-create job" "not complete within 60s"
 
 # 11. In-cluster registry access via crane port-forward
 echo ""
 echo "--- Registry access (in-cluster curl) ---"
-REGISTRY_POD=$(k -n ystack get pod -l app=registry -o=jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+REGISTRY_POD=$(k -n ystack get pod -l ystack-builds-registry=http -o=jsonpath='{.items[0].metadata.name}' 2>/dev/null)
 if [ -n "$REGISTRY_POD" ]; then
-  CATALOG=$(k -n ystack exec "$REGISTRY_POD" -- wget -q -O- http://localhost:5000/v2/_catalog 2>/dev/null)
+  CATALOG=$(k -n ystack exec "$REGISTRY_POD" -- wget -q -O- http://localhost/v2/_catalog 2>/dev/null)
   if echo "$CATALOG" | grep -q "repositories"; then
     report "in-cluster registry v2 API" "ok"
   else
