@@ -27,6 +27,18 @@ cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
 
 TOPOLOGY_ZONE="local"
 
+# Place airgap tarball before k3s starts
+K3S_VERSION=v1.35.1+k3s1
+ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
+y-k3s-airgap-download
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Placing airgap tarball into VM ..."
+  limactl shell ystack sudo mkdir -p /var/lib/rancher/k3s/agent/images
+  limactl shell ystack sudo cp "$AIRGAP_TAR" /var/lib/rancher/k3s/agent/images/
+fi
+
 limactl shell ystack sudo swapoff -a
 limactl shell ystack sudo cp -rv /tmp/lima/ystack/rancher /etc
 limactl shell ystack sh /tmp/lima/ystack/install.sh --node-label "topology.kubernetes.io/zone=$TOPOLOGY_ZONE"
