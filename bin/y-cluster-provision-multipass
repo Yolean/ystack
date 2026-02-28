@@ -9,14 +9,11 @@ YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 CTX=local
 VM_NAME="ystack-master"
 VM_RESOURCES="-m 8G -d 40G -c 4"
-MONITORING=false
-
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CTX="${1#*=}"; shift ;;
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
-    --monitoring) MONITORING=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -51,19 +48,6 @@ KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CTX
 
 CONVERGE_FLAGS="--context=$CTX"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
-
-[ "$MONITORING" != true ] || for base in \
-    namespace \
-    prometheus-operator \
-    prometheus-now \
-    alertmanager-main \
-    kube-state-metrics-now \
-    node-exporter-now \
-    ; do \
-  basepath="$YSTACK_HOME/monitoring/$base/"
-  echo "# Applying $basepath ..."
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX apply --server-side=true -k $basepath
-done
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 

@@ -1,0 +1,7 @@
+bases:
+- ../../monitoring/namespace
+- ../../monitoring/prometheus-operator
+- ../../monitoring/prometheus-now
+- ../../monitoring/alertmanager-main
+- ../../monitoring/kube-state-metrics-now
+- ../../monitoring/node-exporter-now

@@ -7,12 +7,9 @@ YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
 CTX=local
-MONITORING=false
-
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CTX="${1#*=}"; shift ;;
-    --monitoring) MONITORING=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -63,19 +60,6 @@ k delete --wait=false pod amd64test
 
 CONVERGE_FLAGS="--context=$CTX --server-side"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
-
-[ "$MONITORING" != true ] || for base in \
-    namespace \
-    prometheus-operator \
-    prometheus-now \
-    alertmanager-main \
-    kube-state-metrics-now \
-    node-exporter-now \
-    ; do \
-  basepath="$YSTACK_HOME/monitoring/$base/"
-  echo "# Applying $basepath ..."
-  k apply --server-side=true -k $basepath
-done
 
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
 
