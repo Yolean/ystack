@@ -4,21 +4,11 @@ set -eo pipefail
 
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
-# k3s version from the install script
-K3S_VERSION=$(grep '^export INSTALL_K3S_VERSION=' "$YSTACK_HOME/bin/y-k3s-install" | cut -d= -f2)
-[ -z "$K3S_VERSION" ] && echo "Failed to parse INSTALL_K3S_VERSION from y-k3s-install" >&2 && exit 1
-
-{
-  # k3s airgap image list
-  K3S_VERSION_URL="${K3S_VERSION//+/%2B}"
-  curl -sfL "https://github.com/k3s-io/k3s/releases/download/${K3S_VERSION_URL}/k3s-images.txt"
-
-  # Converge bases from y-cluster-converge-ystack
-  BASES=$(grep 'apply_base ' "$YSTACK_HOME/bin/y-cluster-converge-ystack" | sed 's/apply_base //')
-  for base in $BASES; do
-    kubectl kustomize "$YSTACK_HOME/k3s/$base/" 2>/dev/null \
-      | grep -oE 'image:\s*\S+' \
-      | sed 's/image:[[:space:]]*//' \
-      || true
-  done
-} | sort -u
+# Converge bases from y-cluster-converge-ystack
+BASES=$(grep 'apply_base ' "$YSTACK_HOME/bin/y-cluster-converge-ystack" | sed 's/apply_base //')
+for base in $BASES; do
+  kubectl kustomize "$YSTACK_HOME/k3s/$base/" 2>/dev/null \
+    | grep -oE 'image:\s*\S+' \
+    | sed 's/image:[[:space:]]*//' \
+    || true
+done | sort -u
