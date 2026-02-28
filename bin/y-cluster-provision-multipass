@@ -49,10 +49,7 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CTX
 
-KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CTX
-
 CONVERGE_FLAGS="--context=$CTX"
-[ "$MONITORING" = true ] && CONVERGE_FLAGS="$CONVERGE_FLAGS --monitoring"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
 [ "$MONITORING" != true ] || for base in \

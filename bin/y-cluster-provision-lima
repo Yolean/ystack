@@ -61,11 +61,7 @@ k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21
 while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
 k delete --wait=false pod amd64test
 
-# TODO fix node-exporter pod failing on: Error: failed to generate container "..." spec: path "/" is mounted on "/" but it is not a shared or slave mount
-# KUBECONFIG="$KUBECONFIG.tmp" y-cluster-assert-install --context=$CTX
-
 CONVERGE_FLAGS="--context=$CTX --server-side"
-[ "$MONITORING" = true ] && CONVERGE_FLAGS="$CONVERGE_FLAGS --monitoring"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
 [ "$MONITORING" != true ] || for base in \

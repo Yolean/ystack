@@ -5,19 +5,17 @@ set -eo pipefail
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
 CONTEXT=""
-MONITORING=false
 SERVER_SIDE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CONTEXT="${1#*=}"; shift ;;
-    --monitoring) MONITORING=true; shift ;;
     --server-side) SERVER_SIDE="--server-side=true"; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
-[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--monitoring] [--server-side]" && exit 1
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--server-side]" && exit 1
 
 k() {
   kubectl --context="$CONTEXT" "$@"
@@ -88,12 +86,5 @@ echo "# Applied: node-update-hosts"
 apply_base 40-buildkit
 k -n ystack get statefulset buildkitd
 echo "# Validated: buildkitd statefulset exists"
-
-# 10. Monitoring (optional)
-if [ "$MONITORING" = true ]; then
-  apply_base 30-monitoring-nodeport
-  k -n ystack get svc monitoring-nodeport
-  echo "# Validated: monitoring-nodeport service exists"
-fi
 
 echo "# y-cluster-converge-ystack: all steps completed successfully"
