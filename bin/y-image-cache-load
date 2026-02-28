@@ -32,7 +32,15 @@ if [[ "$ANNOTATED_REF" == index.docker.io/* ]]; then
 fi
 
 # Tag with digest so pods using image@sha256:... with imagePullPolicy Never/IfNotPresent work
-REPO="${ANNOTATED_REF%:*}"
-DIGEST_REF="${REPO}@${CACHED_DIGEST}"
-echo "# Tagging digest ref: $DIGEST_REF"
-y-cluster-local-ctr images tag "$ANNOTATED_REF" "$DIGEST_REF" 2>/dev/null || true
+if [[ "$ANNOTATED_REF" == *@sha256:* ]]; then
+  # Annotation is digest-only (e.g. repo@sha256:...), also create a tag ref if we know the tag
+  if [[ "$TAG_REF" == *:* ]]; then
+    echo "# Tagging tag ref: $TAG_REF"
+    y-cluster-local-ctr images tag "$ANNOTATED_REF" "$TAG_REF" 2>/dev/null || true
+  fi
+else
+  REPO="${ANNOTATED_REF%:*}"
+  DIGEST_REF="${REPO}@${CACHED_DIGEST}"
+  echo "# Tagging digest ref: $DIGEST_REF"
+  y-cluster-local-ctr images tag "$ANNOTATED_REF" "$DIGEST_REF" 2>/dev/null || true
+fi
