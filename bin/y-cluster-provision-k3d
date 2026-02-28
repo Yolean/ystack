@@ -60,6 +60,12 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR/oci" ]; then
+  echo "# Loading cached images into containerd ..."
+  y-image-cache-load-all </dev/null || true
+fi
+
 y-cluster-converge-ystack --context=$CTX
 
 # k3d-specific: update node /etc/hosts for registry access

@@ -60,21 +60,19 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR/oci" ]; then
+  echo "# Loading cached images into containerd ..."
+  y-kubeconfig-import "$KUBECONFIG.tmp"
+  y-image-cache-load-all </dev/null || true
+fi
+
 CONVERGE_FLAGS="--context=$CTX"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
-
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-if [ -d "$CACHE_DIR" ]; then
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack port-forward svc/builds-registry 15000:80 &
-  PF_PID=$!
-  sleep 2
-  KUBECONFIG="$KUBECONFIG.tmp" YSTACK_CLUSTER_REGISTRY=localhost:15000 y-image-cache-load-all || true
-  kill $PF_PID 2>/dev/null || true
-fi
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
