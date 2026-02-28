@@ -9,11 +9,13 @@ YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 CTX=local
 VM_NAME="ystack-master"
 VM_RESOURCES="-m 8G -d 40G -c 4"
+SKIP_CONVERGE=false
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CTX="${1#*=}"; shift ;;
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
+    --skip-converge) SKIP_CONVERGE=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -46,12 +48,33 @@ multipass exec "$VM_NAME" -- sudo cat /etc/rancher/k3s/k3s.yaml \
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CTX
 
+# Set cluster name for y-cluster-local-detect (after context rename, remaining "default" refs are cluster/user)
+sed -i '' -e 's/name: default/name: ystack-multipass/g' \
+          -e 's/cluster: default/cluster: ystack-multipass/g' \
+          -e 's/user: default/user: ystack-multipass/g' "$KUBECONFIG.tmp"
+
+if [ "$SKIP_CONVERGE" = "true" ]; then
+  echo "# --skip-converge: skipping converge, validate, and post-provision steps"
+  y-kubeconfig-import "$KUBECONFIG.tmp"
+  echo "# Done. Master IP: $K3S_NODEIP_MASTER"
+  exit 0
+fi
+
 CONVERGE_FLAGS="--context=$CTX"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR" ]; then
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack port-forward svc/builds-registry 15000:80 &
+  PF_PID=$!
+  sleep 2
+  KUBECONFIG="$KUBECONFIG.tmp" YSTACK_CLUSTER_REGISTRY=localhost:15000 y-image-cache-load-all || true
+  kill $PF_PID 2>/dev/null || true
+fi
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 

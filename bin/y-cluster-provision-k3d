@@ -12,6 +12,7 @@ YSTACK_HOST=ystack.local
 K3D_MEMORY="6G"
 K3D_AGENTS="0"
 K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
+SKIP_CONVERGE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -20,6 +21,7 @@ while [ $# -gt 0 ]; do
     --agents=*) K3D_AGENTS="${1#*=}"; shift ;;
     --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
     --host=*) YSTACK_HOST="${1#*=}"; shift ;;
+    --skip-converge) SKIP_CONVERGE=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -27,20 +29,36 @@ done
 [ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
 
+# Clean up renamed entries from previous provisions (must happen before k3d reads kubeconfig)
+kubectl config delete-context $CTX 2>/dev/null || true
+kubectl config delete-cluster ystack-k3d 2>/dev/null || true
+kubectl config delete-user ystack-k3d 2>/dev/null || true
+
 y-k3d cluster create $K3D_NAME \
   --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
   --no-lb \
   --agents="$K3D_AGENTS" \
-  --servers-memory="$K3D_MEMORY"
+  --servers-memory="$K3D_MEMORY" \
+  --image rancher/k3s:v1.35.1-k3s1
 
 # TODO support agents >0
 K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
 docker update $K3D_DOCKER_NAME $K3D_DOCKER_UPDATE
 docker inspect $K3D_DOCKER_NAME | grep Cpu
 
-kubectl config delete-context $CTX || true
 # Could interfere with some k3d functionality. For example skaffold's k3d detection will probably not work.
 kubectl config rename-context k3d-ystack $CTX
+
+# Set cluster name for y-cluster-local-detect
+sed -i '' -e 's/name: k3d-ystack/name: ystack-k3d/g' \
+          -e 's/cluster: k3d-ystack/cluster: ystack-k3d/g' \
+          -e 's/name: admin@k3d-ystack/name: ystack-k3d/g' \
+          -e 's/user: admin@k3d-ystack/user: ystack-k3d/g' "$KUBECONFIG"
+
+if [ "$SKIP_CONVERGE" = "true" ]; then
+  echo "# --skip-converge: skipping converge, validate, and post-provision steps"
+  exit 0
+fi
 
 y-cluster-converge-ystack --context=$CTX
 
