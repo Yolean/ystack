@@ -10,4 +10,4 @@ spec:
     port: 8000
     allowedRoutes:
       namespaces:
-        from: Same
+        from: All

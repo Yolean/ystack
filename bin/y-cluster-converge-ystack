@@ -70,6 +70,11 @@ apply_base 08-buildkitd-grpcroute
 k -n ystack get grpcroute buildkitd
 echo "# Validated: grpcroute buildkitd exists"
 
+# 6.7 Prometheus HTTPRoute
+apply_base 09-prometheus-httproute
+k -n monitoring get httproute prometheus-now
+echo "# Validated: httproute prometheus-now exists"
+
 # 7. Prod registry
 apply_base 21-prod-registry
 k -n ystack get svc prod-registry
