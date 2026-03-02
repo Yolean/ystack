@@ -12,6 +12,18 @@ VM_RESOURCES="-m 8G -d 40G -c 4"
 SKIP_CONVERGE=false
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-multipass [flags]
+
+Flags:
+  --context=NAME          kubeconfig context name (default: local)
+  --vm-name=NAME          multipass VM name (default: ystack-master)
+  --vm-resources=ARGS     multipass launch resource flags (default: -m 8G -d 40G -c 4)
+  --skip-converge         skip converge, validate, and post-provision steps
+  -h, --help              show this help
+EOF
+      exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
@@ -20,9 +32,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if multipass list | grep "$VM_NAME"
-then
-  echo "Y-stack appears to be running already" && exit
+if multipass list | grep -q "$VM_NAME.*Deleted"; then
+  echo "# Purging deleted VM $VM_NAME ..."
+  multipass purge
+elif multipass list | grep -q "$VM_NAME"; then
+  echo "Y-stack appears to be running already" >&2 && exit 1
 fi
 
 # "noble 24.04.." is currently the version our nodes run

@@ -16,6 +16,20 @@ SKIP_CONVERGE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-k3d [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (default: local)
+  --memory=SIZE         server node memory limit (default: 6G)
+  --agents=N            number of agent nodes (default: 0)
+  --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
+  --host=HOSTNAME       hostname for ingress (default: ystack.local)
+  --skip-converge       skip converge, validate, and post-provision steps
+  -h, --help            show this help
+EOF
+      exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --memory=*) K3D_MEMORY="${1#*=}"; shift ;;
     --agents=*) K3D_AGENTS="${1#*=}"; shift ;;

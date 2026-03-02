@@ -10,6 +10,16 @@ CTX=local
 SKIP_CONVERGE=false
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-lima [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (default: local)
+  --skip-converge       skip converge, validate, and post-provision steps
+  -h, --help            show this help
+EOF
+      exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
