@@ -39,7 +39,9 @@ until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; 
 apply_base 05-gateway-api
 echo "# Validated: Gateway API CRDs installed"
 
-# 3. Gateway
+# 3. Gateway (wait for CRD to be served before applying)
+echo "# Waiting for Gateway resource type to be served ..."
+until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
 apply_base 06-gateway
 k -n ystack get gateway ystack
 echo "# Validated: gateway ystack exists"
