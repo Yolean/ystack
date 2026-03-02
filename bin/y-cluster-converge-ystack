@@ -10,7 +10,7 @@ SERVER_SIDE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CONTEXT="${1#*=}"; shift ;;
-    --server-side) SERVER_SIDE="--server-side=true"; shift ;;
+    --server-side) SERVER_SIDE="--server-side=true --force-conflicts"; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -68,8 +68,14 @@ apply_base 08-buildkitd-grpcroute
 k -n ystack get grpcroute buildkitd
 echo "# Validated: grpcroute buildkitd exists"
 
-# 6.7 Monitoring
-apply_base 30-monitoring
+# 6.7 Monitoring (CRDs may need a moment to register; retry once if CRs fail)
+if apply_base 30-monitoring; then
+  true
+else
+  echo "# Retrying monitoring apply (waiting for CRDs to register) ..."
+  sleep 5
+  apply_base 30-monitoring
+fi
 k -n monitoring get prometheus now
 echo "# Validated: monitoring stack exists"
 

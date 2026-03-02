@@ -26,6 +26,15 @@ EOF
   esac
 done
 
+# Verify prerequisites
+command -v limactl >/dev/null 2>&1 || { echo "ERROR: limactl not found in PATH" >&2; exit 1; }
+
+# Check for existing VM
+if limactl list 2>/dev/null | grep -q "^ystack "; then
+  echo "ERROR: Lima VM 'ystack' already exists. Delete it first with: limactl delete ystack && limactl prune" >&2
+  exit 1
+fi
+
 # Not reusing y-k3s-install, avoid breaking multipass provision
 K3S_INSTALLER_REVISION=50fa2d70c239b3984dab99a2fb1ddaa35c3f2051
 

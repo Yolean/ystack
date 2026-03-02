@@ -40,6 +40,16 @@ EOF
   esac
 done
 
+# Verify prerequisites
+docker info >/dev/null 2>&1 || { echo "ERROR: Docker is not running" >&2; exit 1; }
+command -v y-k3d >/dev/null 2>&1 || { echo "ERROR: y-k3d not found in PATH" >&2; exit 1; }
+
+# Check for existing cluster
+if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
+  echo "ERROR: k3d cluster '$K3D_NAME' already exists. Delete it first with: y-k3d cluster delete $K3D_NAME" >&2
+  exit 1
+fi
+
 [ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
 
