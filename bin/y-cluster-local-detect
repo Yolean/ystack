@@ -2,7 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-CLUSTER=$(kubectl --context=local config view -o jsonpath='{.contexts[?(@.name=="local")].context.cluster}' 2>/dev/null)
+CLUSTER=$(kubectl --context=local config view -o jsonpath='{.contexts[?(@.name=="local")].context.cluster}' 2>/dev/null) || true
 
 case "$CLUSTER" in
   ystack-k3d)       PROVISIONER=k3d ;;

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Parse K3S version from y-k3s-install
+K3S_VERSION=$(grep '^export INSTALL_K3S_VERSION=' "$YSTACK_HOME/bin/y-k3s-install" | cut -d= -f2)
+
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)  ARCH=amd64 ;;
+  aarch64) ARCH=arm64 ;;
+esac
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+AIRGAP_DIR="$CACHE_DIR/airgap/$K3S_VERSION"
+AIRGAP_TAR="$AIRGAP_DIR/k3s-airgap-images-$ARCH.tar.zst"
+
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Already cached: $AIRGAP_TAR"
+  exit 0
+fi
+
+mkdir -p "$AIRGAP_DIR"
+
+DOWNLOAD_URL="https://github.com/k3s-io/k3s/releases/download/${K3S_VERSION/+/%2B}/k3s-airgap-images-$ARCH.tar.zst"
+echo "# Downloading k3s airgap images for $K3S_VERSION ($ARCH) ..."
+curl -fSL -o "$AIRGAP_TAR.tmp" "$DOWNLOAD_URL"
+mv "$AIRGAP_TAR.tmp" "$AIRGAP_TAR"
+echo "# Saved: $AIRGAP_TAR"

@@ -10,6 +10,16 @@ CTX=local
 SKIP_CONVERGE=false
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-lima [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (default: local)
+  --skip-converge       skip converge, validate, and post-provision steps
+  -h, --help            show this help
+EOF
+      exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
@@ -26,6 +36,18 @@ limactl start --tty=false $YSTACK_HOME/k3s/ystack.yaml
 cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
 
 TOPOLOGY_ZONE="local"
+
+# Place airgap tarball before k3s starts
+K3S_VERSION=v1.35.1+k3s1
+ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
+y-k3s-airgap-download
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Placing airgap tarball into VM ..."
+  limactl shell ystack sudo mkdir -p /var/lib/rancher/k3s/agent/images
+  limactl shell ystack sudo cp "$AIRGAP_TAR" /var/lib/rancher/k3s/agent/images/
+fi
 
 limactl shell ystack sudo swapoff -a
 limactl shell ystack sudo cp -rv /tmp/lima/ystack/rancher /etc
@@ -58,6 +80,13 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR/oci" ]; then
+  echo "# Loading cached images into containerd ..."
+  y-kubeconfig-import "$KUBECONFIG.tmp"
+  y-image-cache-load-all </dev/null || true
+fi
+
 echo "==> Testing amd64 compatibility ..."
 k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
 while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
@@ -67,14 +96,5 @@ CONVERGE_FLAGS="--context=$CTX --server-side"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
-
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-if [ -d "$CACHE_DIR" ]; then
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack port-forward svc/builds-registry 15000:80 &
-  PF_PID=$!
-  sleep 2
-  KUBECONFIG="$KUBECONFIG.tmp" YSTACK_CLUSTER_REGISTRY=localhost:15000 y-image-cache-load-all || true
-  kill $PF_PID 2>/dev/null || true
-fi
 
 y-kubeconfig-import "$KUBECONFIG.tmp"

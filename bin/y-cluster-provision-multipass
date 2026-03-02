@@ -12,6 +12,18 @@ VM_RESOURCES="-m 8G -d 40G -c 4"
 SKIP_CONVERGE=false
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-multipass [flags]
+
+Flags:
+  --context=NAME          kubeconfig context name (default: local)
+  --vm-name=NAME          multipass VM name (default: ystack-master)
+  --vm-resources=ARGS     multipass launch resource flags (default: -m 8G -d 40G -c 4)
+  --skip-converge         skip converge, validate, and post-provision steps
+  -h, --help              show this help
+EOF
+      exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
@@ -20,9 +32,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if multipass list | grep "$VM_NAME"
-then
-  echo "Y-stack appears to be running already" && exit
+if multipass list | grep -q "$VM_NAME.*Deleted"; then
+  echo "# Purging deleted VM $VM_NAME ..."
+  multipass purge
+elif multipass list | grep -q "$VM_NAME"; then
+  echo "Y-stack appears to be running already" >&2 && exit 1
 fi
 
 # "noble 24.04.." is currently the version our nodes run
@@ -34,11 +48,26 @@ K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $
 YSTACK_PROD_REGISTRY=$YSTACK_PROD_REGISTRY YSTACK_PROD_REGISTRY_REWRITE=$YSTACK_PROD_REGISTRY_REWRITE y-registry-config k3s-yaml \
   | multipass transfer - "$VM_NAME:/tmp/registries.yaml"
 
+K3S_VERSION=v1.35.1+k3s1
+ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
+
 multipass exec "$VM_NAME" -- sudo bash -cex "
   $(cat $YSTACK_HOME/bin/y-ubuntu-swapoff)
   mkdir -p /etc/rancher/k3s
   mv /tmp/registries.yaml /etc/rancher/k3s/
 ";
+
+y-k3s-airgap-download
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Transferring airgap tarball to VM ..."
+  multipass transfer "$AIRGAP_TAR" "$VM_NAME:/tmp/k3s-airgap.tar.zst"
+  multipass exec "$VM_NAME" -- sudo bash -cex "
+    mkdir -p /var/lib/rancher/k3s/agent/images
+    mv /tmp/k3s-airgap.tar.zst /var/lib/rancher/k3s/agent/images/
+  "
+fi
 
 multipass exec "$VM_NAME" -- sudo INSTALL_K3S_EXEC="$INSTALL_K3S_EXEC" bash -cex "$(cat $YSTACK_HOME/bin/y-k3s-install)";
 
@@ -60,21 +89,19 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR/oci" ]; then
+  echo "# Loading cached images into containerd ..."
+  y-kubeconfig-import "$KUBECONFIG.tmp"
+  y-image-cache-load-all </dev/null || true
+fi
+
 CONVERGE_FLAGS="--context=$CTX"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
 KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
 
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
-
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-if [ -d "$CACHE_DIR" ]; then
-  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack port-forward svc/builds-registry 15000:80 &
-  PF_PID=$!
-  sleep 2
-  KUBECONFIG="$KUBECONFIG.tmp" YSTACK_CLUSTER_REGISTRY=localhost:15000 y-image-cache-load-all || true
-  kill $PF_PID 2>/dev/null || true
-fi
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 

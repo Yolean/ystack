@@ -16,6 +16,20 @@ SKIP_CONVERGE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-k3d [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (default: local)
+  --memory=SIZE         server node memory limit (default: 6G)
+  --agents=N            number of agent nodes (default: 0)
+  --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
+  --host=HOSTNAME       hostname for ingress (default: ystack.local)
+  --skip-converge       skip converge, validate, and post-provision steps
+  -h, --help            show this help
+EOF
+      exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --memory=*) K3D_MEMORY="${1#*=}"; shift ;;
     --agents=*) K3D_AGENTS="${1#*=}"; shift ;;
@@ -29,6 +43,18 @@ done
 [ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
 
+# k3s airgap image volume mount
+K3S_VERSION=v1.35.1+k3s1
+ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
+y-k3s-airgap-download
+K3D_AIRGAP_VOL=""
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Mounting airgap tarball: $AIRGAP_TAR"
+  K3D_AIRGAP_VOL="-v $AIRGAP_TAR:/var/lib/rancher/k3s/agent/images/k3s-airgap-images.tar.zst@server:0"
+fi
+
 # Clean up renamed entries from previous provisions (must happen before k3d reads kubeconfig)
 kubectl config delete-context $CTX 2>/dev/null || true
 kubectl config delete-cluster ystack-k3d 2>/dev/null || true
@@ -39,7 +65,8 @@ y-k3d cluster create $K3D_NAME \
   --no-lb \
   --agents="$K3D_AGENTS" \
   --servers-memory="$K3D_MEMORY" \
-  --image rancher/k3s:v1.35.1-k3s1
+  --image rancher/k3s:v1.35.1-k3s1 \
+  $K3D_AIRGAP_VOL
 
 # TODO support agents >0
 K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
@@ -58,6 +85,12 @@ sed -i '' -e 's/name: k3d-ystack/name: ystack-k3d/g' \
 if [ "$SKIP_CONVERGE" = "true" ]; then
   echo "# --skip-converge: skipping converge, validate, and post-provision steps"
   exit 0
+fi
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR/oci" ]; then
+  echo "# Loading cached images into containerd ..."
+  y-image-cache-load-all </dev/null || true
 fi
 
 y-cluster-converge-ystack --context=$CTX

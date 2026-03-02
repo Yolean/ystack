@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+IMAGES=$(y-image-list-ystack)
+while IFS= read -r image; do
+  [ -z "$image" ] && continue
+  y-image-cache-load "$image" </dev/null
+done <<< "$IMAGES"
