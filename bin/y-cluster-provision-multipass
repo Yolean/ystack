@@ -102,8 +102,6 @@ fi
 CONVERGE_FLAGS="--context=$CTX --server-side"
 y-cluster-converge-ystack $CONVERGE_FLAGS
 
-kubectl --context=$CTX -n ystack apply -k $YSTACK_HOME/registry/containerd-config/
-
 y-cluster-validate --context=$CTX
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"

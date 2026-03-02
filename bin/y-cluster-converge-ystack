@@ -90,11 +90,7 @@ apply_base 21-prod-registry
 k -n ystack get svc prod-registry
 echo "# Validated: prod-registry service exists"
 
-# 8. Node update hosts
-apply_base 22-node-update-hosts
-echo "# Applied: node-update-hosts"
-
-# 9. Buildkit
+# 8. Buildkit
 apply_base 40-buildkit
 k -n ystack get statefulset buildkitd
 echo "# Validated: buildkitd statefulset exists"
