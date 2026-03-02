@@ -104,7 +104,7 @@ k delete --wait=false pod amd64test
 CONVERGE_FLAGS="--context=$CTX --server-side"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
-KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
+KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate-ystack --context=$CTX
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
