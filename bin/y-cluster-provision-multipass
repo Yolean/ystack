@@ -102,10 +102,10 @@ fi
 CONVERGE_FLAGS="--context=$CTX --server-side"
 y-cluster-converge-ystack $CONVERGE_FLAGS
 
-y-cluster-validate-ystack --context=$CTX
-
 echo "# Updating /etc/hosts (requires sudo) ..."
 y-k8s-ingress-hosts -write || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
+
+y-cluster-validate-ystack --context=$CTX
 y-mkcert-after-k8s-ingress-hosts || echo "# WARNING: failed to generate mkcert certs. Run manually: y-mkcert-after-k8s-ingress-hosts"
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"
