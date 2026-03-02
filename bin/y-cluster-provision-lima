@@ -107,3 +107,7 @@ KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-validate --context=$CTX
 
 y-kubeconfig-import "$KUBECONFIG.tmp"
+
+echo "# Updating /etc/hosts (requires sudo) ..."
+y-k8s-ingress-hosts -write || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
+y-mkcert-after-k8s-ingress-hosts || echo "# WARNING: failed to generate mkcert certs. Run manually: y-mkcert-after-k8s-ingress-hosts"
