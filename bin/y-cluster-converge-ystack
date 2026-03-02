@@ -33,9 +33,10 @@ apply_base 00-ystack-namespace
 k get ns ystack
 echo "# Validated: namespace ystack exists"
 
-# 2. Gateway API CRDs
+# 2. Gateway API CRDs (managed by k3s traefik-crd HelmChart) + traefik Gateway provider config
+echo "# Waiting for Gateway API CRDs (from k3s traefik-crd) ..."
+until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
 apply_base 05-gateway-api
-k get crd gateways.gateway.networking.k8s.io
 echo "# Validated: Gateway API CRDs installed"
 
 # 3. Gateway
