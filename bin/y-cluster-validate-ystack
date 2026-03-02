@@ -96,16 +96,16 @@ k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
   || report "buildkitd statefulset" "not found"
 
 # 9. Registry pod running (wait for rollout)
-echo "  .... waiting for registry rollout (up to 60s)"
-ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=60s 2>&1) \
+echo "  .... waiting for registry rollout (up to 10s)"
+ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=10s 2>&1) \
   && report "registry rollout" "ok" \
   || report "registry rollout" "$ROLLOUT_REG"
 
-# 10. bucket-create job completed (wait up to 60s)
-echo "  .... waiting for bucket-create job (up to 60s)"
-k -n ystack wait --for=condition=complete job/bucket-create-ystack-builds --timeout=60s >/dev/null 2>&1 \
+# 10. bucket-create job completed
+echo "  .... waiting for bucket-create job (up to 10s)"
+k -n ystack wait --for=condition=complete job/bucket-create-ystack-builds --timeout=10s >/dev/null 2>&1 \
   && report "bucket-create job" "ok" \
-  || report "bucket-create job" "not complete within 60s"
+  || report "bucket-create job" "not complete within 10s"
 
 # 11. In-cluster registry access via crane port-forward
 echo ""
