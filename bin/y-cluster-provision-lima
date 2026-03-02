@@ -104,6 +104,12 @@ k delete --wait=false pod amd64test
 CONVERGE_FLAGS="--context=$CTX --server-side"
 KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
 
+# lima-specific: update VM /etc/hosts so containerd can resolve registry services
+BUILDS_REGISTRY_IP=$(KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
+limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
+
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
