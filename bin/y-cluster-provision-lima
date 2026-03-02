@@ -89,28 +89,28 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-if [ -d "$CACHE_DIR/oci" ]; then
-  echo "# Loading cached images into containerd ..."
-  y-kubeconfig-import "$KUBECONFIG.tmp"
-  y-image-cache-load-all </dev/null || true
-fi
-
 echo "==> Testing amd64 compatibility ..."
 k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
 while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
 k delete --wait=false pod amd64test
 
+# Import kubeconfig before cache-load and converge (y-kubeconfig-import moves the .tmp file)
+y-kubeconfig-import "$KUBECONFIG.tmp"
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
+if [ -d "$CACHE_DIR/oci" ]; then
+  echo "# Loading cached images into containerd ..."
+  y-image-cache-load-all </dev/null || true
+fi
+
 CONVERGE_FLAGS="--context=$CTX --server-side"
-KUBECONFIG="$KUBECONFIG.tmp" y-cluster-converge-ystack $CONVERGE_FLAGS
+y-cluster-converge-ystack $CONVERGE_FLAGS
 
 # lima-specific: update VM /etc/hosts so containerd can resolve registry services
-BUILDS_REGISTRY_IP=$(KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
-PROD_REGISTRY_IP=$(KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
 limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
-
-y-kubeconfig-import "$KUBECONFIG.tmp"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
 y-k8s-ingress-hosts -write || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"

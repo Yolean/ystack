@@ -70,12 +70,16 @@ kubectl config delete-context $CTX 2>/dev/null || true
 kubectl config delete-cluster ystack-k3d 2>/dev/null || true
 kubectl config delete-user ystack-k3d 2>/dev/null || true
 
+# Port-map traefik ports so the host can reach the gateway (Docker bridge IPs aren't routable on macOS)
+K3D_PORT_BIND="${YSTACK_PORTS_IP:+$YSTACK_PORTS_IP:}"
+
 y-k3d cluster create $K3D_NAME \
   --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
-  --no-lb \
   --agents="$K3D_AGENTS" \
   --servers-memory="$K3D_MEMORY" \
   --image rancher/k3s:v1.35.1-k3s1 \
+  -p "${K3D_PORT_BIND}80:80@loadbalancer" \
+  -p "${K3D_PORT_BIND}443:443@loadbalancer" \
   $K3D_AIRGAP_VOL
 
 # TODO support agents >0
