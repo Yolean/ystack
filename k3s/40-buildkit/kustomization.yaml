@@ -2,7 +2,7 @@ namespace: ystack
 bases:
 - ../../buildkit
 - ../../buildkit/gateway-proxy
-- ../../versitygw/standalone,defaultsecret
+- ../../minio/standalone,defaultsecret
 resources:
 - buildkitd-nodeport-service.yaml
 patchesStrategicMerge:

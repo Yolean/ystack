@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: minio-hl-svc
-  labels:
-    ystack-kubefwd: never

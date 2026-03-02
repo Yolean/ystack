@@ -1,14 +1,12 @@
-# Deprecated (maybe), kept while the minio instance was renamed
 apiVersion: v1
 kind: Service
 metadata:
   name: blobs-minio
   labels:
     app: minio
-    release: blobs
 spec:
   selector:
-    v1beta1.min.io/instance: minio
+    app: minio
   ports:
   - name: http
     port: 80
