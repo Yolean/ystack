@@ -48,6 +48,7 @@ spec:
         - --http-address=0.0.0.0:10902
         - --remote-write.address=0.0.0.0:19291
         - --label=receive_replica="0"
+        - --objstore.config-file=/etc/thanos/objstore.yml
         ports:
         - name: grpc
           containerPort: 10901
@@ -74,6 +75,11 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+        - name: objstore-config
+          mountPath: /etc/thanos
       volumes:
       - name: data
         emptyDir: {}
+      - name: objstore-config
+        configMap:
+          name: thanos-objstore

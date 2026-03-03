@@ -6,3 +6,18 @@ namespace: monitoring
 resources:
 - thanos-receive.yaml
 - thanos-query.yaml
+- bucket-create.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+- name: minio
+  literals:
+  - accesskey=YstackEXAMPLEKEY
+  - secretkey=github.com/Yolean/ystack-EXAMPLE
+
+configMapGenerator:
+- name: thanos-objstore
+  files:
+  - objstore.yml

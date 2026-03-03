@@ -1,0 +1,7 @@
+type: S3
+config:
+  bucket: thanos-receive
+  endpoint: blobs-versitygw.ystack.svc.cluster.local
+  insecure: true
+  access_key: YstackEXAMPLEKEY
+  secret_key: github.com/Yolean/ystack-EXAMPLE
