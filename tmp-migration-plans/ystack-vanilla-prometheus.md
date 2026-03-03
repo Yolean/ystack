@@ -6,7 +6,17 @@ ystack provides a monitoring stack that downstream projects inherit. The stack c
 depends on prometheus-operator CRDs. This plan replaces all CRD-based resources with
 plain Kubernetes manifests, removing the operator dependency entirely.
 
-The operator manages 5 CRDs in ystack today:
+### Prerequisite: merge `local-cluster-provision-alignment`
+
+This plan assumes the `agents/local-cluster-provision-alignment` branch has been merged.
+That branch already:
+- Removes `kubernetes-assert`, `specs/`, `y-assert-support/`, `bin/y-cluster-assert-install`, `bin/y-assert`
+- Replaces the envoy monitoring proxy with a Gateway API `HTTPRoute` (`monitoring/httproute/`)
+- Consolidates monitoring into `k3s/30-monitoring/kustomization.yaml`
+- Adds `bin/y-cluster-converge-ystack` and `bin/y-cluster-validate-ystack`
+- Upgrades prometheus-operator to v0.89.0
+
+What remains after that merge is 5 prometheus-operator CRDs:
 
 | CRD kind | Name | File | What it does |
 |---|---|---|---|
@@ -16,9 +26,16 @@ The operator manages 5 CRDs in ystack today:
 | ServiceMonitor | kube-state-metrics | `monitoring/kube-state-metrics/kube-state-metrics-servicemonitor.yaml` | Scrapes kube-state-metrics endpoints |
 | PrometheusRule | node-exporter | `monitoring/node-exporter/example-rules.yaml` | Recording rules for CPU metrics |
 
-After migration, no `monitoring.coreos.com` API references will remain. Downstream projects
-can then migrate their own PodMonitor/ServiceMonitor/PrometheusRule CRDs to annotations and
-config files at their own pace, since the operator itself is no longer installed by ystack.
+And these references to the operator:
+
+| File | Reference |
+|---|---|
+| `monitoring/prometheus-operator/kustomization.yaml` | Installs operator from GitHub ref v0.89.0 |
+| `k3s/30-monitoring/kustomization.yaml` | Lists `../../monitoring/prometheus-operator` as a base |
+| `monitoring/node-exporter-now/kustomization.yaml` | Patches PodMonitor and PrometheusRule with `prometheus: now` label |
+| `monitoring/kube-state-metrics-now/kustomization.yaml` | Patches ServiceMonitor with `prometheus: now` label |
+
+After this migration, no `monitoring.coreos.com` API references will remain.
 
 ---
 
@@ -43,7 +60,7 @@ These affect config and queries:
 - **`expand-external-labels` now default**: Remove feature flag if present.
 - **Distroless image UID**: Uses 65532 (nonroot), not 65534 (nobody).
   Update `securityContext.runAsUser` accordingly.
-- **Alertmanager v1 API removed**: ystack tests already use v2 API (`/api/v2/alerts`), no change needed.
+- **Alertmanager v1 API removed**: v0.31.0 uses only v2 API.
 
 ---
 
@@ -105,9 +122,8 @@ scrape_configs:
         regex: kube_replicaset_status_observed_generation
         action: drop
 
-  # Generic annotation-based pod discovery
-  # Pods with prometheus.io/scrape: "true" are scraped automatically.
-  # This replaces PodMonitor CRDs for any workload (e.g. kubernetes-assert).
+  # Generic annotation-based pod discovery.
+  # Any pod with prometheus.io/scrape: "true" is scraped automatically.
   - job_name: kubernetes-pods
     kubernetes_sd_configs:
       - role: pod
@@ -134,9 +150,8 @@ scrape_configs:
         action: replace
         target_label: node
 
-  # Generic annotation-based service/endpoint discovery
-  # Services with prometheus.io/scrape: "true" are scraped automatically.
-  # This replaces ServiceMonitor CRDs for any workload.
+  # Generic annotation-based service/endpoint discovery.
+  # Any Service with prometheus.io/scrape: "true" is scraped automatically.
   - job_name: kubernetes-service-endpoints
     kubernetes_sd_configs:
       - role: endpoints
@@ -507,76 +522,66 @@ resources:
 
 ---
 
-## Step 6: Delete prometheus-operator
+## Step 6: Delete prometheus-operator and update references
 
 ### 6a. Delete the directory `monitoring/prometheus-operator/`
 
-This removes:
-- `monitoring/prometheus-operator/kustomization.yaml` (which pulled the operator from
-  `github.com/prometheus-operator/prometheus-operator?ref=6a98ac44054ecddfa857bf6dd2d2f5c7f661992a`)
+This removes the kustomization that pulled the operator from GitHub ref v0.89.0.
+
+### 6b. Update `k3s/30-monitoring/kustomization.yaml`
+
+Remove the `../../monitoring/prometheus-operator` base. Result:
+
+```yaml
+bases:
+  - ../../monitoring/namespace
+  - ../../monitoring/prometheus-now
+  - ../../monitoring/alertmanager-main
+  - ../../monitoring/kube-state-metrics-now
+  - ../../monitoring/node-exporter-now
+```
 
 ---
 
-## Step 7: Update provisioning scripts
+## Step 7: Update validation
 
-### 7a. `bin/y-cluster-provision-k3s-lima` (line ~70)
+### 7a. `bin/y-cluster-validate-ystack`
 
-Remove `prometheus-operator \` from the monitoring bases loop:
+The validate script currently checks `k -n monitoring get prometheus now` which is a
+prometheus-operator CRD check. Replace with a plain resource check:
 
 ```bash
-[ "$MONITORING_ENABLE" != "true" ] || for base in \
-    namespace \
-    prometheus-now \
-    alertmanager-main \
-    kube-state-metrics-now \
-    node-exporter-now \
-    ; do \
+# Replace:
+#   k -n monitoring get prometheus now
+# With:
+k -n monitoring rollout status deploy/prometheus-now --timeout=10s
 ```
 
-### 7b. `bin/y-cluster-provision-k3s-multipass`
+### 7b. `bin/y-cluster-converge-ystack`
 
-Apply the same change if it has a similar monitoring loop.
+The converge script currently checks `k -n monitoring get prometheus now` and has a
+retry for CRD registration. Replace with:
 
-### 7c. `bin/y-cluster-assert-install`
-
-Remove the prometheus-operator bundle install (lines 17-19):
 ```bash
-# DELETE these lines:
-kubectl $ctx -n default create -f https://github.com/prometheus-operator/prometheus-operator/raw/$OPERATOR_VERSION/bundle.yaml
-kubectl-waitretry $ctx -n default --for=condition=Ready pod -l app.kubernetes.io/name=prometheus-operator
+# Replace the monitoring block with:
+apply_base 30-monitoring
+k -n monitoring rollout status deploy/prometheus-now --timeout=60s
+echo "# Validated: monitoring stack exists"
 ```
 
-Also remove the `OPERATOR_VERSION` variable (line 5).
+The CRD registration retry is no longer needed since there are no CRDs.
 
 ---
 
-## Step 8: Update tests
+## Service name compatibility
 
-### 8a. `specs/monitoring.spec.js`
+These service DNS names are preserved (Grafana datasource and Gateway API HTTPRoute
+depend on them):
+- `prometheus-now.monitoring.svc.cluster.local:9090`
+- `alertmanager-main.monitoring.svc.cluster.local:9093`
 
-The test at line 15 checks for a PodMonitor-style scrape pool:
-```js
-expect(config.data.yaml).toMatch(/job_name: podMonitor\/monitoring\/kubernetes-assert\/0/);
-```
-
-With annotation-based discovery, kubernetes-assert pods need the annotation
-`prometheus.io/scrape: "true"`. The scrape pool name becomes `kubernetes-pods`.
-Update the test:
-
-```js
-expect(config.data.yaml).toMatch(/job_name: kubernetes-pods/);
-```
-
-The test at line 21 checks for active targets in that pool. Update:
-```js
-expect(targets.data.activeTargets).toEqual(
-  expect.arrayContaining([
-    expect.objectContaining({scrapePool: 'kubernetes-pods'})
-  ])
-);
-```
-
-The Prometheus and Alertmanager API tests (lines 5-13) require no changes.
+The HTTPRoute at `monitoring/httproute/httproute.yaml` routes to `prometheus-now:9090`
+and continues to work unchanged.
 
 ---
 
@@ -626,12 +631,13 @@ See also: https://monitoring.mixins.dev/ for the full mixin registry.
 ## Verification checklist
 
 1. `grep -r "monitoring.coreos.com" monitoring/` returns no results
-2. `kustomize build monitoring/prometheus-now` produces Deployment + ConfigMaps + Service + RBAC
-3. `kustomize build monitoring/alertmanager-main` produces Deployment + Secret + Service
-4. `kustomize build monitoring/node-exporter-now` produces DaemonSet + RBAC, no CRDs
-5. `kustomize build monitoring/kube-state-metrics-now` produces Deployment + RBAC, no CRDs
-6. After applying with `MONITORING_ENABLE=true`, Prometheus is reachable at
-   `prometheus-now.monitoring:9090` and reports `reloadConfigSuccess: true`
-7. Alertmanager is reachable at `alertmanager-main.monitoring:9093/api/v2/alerts`
-8. Prometheus discovers node-exporter and kube-state-metrics targets
-9. `specs/monitoring.spec.js` passes
+2. `grep -r "monitoring.coreos.com" k3s/` returns no results
+3. `kustomize build monitoring/prometheus-now` produces Deployment + ConfigMaps + Service + RBAC
+4. `kustomize build monitoring/alertmanager-main` produces Deployment + Secret + Service
+5. `kustomize build monitoring/node-exporter-now` produces DaemonSet + RBAC, no CRDs
+6. `kustomize build monitoring/kube-state-metrics-now` produces Deployment + RBAC, no CRDs
+7. `kustomize build k3s/30-monitoring` produces all of the above combined, no operator
+8. `y-cluster-converge-ystack --context=<name>` applies successfully without CRDs
+9. `y-cluster-validate-ystack --context=<name>` passes the monitoring check
+10. Prometheus is reachable via HTTPRoute and reports `reloadConfigSuccess: true`
+11. Prometheus discovers node-exporter and kube-state-metrics targets
