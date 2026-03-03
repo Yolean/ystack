@@ -127,7 +127,7 @@ limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystac
 limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts -write || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
+y-k8s-ingress-hosts -write -override-ip 127.0.0.1 || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
 
 y-cluster-validate-ystack --context=$CTX
 y-mkcert-after-k8s-ingress-hosts || echo "# WARNING: failed to generate mkcert certs. Run manually: y-mkcert-after-k8s-ingress-hosts"
