@@ -17,17 +17,31 @@ Usage: y-cluster-provision-lima [flags]
 Flags:
   --context=NAME        kubeconfig context name (default: local)
   --skip-converge       skip converge, validate, and post-provision steps
+  --teardown            delete existing VM and exit
   -h, --help            show this help
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
 # Verify prerequisites
 command -v limactl >/dev/null 2>&1 || { echo "ERROR: limactl not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if limactl list 2>/dev/null | grep -q "^ystack "; then
+    limactl delete -f ystack
+    limactl prune
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No Lima VM 'ystack' found"
+  fi
+  exit 0
+fi
 
 # Check for existing VM
 if limactl list 2>/dev/null | grep -q "^ystack "; then

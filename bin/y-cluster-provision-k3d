@@ -27,6 +27,7 @@ Flags:
   --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
   --host=HOSTNAME       hostname for ingress (default: ystack.local)
   --skip-converge       skip converge, validate, and post-provision steps
+  --teardown            delete existing cluster and exit
   -h, --help            show this help
 EOF
       exit 0 ;;
@@ -36,6 +37,7 @@ EOF
     --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
     --host=*) YSTACK_HOST="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -43,6 +45,17 @@ done
 # Verify prerequisites
 docker info >/dev/null 2>&1 || { echo "ERROR: Docker is not running" >&2; exit 1; }
 command -v y-k3d >/dev/null 2>&1 || { echo "ERROR: y-k3d not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
+    y-k3d cluster delete $K3D_NAME
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No k3d cluster '$K3D_NAME' found"
+  fi
+  exit 0
+fi
 
 # Check for existing cluster
 if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then

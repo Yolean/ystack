@@ -21,6 +21,7 @@ Flags:
   --vm-name=NAME          multipass VM name (default: ystack-master)
   --vm-resources=ARGS     multipass launch resource flags (default: -m 8G -d 40G -c 4)
   --skip-converge         skip converge, validate, and post-provision steps
+  --teardown              delete existing VM and exit
   -h, --help              show this help
 EOF
       exit 0 ;;
@@ -28,12 +29,25 @@ EOF
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
 # Verify prerequisites
 command -v multipass >/dev/null 2>&1 || { echo "ERROR: multipass not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if multipass list | grep -q "$VM_NAME"; then
+    multipass delete "$VM_NAME"
+    multipass purge
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No multipass VM '$VM_NAME' found"
+  fi
+  exit 0
+fi
 
 if multipass list | grep -q "$VM_NAME.*Deleted"; then
   echo "# Purging deleted VM $VM_NAME ..."
