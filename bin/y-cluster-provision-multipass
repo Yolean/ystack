@@ -21,6 +21,7 @@ Flags:
   --vm-name=NAME          multipass VM name (default: ystack-master)
   --vm-resources=ARGS     multipass launch resource flags (default: -m 8G -d 40G -c 4)
   --skip-converge         skip converge, validate, and post-provision steps
+  --teardown              delete existing VM and exit
   -h, --help              show this help
 EOF
       exit 0 ;;
@@ -28,12 +29,25 @@ EOF
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
 # Verify prerequisites
 command -v multipass >/dev/null 2>&1 || { echo "ERROR: multipass not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if multipass list | grep -q "$VM_NAME"; then
+    multipass delete "$VM_NAME"
+    multipass purge
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No multipass VM '$VM_NAME' found"
+  fi
+  exit 0
+fi
 
 if multipass list | grep -q "$VM_NAME.*Deleted"; then
   echo "# Purging deleted VM $VM_NAME ..."
@@ -51,18 +65,13 @@ K3S_NODEIP_MASTER="$(multipass info $VM_NAME | grep "IPv4" | awk -F' ' '{print $
 YSTACK_PROD_REGISTRY=$YSTACK_PROD_REGISTRY YSTACK_PROD_REGISTRY_REWRITE=$YSTACK_PROD_REGISTRY_REWRITE y-registry-config k3s-yaml \
   | multipass transfer - "$VM_NAME:/tmp/registries.yaml"
 
-K3S_VERSION=v1.35.1+k3s1
-ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
-
 multipass exec "$VM_NAME" -- sudo bash -cex "
   $(cat $YSTACK_HOME/bin/y-ubuntu-swapoff)
   mkdir -p /etc/rancher/k3s
   mv /tmp/registries.yaml /etc/rancher/k3s/
 ";
 
-y-k3s-airgap-download
+AIRGAP_TAR=$(y-k3s-airgap-download)
 if [ -f "$AIRGAP_TAR" ]; then
   echo "# Transferring airgap tarball to VM ..."
   multipass transfer "$AIRGAP_TAR" "$VM_NAME:/tmp/k3s-airgap.tar.zst"
@@ -109,9 +118,8 @@ multipass exec "$VM_NAME" -- sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-regist
 multipass exec "$VM_NAME" -- sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts -write || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
+y-k8s-ingress-hosts -write
 
 y-cluster-validate-ystack --context=$CTX
-y-mkcert-after-k8s-ingress-hosts || echo "# WARNING: failed to generate mkcert certs. Run manually: y-mkcert-after-k8s-ingress-hosts"
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"

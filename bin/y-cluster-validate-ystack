@@ -131,27 +131,21 @@ EXAMPLE_DIR="$YSTACK_HOME/examples/basic-dev-inner-loop"
 EXAMPLE_NS=default
 y-buildkitd-available --context="$CONTEXT" 2>&1 || true
 echo "  .... building and deploying example app"
-if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= skaffold run --kube-context="$CONTEXT" -n "$EXAMPLE_NS") 2>&1 | tail -5; then
+if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS") 2>&1 | tail -5; then
   report "skaffold run" "ok"
 
-  # Apply gateway route for the example
+  # Apply gateway route for the example and wait for traefik to reconcile
   k -n "$EXAMPLE_NS" apply -k "$EXAMPLE_DIR/k8s/gatewayapi/" >/dev/null 2>&1
-
-  # Wait for rollout and test HTTP response
-  echo "  .... waiting for example app rollout (up to 10s)"
-  if k -n "$EXAMPLE_NS" rollout status deploy/node --timeout=10s >/dev/null 2>&1; then
-    report "example app rollout" "ok"
-
-    # Test via gateway using Host header (no /etc/hosts dependency)
-    GATEWAY_IP=$(k -n ystack get gateway ystack -o jsonpath='{.status.addresses[0].value}' 2>/dev/null)
-    RESPONSE=$(curl -s --connect-timeout 3 -H "Host: node-backend.ystack.svc.cluster.local" "http://$GATEWAY_IP/" 2>/dev/null)
-    if [ "$RESPONSE" = "Hello World!" ]; then
-      report "example app response" "ok"
-    else
-      report "example app response" "got '$RESPONSE'"
-    fi
+  echo "  .... waiting for gateway route to propagate"
+  for i in 1 2 3 4 5; do
+    RESPONSE=$(curl -s --connect-timeout 10 -H "Host: node-backend.ystack.svc.cluster.local" "http://builds-registry.ystack.svc.cluster.local/" 2>/dev/null)
+    [ "$RESPONSE" = "Hello World!" ] && break
+    sleep 2
+  done
+  if [ "$RESPONSE" = "Hello World!" ]; then
+    report "example app response" "ok"
   else
-    report "example app rollout" "timed out"
+    report "example app response" "got '$RESPONSE'"
   fi
 
   # Clean up

@@ -27,6 +27,7 @@ Flags:
   --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
   --host=HOSTNAME       hostname for ingress (default: ystack.local)
   --skip-converge       skip converge, validate, and post-provision steps
+  --teardown            delete existing cluster and exit
   -h, --help            show this help
 EOF
       exit 0 ;;
@@ -36,6 +37,7 @@ EOF
     --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
     --host=*) YSTACK_HOST="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -43,6 +45,17 @@ done
 # Verify prerequisites
 docker info >/dev/null 2>&1 || { echo "ERROR: Docker is not running" >&2; exit 1; }
 command -v y-k3d >/dev/null 2>&1 || { echo "ERROR: y-k3d not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
+    y-k3d cluster delete $K3D_NAME
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No k3d cluster '$K3D_NAME' found"
+  fi
+  exit 0
+fi
 
 # Check for existing cluster
 if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
@@ -54,18 +67,14 @@ fi
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
 
 # k3s airgap image volume mount
-K3S_VERSION=v1.35.1+k3s1
-ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
-y-k3s-airgap-download
+AIRGAP_TAR=$(y-k3s-airgap-download)
 K3D_AIRGAP_VOL=""
 if [ -f "$AIRGAP_TAR" ]; then
   echo "# Mounting airgap tarball: $AIRGAP_TAR"
   K3D_AIRGAP_VOL="-v $AIRGAP_TAR:/var/lib/rancher/k3s/agent/images/k3s-airgap-images.tar.zst@server:0"
 fi
 
-# Clean up renamed entries from previous provisions (must happen before k3d reads kubeconfig)
+# Clean up renamed entries from failed provisions (must happen before k3d reads kubeconfig)
 kubectl config delete-context $CTX 2>/dev/null || true
 kubectl config delete-cluster ystack-k3d 2>/dev/null || true
 kubectl config delete-user ystack-k3d 2>/dev/null || true
@@ -73,11 +82,15 @@ kubectl config delete-user ystack-k3d 2>/dev/null || true
 # Port-map traefik ports so the host can reach the gateway (Docker bridge IPs aren't routable on macOS)
 K3D_PORT_BIND="${YSTACK_PORTS_IP:+$YSTACK_PORTS_IP:}"
 
+# K3S version from the single source of truth (y-k3s-install)
+K3S_VERSION=$(grep '^export INSTALL_K3S_VERSION=' "$YSTACK_HOME/bin/y-k3s-install" | cut -d= -f2)
+K3D_IMAGE="rancher/k3s:${K3S_VERSION//+/-}"
+
 y-k3d cluster create $K3D_NAME \
   --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
   --agents="$K3D_AGENTS" \
   --servers-memory="$K3D_MEMORY" \
-  --image rancher/k3s:v1.35.1-k3s1 \
+  --image "$K3D_IMAGE" \
   -p "${K3D_PORT_BIND}80:80@loadbalancer" \
   -p "${K3D_PORT_BIND}443:443@loadbalancer" \
   $K3D_AIRGAP_VOL
@@ -116,7 +129,6 @@ docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-regist
 docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts -write || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
+y-k8s-ingress-hosts -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"
 
 y-cluster-validate-ystack --context=$CTX
-y-mkcert-after-k8s-ingress-hosts || echo "# WARNING: failed to generate mkcert certs. Run manually: y-mkcert-after-k8s-ingress-hosts"
