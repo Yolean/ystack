@@ -17,7 +17,20 @@ if [ ! -f "$OCI_DIR/index.json" ]; then
 fi
 
 echo "# Loading $TAG_REF into local cluster containerd"
-tar -cf - -C "$OCI_DIR" . | y-cluster-local-ctr images import --all-platforms --digests -
+
+PROVISIONER=$(y-cluster-local-detect)
+
+if [ "$PROVISIONER" = "multipass" ]; then
+  # multipass exec truncates large stdin pipes; transfer as file instead
+  TMPTAR=$(mktemp /tmp/ystack-cache-load-XXXXXX.tar)
+  trap "rm -f '$TMPTAR'" EXIT
+  tar -cf "$TMPTAR" -C "$OCI_DIR" .
+  multipass transfer "$TMPTAR" "ystack-master:/tmp/oci-import.tar"
+  multipass exec ystack-master -- sudo k3s ctr images import --all-platforms --digests /tmp/oci-import.tar
+  multipass exec ystack-master -- rm -f /tmp/oci-import.tar
+else
+  tar -cf - -C "$OCI_DIR" . | y-cluster-local-ctr images import --all-platforms --digests -
+fi
 
 # Ensure digest-pinned references work (ctr --digests only creates them for Docker Hub annotations)
 CACHED_DIGEST=$(jq -r '.manifests[0].digest' "$OCI_DIR/index.json")

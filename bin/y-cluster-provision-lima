@@ -61,11 +61,7 @@ cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
 TOPOLOGY_ZONE="local"
 
 # Place airgap tarball before k3s starts
-K3S_VERSION=v1.35.1+k3s1
-ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-AIRGAP_TAR="$CACHE_DIR/airgap/$K3S_VERSION/k3s-airgap-images-$ARCH.tar.zst"
-y-k3s-airgap-download
+AIRGAP_TAR=$(y-k3s-airgap-download)
 if [ -f "$AIRGAP_TAR" ]; then
   echo "# Placing airgap tarball into VM ..."
   limactl shell ystack sudo mkdir -p /var/lib/rancher/k3s/agent/images
@@ -127,7 +123,7 @@ limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystac
 limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts -write -override-ip 127.0.0.1 || echo "# WARNING: failed to update /etc/hosts. Run manually: y-k8s-ingress-hosts -write"
+y-k8s-ingress-hosts -write -override-ip 127.0.0.1
 
 y-cluster-validate-ystack --context=$CTX
-y-mkcert-after-k8s-ingress-hosts || echo "# WARNING: failed to generate mkcert certs. Run manually: y-mkcert-after-k8s-ingress-hosts"
+y-mkcert-after-k8s-ingress-hosts
