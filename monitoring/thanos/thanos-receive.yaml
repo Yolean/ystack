@@ -49,6 +49,10 @@ spec:
         - --remote-write.address=0.0.0.0:19291
         - --label=receive_replica="0"
         - --objstore.config-file=/etc/thanos/objstore.yml
+        # WARNING: Do not use these min/max-block-duration overrides in production.
+        # They force frequent block cuts for experiment verification only.
+        - --tsdb.min-block-duration=5m
+        - --tsdb.max-block-duration=5m
         ports:
         - name: grpc
           containerPort: 10901
