@@ -71,14 +71,15 @@ apply_base 08-buildkitd-grpcroute
 k -n ystack get grpcroute buildkitd
 echo "# Validated: grpcroute buildkitd exists"
 
-# 6.7 Monitoring (CRDs may need a moment to register; retry once if CRs fail)
-if apply_base 30-monitoring; then
-  true
-else
-  echo "# Retrying monitoring apply (waiting for CRDs to register) ..."
-  sleep 5
-  apply_base 30-monitoring
-fi
+# 7. Monitoring operator + CRDs
+apply_base 30-monitoring-operator
+echo "# Waiting for prometheus-operator CRDs to register ..."
+until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+until k get crd alertmanagers.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+echo "# Validated: prometheus-operator CRDs registered"
+
+# 8. Monitoring CRs (Prometheus, Alertmanager, exporters)
+apply_base 31-monitoring
 k -n monitoring get prometheus now
 echo "# Validated: monitoring stack exists"
 
