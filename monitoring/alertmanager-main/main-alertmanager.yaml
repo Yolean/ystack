@@ -24,7 +24,7 @@ spec:
         fsGroup: 65534
       containers:
         - name: alertmanager
-          image: quay.io/prometheus/alertmanager:v0.31.0
+          image: quay.io/prometheus/alertmanager:v0.28.1
           args:
             - --config.file=/etc/alertmanager/alertmanager.yaml
             - --storage.path=/data
