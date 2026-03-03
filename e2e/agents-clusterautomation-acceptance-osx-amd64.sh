@@ -33,7 +33,7 @@ echo "$PATH"
 
 y-cluster-local-detect && (echo "tear down existing local cluster first" && exit 1) || true
 
-lsof -i :80 -i :443 -P -n >/dev/null 2>&1 && echo "port 80 and 443 must be available for local cluster vm to bind to" && exit 1
+lsof -iTCP:80 -iTCP:443 -sTCP:LISTEN -P -n >/dev/null 2>&1 && echo "port 80 and 443 must be available for local cluster vm to bind to" && exit 1
 
 y-cluster-provision-k3d --teardown
 y-cluster-provision-k3d

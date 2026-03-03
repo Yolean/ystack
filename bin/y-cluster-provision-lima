@@ -107,11 +107,11 @@ k delete --wait=false pod amd64test
 # Import kubeconfig before cache-load and converge (y-kubeconfig-import moves the .tmp file)
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-if [ -d "$CACHE_DIR/oci" ]; then
-  echo "# Loading cached images into containerd ..."
-  y-image-cache-load-all </dev/null || true
-fi
+echo "# Saving ystack images to local cache ..."
+y-image-cache-ystack </dev/null
+
+echo "# Loading cached images into containerd ..."
+y-image-cache-load-all </dev/null || true
 
 CONVERGE_FLAGS="--context=$CTX --server-side"
 y-cluster-converge-ystack $CONVERGE_FLAGS
