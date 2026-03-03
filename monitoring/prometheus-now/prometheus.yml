@@ -11,6 +11,10 @@ global:
 rule_files:
   - /etc/prometheus/rules/*.yml
 
+remote_write:
+  - url: http://thanos-receive.monitoring.svc.cluster.local:19291/api/v1/receive
+  - url: http://greptimedb.monitoring.svc.cluster.local:4000/v1/prometheus/write
+
 alerting:
   alertmanagers:
     - static_configs:
