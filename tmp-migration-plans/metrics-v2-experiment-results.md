@@ -44,9 +44,17 @@ converge script was updated to reflect the new structure.
 ### 5. Blob store: versitygw (not minio)
 
 The plan referenced minio in some contexts. The codebase has already migrated to
-versitygw. No changes needed for the experiment itself — Thanos Receive and GreptimeDB
-both use emptyDir, not S3 object storage. Any future production deployment that uses
-object storage for long-term retention must target the versitygw S3 API, not minio.
+versitygw. Both backends were reconfigured to write to versitygw S3 storage
+(`blobs-versitygw.ystack.svc.cluster.local`) for storage cost comparison. Bucket-create
+jobs provision `thanos-receive` and `greptimedb` buckets using the same minio/mc
+pattern as the registry.
+
+### 8. Thanos 5m block duration override
+
+To make Thanos upload blocks to object storage quickly enough for experiment
+observation, `--tsdb.min-block-duration=5m` and `--tsdb.max-block-duration=5m` were
+added. The default 2h block duration would mean no S3 uploads during a short
+experiment window. This override must NOT be used in production.
 
 ### 6. configmap-reload sidecar added
 
@@ -157,6 +165,30 @@ in a single process, which explains the higher baseline.
 
 ---
 
+## Object storage comparison
+
+Both backends configured to write to versitygw S3 buckets. Measured after ~17 minutes
+of dual remote_write with Thanos block duration forced to 5m.
+
+| Backend | Bucket size | Object count | Write pattern |
+|---------|------------|-------------|---------------|
+| Thanos Receive | 1.4 MB | 9 files (3 blocks) | Block-based: uploads ~3 files per 5m block (meta.json, index, chunks) |
+| GreptimeDB | 252 KB | 11 files | Columnar: writes smaller objects more frequently |
+
+GreptimeDB stores **5.6x less data** on object storage for the same metrics workload.
+Its columnar format compresses significantly better than Thanos's TSDB block format.
+
+**Caveats:**
+- Thanos block duration was artificially reduced from 2h to 5m. With default settings,
+  Thanos would batch more data per block, potentially improving compression ratio.
+- Thanos Compactor (not deployed in this experiment) further reduces long-term storage
+  by merging and downsampling blocks.
+- GreptimeDB's compaction behavior over longer time windows was not tested.
+- 17 minutes of data is too short for definitive storage cost projections — a multi-day
+  test would be more representative.
+
+---
+
 ## Evaluation scores
 
 Using the criteria from the Mimir replacement research.
@@ -201,38 +233,43 @@ Thanos is significantly lighter. For a local dev cluster this matters.
 
 | Backend | Score | Notes |
 |---------|-------|-------|
-| Thanos | 8/10 | Uses S3-compatible object storage (versitygw). Well-understood cost model. Compactor reduces storage. |
-| GreptimeDB | 7/10 | Also supports S3-compatible storage. Uses columnar format which should compress well. Less proven at scale. |
+| Thanos | 6/10 | 1.4 MB for ~17 min of data. Block-based format is less space-efficient. Compactor helps long-term but adds operational complexity. |
+| GreptimeDB | 9/10 | 252 KB for same data — 5.6x smaller. Columnar format compresses metrics data very well. Fewer bytes = lower S3 storage and egress cost. |
 
-Both can target versitygw for object storage. Thanos has a more mature compaction
-story.
+GreptimeDB's columnar storage format produces significantly smaller objects. Both
+backends target versitygw S3. While Thanos Compactor can reduce long-term storage,
+GreptimeDB's baseline efficiency is notably better.
 
 ### Weighted total
 
 | Backend | Correctness (20%) | Complexity (40%) | Resources (15%) | Maturity (10%) | Storage (15%) | **Total** |
 |---------|-------------------|-----------------|-----------------|---------------|--------------|-----------|
-| Thanos | 2.0 | 2.8 | 1.35 | 1.0 | 1.2 | **8.35** |
-| GreptimeDB | 2.0 | 3.6 | 0.75 | 0.6 | 1.05 | **8.00** |
+| Thanos | 2.0 | 2.8 | 1.35 | 1.0 | 0.9 | **8.05** |
+| GreptimeDB | 2.0 | 3.6 | 0.75 | 0.6 | 1.35 | **8.30** |
 
 ---
 
 ## Recommendation
 
-**Thanos wins narrowly (8.35 vs 8.00)**, primarily due to its lower resource footprint
-and maturity. However, the scores are close enough that the decision should also
-consider:
+**The two backends are essentially tied (Thanos 8.05 vs GreptimeDB 8.30)** after
+accounting for measured object storage efficiency. GreptimeDB's columnar format
+produces 5.6x less data on S3, which flips the storage cost score and narrows
+Thanos's advantage on maturity and resource usage.
 
-1. **For ystack local dev clusters**: Thanos is preferred — lighter resource usage
-   matters in constrained k3d environments, and the 2-component topology (Receive +
-   Query) is manageable.
+1. **For ystack local dev clusters**: Thanos is still preferred — lighter CPU/memory
+   footprint matters in constrained k3d environments, and storage cost is less
+   relevant with emptyDir/local volumes.
 
-2. **For production multi-cluster**: Thanos is preferred — the Receive component
-   already supports multi-tenancy via labels, and the Query component can federate
-   across multiple Receive instances. Zone-aware ingestion is well-documented.
+2. **For production multi-cluster with S3 storage costs**: GreptimeDB deserves
+   serious consideration — its storage efficiency advantage compounds at scale,
+   and lower object counts mean fewer S3 API calls (PUT/GET costs).
 
-3. **GreptimeDB remains interesting** for use cases that need SQL access to metrics
-   data or where the standalone deployment model is valued. It could be revisited in
-   a future evaluation as the project matures.
+3. **Thanos advantages**: CNCF graduated maturity, battle-tested at massive scale,
+   well-documented multi-tenancy and zone-aware ingestion, lower runtime resource
+   footprint.
+
+4. **GreptimeDB advantages**: Simpler single-component topology, dramatically better
+   storage efficiency, SQL access to metrics data, active development pace.
 
 ## Next steps
 
