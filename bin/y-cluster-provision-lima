@@ -126,4 +126,3 @@ echo "# Updating /etc/hosts (requires sudo) ..."
 y-k8s-ingress-hosts -write -override-ip 127.0.0.1
 
 y-cluster-validate-ystack --context=$CTX
-y-mkcert-after-k8s-ingress-hosts

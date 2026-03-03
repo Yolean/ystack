@@ -121,6 +121,5 @@ echo "# Updating /etc/hosts (requires sudo) ..."
 y-k8s-ingress-hosts -write
 
 y-cluster-validate-ystack --context=$CTX
-y-mkcert-after-k8s-ingress-hosts
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"
