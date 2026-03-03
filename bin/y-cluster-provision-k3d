@@ -114,11 +114,11 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache"
-if [ -d "$CACHE_DIR/oci" ]; then
-  echo "# Loading cached images into containerd ..."
-  y-image-cache-load-all </dev/null || true
-fi
+echo "# Saving ystack images to local cache ..."
+y-image-cache-ystack </dev/null
+
+echo "# Loading cached images into containerd ..."
+y-image-cache-load-all </dev/null || true
 
 y-cluster-converge-ystack --context=$CTX --server-side
 

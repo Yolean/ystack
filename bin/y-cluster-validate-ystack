@@ -51,10 +51,10 @@ k -n ystack get gateway ystack >/dev/null 2>&1 \
   && report "gateway ystack" "ok" \
   || report "gateway ystack" "not found"
 
-# 4. minio
-ROLLOUT=$(k -n ystack rollout status deploy/minio --timeout=5s 2>&1) \
-  && report "minio rollout" "ok" \
-  || report "minio rollout" "$ROLLOUT"
+# 4. versitygw
+ROLLOUT=$(k -n ystack rollout status deploy/versitygw --timeout=5s 2>&1) \
+  && report "versitygw rollout" "ok" \
+  || report "versitygw rollout" "$ROLLOUT"
 
 # 5. builds-registry service + clusterIP
 CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)

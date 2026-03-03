@@ -48,8 +48,17 @@ fi
 if [[ "$ANNOTATED_REF" == *@sha256:* ]]; then
   # Annotation is digest-only (e.g. repo@sha256:...), also create a tag ref if we know the tag
   if [[ "$TAG_REF" == *:* ]]; then
-    echo "# Tagging tag ref: $TAG_REF"
-    y-cluster-local-ctr images tag "$ANNOTATED_REF" "$TAG_REF" 2>/dev/null || true
+    # Ensure Docker Hub images get the docker.io/ prefix kubelet expects
+    FULL_TAG_REF="$TAG_REF"
+    FIRST_SEGMENT="${FULL_TAG_REF%%/*}"
+    if [[ "$FIRST_SEGMENT" == index.docker.io ]]; then
+      FULL_TAG_REF="docker.io/${FULL_TAG_REF#index.docker.io/}"
+    elif [[ "$FIRST_SEGMENT" != *.* ]]; then
+      # No dot in the first path segment means Docker Hub (e.g. versity/versitygw:v1.3.0)
+      FULL_TAG_REF="docker.io/$FULL_TAG_REF"
+    fi
+    echo "# Tagging tag ref: $FULL_TAG_REF"
+    y-cluster-local-ctr images tag "$ANNOTATED_REF" "$FULL_TAG_REF" 2>/dev/null || true
   fi
 else
   REPO="${ANNOTATED_REF%:*}"
