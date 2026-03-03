@@ -9,4 +9,5 @@ spec:
     protocol: TCP
     targetPort: web
   selector:
-    alertmanager: main
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: main

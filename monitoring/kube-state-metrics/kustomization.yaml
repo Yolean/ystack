@@ -7,4 +7,3 @@ resources:
 - deployment.yaml
 - service-account.yaml
 - service.yaml
-- kube-state-metrics-servicemonitor.yaml

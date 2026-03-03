@@ -1,6 +1,60 @@
-apiVersion: monitoring.coreos.com/v1
-kind: Alertmanager
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: main
+  name: alertmanager-main
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: main
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/instance: main
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager
+        app.kubernetes.io/instance: main
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        fsGroup: 65534
+      containers:
+        - name: alertmanager
+          image: quay.io/prometheus/alertmanager:v0.31.0
+          args:
+            - --config.file=/etc/alertmanager/alertmanager.yaml
+            - --storage.path=/data
+          ports:
+            - name: web
+              containerPort: 9093
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: web
+            initialDelaySeconds: 15
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config
+          secret:
+            secretName: alertmanager-main
+        - name: data
+          emptyDir: {}

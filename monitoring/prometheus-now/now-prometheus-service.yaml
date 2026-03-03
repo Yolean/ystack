@@ -10,4 +10,4 @@ spec:
     targetPort: web
   selector:
     app.kubernetes.io/name: prometheus
-    prometheus: now
+    app.kubernetes.io/instance: now

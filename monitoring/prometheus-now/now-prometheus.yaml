@@ -1,29 +1,87 @@
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: now
+  name: prometheus-now
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/instance: now
 spec:
   replicas: 1
-  retention: 2h
-  serviceAccountName: prometheus
-  securityContext:
-    runAsUser: 65534
-    runAsGroup: 65534
-    # Uncomment on failure to start a new instance. Left out because it may have performance implications, as configmaps may be large.
-    #fsGroup: 65534
-  alerting:
-    alertmanagers:
-    - namespace: monitoring
-      name: alertmanager-main
-      port: web
-  serviceMonitorNamespaceSelector: {}
-  podMonitorNamespaceSelector: {}
-  serviceMonitorSelector:
+  selector:
     matchLabels:
-      prometheus: now
-  podMonitorSelector:
-    matchLabels:
-      prometheus: now
-  ruleSelector:
-    matchLabels:
-      prometheus: now
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/instance: now
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/instance: now
+    spec:
+      serviceAccountName: prometheus
+      securityContext:
+        runAsUser: 65532
+        runAsGroup: 65532
+        runAsNonRoot: true
+        fsGroup: 65532
+      containers:
+        - name: prometheus
+          image: quay.io/prometheus/prometheus:v3.10.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/data
+            - --storage.tsdb.retention.time=2h
+            - --web.enable-lifecycle
+          ports:
+            - name: web
+              containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: web
+            initialDelaySeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+            - name: rules
+              mountPath: /etc/prometheus/rules
+            - name: data
+              mountPath: /data
+        - name: configmap-reload
+          image: ghcr.io/jimmidyson/configmap-reload:v0.14.0
+          args:
+            - --volume-dir=/etc/prometheus
+            - --volume-dir=/etc/prometheus/rules
+            - --webhook-url=http://127.0.0.1:9090/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+            - name: rules
+              mountPath: /etc/prometheus/rules
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-now-config
+        - name: rules
+          configMap:
+            name: prometheus-now-rules
+        - name: data
+          emptyDir: {}

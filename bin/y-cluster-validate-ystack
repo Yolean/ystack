@@ -82,10 +82,10 @@ k -n ystack get grpcroute buildkitd >/dev/null 2>&1 \
   && report "grpcroute buildkitd" "ok" \
   || report "grpcroute buildkitd" "not found"
 
-# 7.6 Monitoring stack
-k -n monitoring get prometheus now >/dev/null 2>&1 \
-  && report "prometheus now" "ok" \
-  || report "prometheus now" "not found"
+# 7.6 Monitoring stack (vanilla Prometheus deployment)
+ROLLOUT_PROM=$(k -n monitoring rollout status deploy/prometheus-now --timeout=10s 2>&1) \
+  && report "prometheus-now rollout" "ok" \
+  || report "prometheus-now rollout" "$ROLLOUT_PROM"
 
 # 7.7 Prometheus HTTPRoute
 k -n monitoring get httproute prometheus-now >/dev/null 2>&1 \
