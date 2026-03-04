@@ -48,7 +48,7 @@ kubectl -n $NAMESPACE delete job bucket-create-gitea-events --ignore-not-found
 kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/bucket-create-gitea-events.yaml"
 kubectl -n $NAMESPACE wait --for=condition=complete job/bucket-create-gitea-events --timeout=120s
 
-echo "=== Step 8: Deploy webhook receiver and Fluent Bit ==="
+echo "=== Step 8: Deploy Envoy proxy and Fluent Bit ==="
 kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/fluentbit-configmap.yaml"
 kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/fluentbit-deployment.yaml"
 kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/fluentbit-service.yaml"
@@ -153,8 +153,8 @@ EVENT_FILES=$(kubectl -n $NAMESPACE exec "$VERSITYGW_POD" -- find /data/gitea-ev
 
 if [ -z "$EVENT_FILES" ]; then
   echo "FAIL: No event files found in /data/gitea-events/"
-  echo "Webhook receiver logs:"
-  kubectl -n $NAMESPACE logs deployment/fluentbit-webhook -c webhook-receiver --tail=20
+  echo "Envoy logs:"
+  kubectl -n $NAMESPACE logs deployment/fluentbit-webhook -c envoy --tail=20
   echo "Fluent Bit logs:"
   kubectl -n $NAMESPACE logs deployment/fluentbit-webhook -c fluent-bit --tail=20
   exit 1

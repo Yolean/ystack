@@ -15,18 +15,15 @@ spec:
         app: fluentbit-webhook
     spec:
       containers:
-      - name: webhook-receiver
-        image: python:3-alpine
-        command: ["python3", "/etc/webhook/webhook-receiver.py"]
+      - name: envoy
+        image: ghcr.io/yolean/envoy:distroless-v1.37.0
         ports:
         - containerPort: 8080
           name: http
         volumeMounts:
         - name: config
-          mountPath: /etc/webhook/webhook-receiver.py
-          subPath: webhook-receiver.py
-        - name: webhook-data
-          mountPath: /data/webhook
+          mountPath: /etc/envoy/envoy.yaml
+          subPath: envoy.yaml
       - name: fluent-bit
         image: cr.fluentbit.io/fluent/fluent-bit:4.0
         env:
@@ -49,13 +46,9 @@ spec:
           subPath: parsers.conf
         - name: buffer
           mountPath: /tmp/fluent-bit/s3
-        - name: webhook-data
-          mountPath: /data/webhook
       volumes:
       - name: config
         configMap:
           name: fluentbit-webhook
       - name: buffer
-        emptyDir: {}
-      - name: webhook-data
         emptyDir: {}
