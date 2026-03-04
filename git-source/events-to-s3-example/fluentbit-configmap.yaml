@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentbit-webhook
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        5
+        Log_Level    info
+        Parsers_File parsers.conf
+
+    [INPUT]
+        Name              tail
+        Path              /data/webhook/*.json
+        Tag               webhook
+        Refresh_Interval  2
+        Read_from_Head    On
+
+    [OUTPUT]
+        Name                s3
+        Match               *
+        region              us-east-1
+        bucket              gitea-events
+        endpoint            http://blobs-versitygw.ystack.svc.cluster.local
+        s3_key_format       /events/%Y/%m/%d/%H%M%S/$UUID.json
+        use_put_object      On
+        upload_timeout      15s
+        total_file_size     1M
+        store_dir           /tmp/fluent-bit/s3
+        tls                 Off
+  parsers.conf: |
+    [PARSER]
+        Name        json
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+  webhook-receiver.py: |
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import json, os, uuid, time
+
+    WEBHOOK_DIR = '/data/webhook'
+    os.makedirs(WEBHOOK_DIR, exist_ok=True)
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            length = int(self.headers.get('content-length', 0))
+            body = self.rfile.read(length)
+            # Compact JSON to single line for Fluent Bit tail input
+            try:
+                data = json.loads(body)
+                body = json.dumps(data, separators=(',', ':')).encode()
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                pass
+            ts = int(time.time() * 1000)
+            filename = f"{WEBHOOK_DIR}/{ts}_{uuid.uuid4().hex[:8]}.json"
+            with open(filename, 'wb') as f:
+                f.write(body)
+                f.write(b'\n')
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b'ok\n')
+            self.log_message("Saved %d bytes to %s", len(body), filename)
+
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b'ok\n')
+
+    print(f"Webhook receiver listening on :8080, writing to {WEBHOOK_DIR}")
+    HTTPServer(('0.0.0.0', 8080), Handler).serve_forever()
