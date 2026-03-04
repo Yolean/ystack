@@ -129,6 +129,6 @@ docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-regist
 docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"
+y-k8s-ingress-hosts --context=$CTX -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"
 
 y-cluster-validate-ystack --context=$CTX

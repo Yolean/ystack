@@ -123,6 +123,6 @@ limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystac
 limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
 echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts -write -override-ip 127.0.0.1
+y-k8s-ingress-hosts --context=$CTX -write -override-ip 127.0.0.1
 
 y-cluster-validate-ystack --context=$CTX
