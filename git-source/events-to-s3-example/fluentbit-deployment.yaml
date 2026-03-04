@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluentbit-webhook
+  labels:
+    app: fluentbit-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluentbit-webhook
+  template:
+    metadata:
+      labels:
+        app: fluentbit-webhook
+    spec:
+      containers:
+      - name: webhook-receiver
+        image: python:3-alpine
+        command: ["python3", "/etc/webhook/webhook-receiver.py"]
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/webhook/webhook-receiver.py
+          subPath: webhook-receiver.py
+        - name: webhook-data
+          mountPath: /data/webhook
+      - name: fluent-bit
+        image: cr.fluentbit.io/fluent/fluent-bit:4.0
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: accesskey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: secretkey
+        volumeMounts:
+        - name: config
+          mountPath: /fluent-bit/etc/fluent-bit.conf
+          subPath: fluent-bit.conf
+        - name: config
+          mountPath: /fluent-bit/etc/parsers.conf
+          subPath: parsers.conf
+        - name: buffer
+          mountPath: /tmp/fluent-bit/s3
+        - name: webhook-data
+          mountPath: /data/webhook
+      volumes:
+      - name: config
+        configMap:
+          name: fluentbit-webhook
+      - name: buffer
+        emptyDir: {}
+      - name: webhook-data
+        emptyDir: {}
