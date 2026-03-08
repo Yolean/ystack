@@ -126,13 +126,17 @@ fi
 
 # 12. Build and deploy example app
 echo ""
-echo "--- Example app build + deploy (skaffold run) ---"
+echo "--- Example app build + deploy (y-skaffold run) ---"
 EXAMPLE_DIR="$YSTACK_HOME/examples/basic-dev-inner-loop"
 EXAMPLE_NS=default
 y-buildkitd-available --context="$CONTEXT" 2>&1 || true
 echo "  .... building and deploying example app"
-if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS") 2>&1 | tail -5; then
-  report "skaffold run" "ok"
+SKAFFOLD_LOG=$(mktemp)
+(cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= y-skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS") >"$SKAFFOLD_LOG" 2>&1 && SKAFFOLD_OK=true || SKAFFOLD_OK=false
+tail -5 "$SKAFFOLD_LOG"
+rm -f "$SKAFFOLD_LOG"
+if [ "$SKAFFOLD_OK" = "true" ]; then
+  report "y-skaffold run" "ok"
 
   # Apply gateway route for the example and wait for traefik to reconcile
   k -n "$EXAMPLE_NS" apply -k "$EXAMPLE_DIR/k8s/gatewayapi/" >/dev/null 2>&1
@@ -151,9 +155,9 @@ if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= skaffold run --cache-artifacts=f
   # Clean up
   echo "  .... cleaning up example app"
   k -n "$EXAMPLE_NS" delete -k "$EXAMPLE_DIR/k8s/gatewayapi/" --ignore-not-found >/dev/null 2>&1
-  (cd "$EXAMPLE_DIR" && skaffold delete --kube-context="$CONTEXT" -n "$EXAMPLE_NS") >/dev/null 2>&1
+  (cd "$EXAMPLE_DIR" && y-skaffold delete --kube-context="$CONTEXT" -n "$EXAMPLE_NS") >/dev/null 2>&1
 else
-  report "skaffold run" "build or deploy failed"
+  report "y-skaffold run" "build or deploy failed"
 fi
 
 echo ""
