@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
 
 NAMESPACE=ystack
 GITEA_HOST=git.ystack.svc.cluster.local
@@ -13,46 +14,50 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 
+k() {
+  kubectl --context=local -n "$NAMESPACE" "$@"
+}
+
 echo "=== Step 1: Provision k3d cluster ==="
 y-cluster-provision-k3d
 
-echo "=== Step 2: Deploy Gitea base and install ==="
-kubectl apply -k "$REPO_ROOT/git-source/base/"
-kubectl apply -k "$REPO_ROOT/git-source/install/"
+echo "=== Step 2: Deploy Gitea ==="
+k apply -k "$REPO_ROOT/git-source/base/"
+k apply -k "$REPO_ROOT/git-source/install/"
 
-echo "=== Step 3: Wait for Gitea install job ==="
-kubectl -n $NAMESPACE wait --for=condition=complete job/gitea-install --timeout=180s
+echo "=== Step 3: Wait for Gitea install ==="
+k wait --for=condition=complete job/gitea-install --timeout=180s
 
 echo "=== Step 4: Configure Gitea webhook settings ==="
 # Allow webhook delivery to in-cluster services (private IPs)
-kubectl -n $NAMESPACE exec gitea-0 -- sh -c '
-  if ! grep -q "\\[webhook\\]" /data/gitea/conf/app.ini; then
-    printf "\n[webhook]\nALLOWED_HOST_LIST = private\nDELIVER_TIMEOUT = 30\n" >> /data/gitea/conf/app.ini
+k exec gitea-0 -- sh -c '
+  if ! grep -q "\[webhook\]" /etc/gitea/app.ini; then
+    printf "\n[webhook]\nALLOWED_HOST_LIST = private\nDELIVER_TIMEOUT = 30\n" >> /etc/gitea/app.ini
     echo "Added webhook config to app.ini"
   else
     echo "Webhook config already present"
   fi
 '
 # Restart Gitea to pick up config changes
-kubectl -n $NAMESPACE delete pod gitea-0
-kubectl -n $NAMESPACE wait --for=condition=ready pod/gitea-0 --timeout=120s
+k delete pod gitea-0
+k wait --for=condition=ready pod/gitea-0 --timeout=120s
 
 echo "=== Step 5: Apply Gitea HTTPRoute ==="
-kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/gitea-httproute.yaml"
+k apply -f "$SCRIPT_DIR/gitea-httproute.yaml"
 
 echo "=== Step 6: Update ingress hosts ==="
 y-k8s-ingress-hosts -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"
 
 echo "=== Step 7: Create S3 bucket for events ==="
-kubectl -n $NAMESPACE delete job bucket-create-gitea-events --ignore-not-found
-kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/bucket-create-gitea-events.yaml"
-kubectl -n $NAMESPACE wait --for=condition=complete job/bucket-create-gitea-events --timeout=120s
+k delete job bucket-create-gitea-events --ignore-not-found
+k apply -f "$SCRIPT_DIR/bucket-create-gitea-events.yaml"
+k wait --for=condition=complete job/bucket-create-gitea-events --timeout=120s
 
-echo "=== Step 8: Deploy Envoy proxy and Fluent Bit ==="
-kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/fluentbit-configmap.yaml"
-kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/fluentbit-deployment.yaml"
-kubectl -n $NAMESPACE apply -f "$SCRIPT_DIR/fluentbit-service.yaml"
-kubectl -n $NAMESPACE rollout status deployment/fluentbit-webhook --timeout=120s
+echo "=== Step 8: Deploy Fluent Bit webhook receiver ==="
+k apply -f "$SCRIPT_DIR/fluentbit-configmap.yaml"
+k apply -f "$SCRIPT_DIR/fluentbit-deployment.yaml"
+k apply -f "$SCRIPT_DIR/fluentbit-service.yaml"
+k rollout status deployment/fluentbit-webhook --timeout=120s
 
 echo "=== Step 9: Wait for Gitea API ==="
 for i in $(seq 1 30); do
@@ -146,17 +151,15 @@ echo "=== Step 13: Wait for Fluent Bit to flush ==="
 sleep 25
 
 echo "=== Step 14: Verify events in S3 ==="
-VERSITYGW_POD=$(kubectl -n $NAMESPACE get pod -l app=versitygw --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+VERSITYGW_POD=$(k get pod -l app=versitygw --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
 echo "Checking versitygw pod: $VERSITYGW_POD"
 
-EVENT_FILES=$(kubectl -n $NAMESPACE exec "$VERSITYGW_POD" -- find /data/gitea-events -type f 2>/dev/null || true)
+EVENT_FILES=$(k exec "$VERSITYGW_POD" -- find /data/gitea-events -type f 2>/dev/null || true)
 
 if [ -z "$EVENT_FILES" ]; then
   echo "FAIL: No event files found in /data/gitea-events/"
-  echo "Envoy logs:"
-  kubectl -n $NAMESPACE logs deployment/fluentbit-webhook -c envoy --tail=20
   echo "Fluent Bit logs:"
-  kubectl -n $NAMESPACE logs deployment/fluentbit-webhook -c fluent-bit --tail=20
+  k logs deployment/fluentbit-webhook --tail=30
   exit 1
 fi
 
@@ -168,11 +171,7 @@ echo "Total event files: $FILE_COUNT"
 
 echo "=== Sample event content ==="
 FIRST_FILE=$(echo "$EVENT_FILES" | head -1)
-kubectl -n $NAMESPACE exec "$VERSITYGW_POD" -- cat "$FIRST_FILE" | head -c 500
+k exec "$VERSITYGW_POD" -- cat "$FIRST_FILE" | head -c 500
 echo ""
-
-echo "=== Webhook delivery stats ==="
-kubectl -n $NAMESPACE exec gitea-0 -- sqlite3 /data/gitea/gitea.db \
-  "SELECT is_succeed, COUNT(*) FROM hook_task GROUP BY is_succeed;" 2>/dev/null || true
 
 echo "=== Test passed ==="

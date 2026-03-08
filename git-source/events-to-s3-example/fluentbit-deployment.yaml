@@ -15,17 +15,11 @@ spec:
         app: fluentbit-webhook
     spec:
       containers:
-      - name: envoy
-        image: ghcr.io/yolean/envoy:distroless-v1.37.0
-        ports:
-        - containerPort: 8080
-          name: http
-        volumeMounts:
-        - name: config
-          mountPath: /etc/envoy/envoy.yaml
-          subPath: envoy.yaml
       - name: fluent-bit
         image: cr.fluentbit.io/fluent/fluent-bit:4.0
+        ports:
+        - containerPort: 9880
+          name: http
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -41,9 +35,6 @@ spec:
         - name: config
           mountPath: /fluent-bit/etc/fluent-bit.conf
           subPath: fluent-bit.conf
-        - name: config
-          mountPath: /fluent-bit/etc/parsers.conf
-          subPath: parsers.conf
         - name: buffer
           mountPath: /tmp/fluent-bit/s3
       volumes:

@@ -7,5 +7,5 @@ spec:
     app: fluentbit-webhook
   ports:
   - port: 9880
-    targetPort: 8080
+    targetPort: 9880
     name: http
