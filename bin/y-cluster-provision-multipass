@@ -120,6 +120,4 @@ multipass exec "$VM_NAME" -- sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry
 echo "# Updating /etc/hosts (requires sudo) ..."
 y-k8s-ingress-hosts --context=$CTX -write
 
-y-cluster-validate-ystack --context=$CTX
-
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"

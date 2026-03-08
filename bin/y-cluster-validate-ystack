@@ -131,11 +131,7 @@ EXAMPLE_DIR="$YSTACK_HOME/examples/basic-dev-inner-loop"
 EXAMPLE_NS=default
 y-buildkitd-available --context="$CONTEXT" 2>&1 || true
 echo "  .... building and deploying example app"
-SKAFFOLD_LOG=$(mktemp)
-(cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= y-skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS") >"$SKAFFOLD_LOG" 2>&1 && SKAFFOLD_OK=true || SKAFFOLD_OK=false
-tail -5 "$SKAFFOLD_LOG"
-rm -f "$SKAFFOLD_LOG"
-if [ "$SKAFFOLD_OK" = "true" ]; then
+if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= y-skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS"); then
   report "y-skaffold run" "ok"
 
   # Apply gateway route for the example and wait for traefik to reconcile
