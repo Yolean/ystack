@@ -29,6 +29,7 @@ case "$platform" in
   Linux)
     if [ -z "$(ip addr show dev lo label lo:$num)" ]; then
       echo "Adding missing interface lo:$num ..."
+      [ $(id -u) -eq 0 ] || exec sudo -E $0 "$@"
       ip addr add $ip/32 dev lo label lo:$num
     fi
     ;;
