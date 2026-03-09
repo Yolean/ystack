@@ -40,6 +40,20 @@ $CURRENT_USER ALL=(root) NOPASSWD: $YBIN/y-k8s-ingress-hosts-v*-bin *
 EOF
 }
 
+sudo_rs_check() {
+  # sudo-rs (default on Ubuntu 25.10+) doesn't honor NOPASSWD rules in
+  # /etc/sudoers.d/ when the user is also in the sudo group.
+  # The original sudo (sudo.ws) handles this correctly.
+  if sudo --version 2>&1 | grep -q "sudo-rs" && [ -x /usr/bin/sudo.ws ]; then
+    echo ""
+    echo "WARNING: sudo-rs is the default sudo on this system."
+    echo "NOPASSWD rules may not work. To fix, switch to the original sudo:"
+    echo ""
+    echo "  sudo update-alternatives --set sudo /usr/bin/sudo.ws"
+    echo ""
+  fi
+}
+
 if [ "$WRITE" = "true" ]; then
   if [ $(id -u) -ne 0 ]; then
     echo "Writing sudoers rules requires root. Re-running with sudo ..."
@@ -53,6 +67,7 @@ if [ "$WRITE" = "true" ]; then
     chmod 0440 "$SUDOERS_FILE"
     rm "$TMPFILE"
     echo "Wrote $SUDOERS_FILE"
+    sudo_rs_check
   else
     rm "$TMPFILE"
     echo "ERROR: Generated sudoers rules failed validation" >&2
@@ -63,4 +78,5 @@ else
   echo "# Run 'y-cluster-sudoers --write' to install them."
   echo ""
   rules
+  sudo_rs_check
 fi
