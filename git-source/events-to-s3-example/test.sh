@@ -25,22 +25,39 @@ echo "=== Step 2: Deploy Gitea ==="
 k apply -k "$REPO_ROOT/git-source/base/"
 k apply -k "$REPO_ROOT/git-source/install/"
 
-echo "=== Step 3: Wait for Gitea install ==="
-k wait --for=condition=complete job/gitea-install --timeout=180s
+echo "=== Step 3: Wait for Gitea pod ==="
+for i in $(seq 1 30); do
+  k get pod gitea-0 >/dev/null 2>&1 && break
+  sleep 2
+done
+k wait --for=condition=ready pod/gitea-0 --timeout=120s
 
-echo "=== Step 4: Configure Gitea webhook settings ==="
-# Allow webhook delivery to in-cluster services (private IPs)
+echo "=== Step 4: Configure Gitea via CLI ==="
+# The rootless image ships with INSTALL_LOCK=false and a default app.ini.
+# The curl-based install job doesn't work reliably with rootless,
+# so we configure directly via CLI instead.
 k exec gitea-0 -- sh -c '
+  sed -i "s|INSTALL_LOCK = false|INSTALL_LOCK = true|" /etc/gitea/app.ini
+  sed -i "s|ROOT_URL.*=.*|ROOT_URL = http://git.ystack.svc.cluster.local/|" /etc/gitea/app.ini
   if ! grep -q "\[webhook\]" /etc/gitea/app.ini; then
     printf "\n[webhook]\nALLOWED_HOST_LIST = private\nDELIVER_TIMEOUT = 30\n" >> /etc/gitea/app.ini
-    echo "Added webhook config to app.ini"
-  else
-    echo "Webhook config already present"
   fi
+  echo "app.ini configured"
 '
-# Restart Gitea to pick up config changes
+
+# Restart to pick up config
 k delete pod gitea-0
 k wait --for=condition=ready pod/gitea-0 --timeout=120s
+
+# Create admin user
+k exec gitea-0 -- gitea admin user create \
+  --admin \
+  --username "$GITEA_USER" \
+  --password "$GITEA_PASS" \
+  --email "${GITEA_USER}@example.com" \
+  --config /etc/gitea/app.ini \
+  2>&1 || true
+echo "Admin user configured"
 
 echo "=== Step 5: Apply Gitea HTTPRoute ==="
 k apply -f "$SCRIPT_DIR/gitea-httproute.yaml"

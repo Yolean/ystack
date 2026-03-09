@@ -31,11 +31,9 @@ spec:
         volumeMounts:
         - name: git-data
           mountPath: /var/lib/gitea
-        - name: gitea-config
+        - name: git-data
           mountPath: /etc/gitea
-      volumes:
-      - name: gitea-config
-        emptyDir: {}
+          subPath: config
   volumeClaimTemplates:
   - metadata:
       name: git-data

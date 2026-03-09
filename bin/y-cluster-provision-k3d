@@ -104,7 +104,7 @@ docker inspect $K3D_DOCKER_NAME | grep Cpu
 y-kubectl config rename-context k3d-ystack $CTX
 
 # Set cluster name for y-cluster-local-detect
-sed -i'' -e 's/name: k3d-ystack/name: ystack-k3d/g' \
+sed -i '' -e 's/name: k3d-ystack/name: ystack-k3d/g' \
          -e 's/cluster: k3d-ystack/cluster: ystack-k3d/g' \
          -e 's/name: admin@k3d-ystack/name: ystack-k3d/g' \
          -e 's/user: admin@k3d-ystack/user: ystack-k3d/g' "$KUBECONFIG"
