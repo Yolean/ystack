@@ -2,30 +2,48 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-# Parse /etc/hosts between k8s-ingress-hosts markers and generate mkcert certs
+# Generates certs for k8s-ingress-hosts into ingress-tls-local/tls.{crt,key}.
+# Preserves SANs from the existing cert (hosts are only added, never removed).
 
-HOSTS_FILE="/etc/hosts"
-START_MARKER="# generated using k8s-ingress-hosts start #"
-END_MARKER="# generated using k8s-ingress-hosts end #"
+YBIN="$(dirname $0)"
+CERT="$YBIN/../ingress-tls-local/tls.crt"
+KEY="$YBIN/../ingress-tls-local/tls.key"
 
-# Extract hostnames between markers
-HOSTNAMES=$(sed -n "/$START_MARKER/,/$END_MARKER/p" "$HOSTS_FILE" \
-  | grep -v "^#" \
-  | sed 's/#.*//' \
-  | awk 'NF>=2 {for(i=2;i<=NF;i++) print $i}' \
-  | sort -u \
-  | tr '\n' ' ')
+[ "$1" = "help" ] && echo '
+Generates mkcert certs from the k8s-ingress-hosts block in /etc/hosts
+into ingress-tls-local/tls.{crt,key}.
 
-if [ -z "$HOSTNAMES" ]; then
-  echo "ERROR: No hostnames found between k8s-ingress-hosts markers in $HOSTS_FILE" >&2
+Preserves SANs from the existing cert (hosts are only added, never removed).
+
+Usage: y-mkcert-after-k8s-ingress-hosts [--no-existing]
+' && exit 0
+
+NO_EXISTING=false
+[ "$1" = "--no-existing" ] && NO_EXISTING=true
+
+# Extract hostnames from k8s-ingress-hosts block in /etc/hosts
+new_hosts=$(awk '/k8s-ingress-hosts start/{flag=1;next}/k8s-ingress-hosts end/{flag=0}flag' /etc/hosts | awk '{print $2}')
+
+if [ -z "$new_hosts" ]; then
+  echo "ERROR: No hostnames found in k8s-ingress-hosts block in /etc/hosts" >&2
   exit 1
 fi
 
-echo "# Found hostnames: $HOSTNAMES"
+# Read existing SANs from cert
+existing_hosts=""
+if [ "$NO_EXISTING" = "false" ] && [ -f "$CERT" ]; then
+  existing_hosts=$(openssl x509 -in "$CERT" -noout -text 2>/dev/null \
+    | grep -A1 "Subject Alternative Name" \
+    | tail -1 \
+    | sed 's/DNS://g; s/,//g')
+fi
 
-# Idempotent CA install
+# Merge: union of existing + new, preserving all existing hosts
+all_hosts=$(printf '%s\n' $existing_hosts $new_hosts | sort -u)
+
+echo "# Hosts from k8s-ingress-hosts: $new_hosts"
+[ -z "$existing_hosts" ] || echo "# Hosts from existing cert: $(echo $existing_hosts | tr '\n' ' ')"
+echo "# Generating cert for: $(echo $all_hosts | tr '\n' ' ')"
+
 y-mkcert -install
-
-# Generate certs for all hosts
-echo "# Generating certs for: $HOSTNAMES"
-y-mkcert $HOSTNAMES
+y-mkcert -cert-file "$CERT" -key-file "$KEY" $all_hosts
