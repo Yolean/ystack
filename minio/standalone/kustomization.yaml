@@ -1,5 +1,4 @@
-bases:
-- ../common
 resources:
+- ../common
 - deployment.yaml
 - pvc.yaml
