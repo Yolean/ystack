@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
+CONTEXT=""
+SERVER_SIDE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CONTEXT="${1#*=}"; shift ;;
+    --server-side) SERVER_SIDE="--server-side=true --force-conflicts"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--server-side]" && exit 1
+
+k() {
+  kubectl --context="$CONTEXT" "$@"
+}
+
+apply_base() {
+  local base="$1"
+  local basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying $basepath ..."
+  k apply $SERVER_SIDE -k "$basepath"
+}
+
+# 1. Namespace
+apply_base 00-ystack-namespace
+k get ns ystack
+echo "# Validated: namespace ystack exists"
+
+# 2. Gateway API CRDs (managed by k3s traefik-crd HelmChart) + traefik Gateway provider config
+echo "# Waiting for Gateway API CRDs (from k3s traefik-crd) ..."
+until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
+apply_base 05-gateway-api
+echo "# Validated: Gateway API CRDs installed"
+
+# 3. Gateway (wait for CRD to be served before applying)
+echo "# Waiting for Gateway resource type to be served ..."
+until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
+apply_base 06-gateway
+k -n ystack get gateway ystack
+echo "# Validated: gateway ystack exists"
+
+# 4. VersityGW (S3-compatible blob store)
+apply_base 10-versitygw
+k -n ystack rollout status deploy/versitygw --timeout=120s
+echo "# Validated: versitygw rollout complete"
+
+# 5. Builds registry
+apply_base 20-builds-registry-versitygw
+k -n ystack get svc builds-registry
+CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}')
+if [ "$CLUSTER_IP" != "10.43.0.50" ]; then
+  echo "ERROR: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
+  exit 1
+fi
+echo "# Validated: builds-registry clusterIP=10.43.0.50"
+
+# 6. Builds registry HTTPRoute
+apply_base 07-builds-registry-httproute
+k -n ystack get httproute builds-registry
+echo "# Validated: httproute builds-registry exists"
+
+# 6.5 Buildkitd GRPCRoute
+apply_base 08-buildkitd-grpcroute
+k -n ystack get grpcroute buildkitd
+echo "# Validated: grpcroute buildkitd exists"
+
+# 7. Monitoring operator + CRDs
+apply_base 30-monitoring-operator
+echo "# Waiting for prometheus-operator CRDs to register ..."
+until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+until k get crd alertmanagers.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+echo "# Validated: prometheus-operator CRDs registered"
+
+# 8. Monitoring CRs (Prometheus, Alertmanager, exporters)
+apply_base 31-monitoring
+k -n monitoring get prometheus now
+echo "# Validated: monitoring stack exists"
+
+# 6.8 Prometheus HTTPRoute
+apply_base 09-prometheus-httproute
+k -n monitoring get httproute prometheus-now
+echo "# Validated: httproute prometheus-now exists"
+
+# 7. Prod registry
+apply_base 21-prod-registry
+k -n ystack get svc prod-registry
+echo "# Validated: prod-registry service exists"
+
+# 8. Buildkit
+apply_base 40-buildkit
+k -n ystack get statefulset buildkitd
+echo "# Validated: buildkitd statefulset exists"
+
+echo "# y-cluster-converge-ystack: all steps completed successfully"

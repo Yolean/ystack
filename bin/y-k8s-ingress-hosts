@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+YBIN="$(dirname $0)"
+
+[ -z "$KUBECONFIG" ] && echo "This script requires a KUBECONFIG" && exit 1
+
+CTX=""
+PASSTHROUGH=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-k8s-ingress-hosts [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (required)
+  -write                rewrite host file
+  -override-ip=IP       use this IP for all entries
+  -h, --help            show this help
+EOF
+      exit 0 ;;
+    --context=*) CTX="${1#*=}"; shift ;;
+    *) PASSTHROUGH+=("$1"); shift ;;
+  esac
+done
+
+[ -z "$CTX" ] && echo "Required: --context=NAME" && exit 1
+
+CONTEXT_KUBECONFIG=$(mktemp)
+trap "rm -f $CONTEXT_KUBECONFIG" EXIT
+kubectl config view --raw --minify --context="$CTX" > "$CONTEXT_KUBECONFIG"
+
+version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
+
+[ $(id -u) -ne 0 ] && exec sudo -E $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"
+
+$YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" || exit $?

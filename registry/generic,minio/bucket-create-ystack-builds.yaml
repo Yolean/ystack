@@ -7,31 +7,32 @@ spec:
     spec:
       containers:
       - name: mc
-        image: minio/mc:RELEASE.2022-03-03T21-12-24Z@sha256:a016f510a2f5e4dc673c227b21ae0d5f9c06fd86dc29efcd9b4d4a95ea7e5c87
+        image: minio/mc:RELEASE.2025-08-13T08-35-41Z
         env:
-        - name: MINIO_HOST
-          value: http://blobs-minio
-        - name: MINIO_ACCESS_KEY
+        - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
               name: minio
               key: accesskey
-        - name: MINIO_SECRET_KEY
+        - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               name: minio
               key: secretkey
+        - name: MINIO_HOST
+          value: http://blobs-minio
         - name: MINIO_REGION
           value: us-east-1
         - name: BUCKET_NAME
-          # TODO all from secret, except host maybe
           value: ystack-builds-registry
         command:
         - sh
         - -ce
         - |
-          sleep 30
-          mc config host add ystack $MINIO_HOST $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+          until mc alias set ystack "$MINIO_HOST" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"; do
+            echo "Waiting for minio..."
+            sleep 5
+          done
           mc stat ystack/$BUCKET_NAME || {
             mc mb --region="$MINIO_REGION" ystack/$BUCKET_NAME
           }

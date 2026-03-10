@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: versitygw
+  labels:
+    app: versitygw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: versitygw
+  template:
+    metadata:
+      labels:
+        app: versitygw
+    spec:
+      containers:
+      - name: versitygw
+        image: versity/versitygw:v1.3.0@sha256:035ca86a38033c92c31a2a3dd54aa37581737c03e872154130306dac50580ad2
+        args:
+        - posix
+        - /data
+        env:
+        - name: ROOT_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: accesskey
+        - name: ROOT_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: secretkey
+        ports:
+        - containerPort: 7070
+          name: s3
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          tcpSocket:
+            port: 7070
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: versitygw-data

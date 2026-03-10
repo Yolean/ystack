@@ -20,6 +20,8 @@ spec:
         app: git-source
         type: gitea
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: gitea
         image: gitea/gitea

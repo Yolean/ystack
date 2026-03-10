@@ -10,16 +10,22 @@ export K3S_NODE_NAME=ystack-master
 # For kubectl top to work with metrics-server, https://github.com/rancher/k3s/issues/252#issuecomment-482662774
 export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0 ${INSTALL_K3S_EXEC}"
 
-INSTALLER_REVISION=bd04941a294793ec92e8703d5e5da14107902e88
-export INSTALL_K3S_VERSION=v1.30.5+k3s1
+INSTALLER_REVISION=50fa2d70c239b3984dab99a2fb1ddaa35c3f2051
+export INSTALL_K3S_VERSION=v1.35.1+k3s1
 curl -sfL https://github.com/k3s-io/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start
-k3s crictl info
 
-# The default storage class with k3s >= 0.10 is "local-path"
-#k3s kubectl patch storageclass standard -p "{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
+# Validate containerd runtime is ready (crictl info returns verbose JSON)
+if k3s crictl info 2>&1 | grep -q '"RuntimeReady"'; then
+  echo "# containerd: RuntimeReady"
+else
+  echo "ERROR: containerd runtime not ready" >&2
+  k3s crictl info >&2
+  exit 1
+fi
+
 ctx="--kubeconfig=/etc/rancher/k3s/k3s.yaml"
 k3s kubectl $ctx get node
 sleep 5
-until k3s kubectl $ctl wait --for=condition=Ready node/ystack-master; do sleep 5; done
+until k3s kubectl $ctx wait --for=condition=Ready node/ystack-master; do sleep 5; done

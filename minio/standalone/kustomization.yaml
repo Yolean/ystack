@@ -1,5 +1,4 @@
-bases:
+resources:
 - ../common
-- github.com/Yolean/kubernetes-minio/ystack-scale-1?ref=d58575697954690ea9819bb4077fb4c9db76d9bf
-patchesStrategicMerge:
-- kubefwd-never-hl-service.yaml
+- deployment.yaml
+- pvc.yaml

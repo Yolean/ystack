@@ -1,0 +1,7 @@
+namespace: ystack
+bases:
+- ../../registry/builds-service
+- ../../registry/generic,versitygw
+patchesStrategicMerge:
+- builds-registry-magic-numbers.yaml
+- builds-registry-replicas-1.yaml

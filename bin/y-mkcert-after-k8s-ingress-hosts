@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+# Generates certs for k8s-ingress-hosts into ingress-tls-local/tls.{crt,key}.
+# Preserves SANs from the existing cert (hosts are only added, never removed).
+
+YBIN="$(dirname $0)"
+CERT="$YBIN/../ingress-tls-local/tls.crt"
+KEY="$YBIN/../ingress-tls-local/tls.key"
+
+[ "$1" = "help" ] && echo '
+Generates mkcert certs from the k8s-ingress-hosts block in /etc/hosts
+into ingress-tls-local/tls.{crt,key}.
+
+Preserves SANs from the existing cert (hosts are only added, never removed).
+
+Usage: y-mkcert-after-k8s-ingress-hosts [--no-existing]
+' && exit 0
+
+NO_EXISTING=false
+[ "$1" = "--no-existing" ] && NO_EXISTING=true
+
+# Extract hostnames from k8s-ingress-hosts block in /etc/hosts
+new_hosts=$(awk '/k8s-ingress-hosts start/{flag=1;next}/k8s-ingress-hosts end/{flag=0}flag' /etc/hosts | awk '{print $2}')
+
+if [ -z "$new_hosts" ]; then
+  echo "ERROR: No hostnames found in k8s-ingress-hosts block in /etc/hosts" >&2
+  exit 1
+fi
+
+# Read existing SANs from cert
+existing_hosts=""
+if [ "$NO_EXISTING" = "false" ] && [ -f "$CERT" ]; then
+  existing_hosts=$(openssl x509 -in "$CERT" -noout -text 2>/dev/null \
+    | grep -A1 "Subject Alternative Name" \
+    | tail -1 \
+    | sed 's/DNS://g; s/,//g')
+fi
+
+# Merge: union of existing + new, preserving all existing hosts
+all_hosts=$(printf '%s\n' $existing_hosts $new_hosts | sort -u)
+
+echo "# Hosts from k8s-ingress-hosts: $new_hosts"
+[ -z "$existing_hosts" ] || echo "# Hosts from existing cert: $(echo $existing_hosts | tr '\n' ' ')"
+echo "# Generating cert for: $(echo $all_hosts | tr '\n' ' ')"
+
+y-mkcert -install
+y-mkcert -cert-file "$CERT" -key-file "$KEY" $all_hosts

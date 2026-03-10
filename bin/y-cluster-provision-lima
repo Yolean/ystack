@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
+[ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
+
+CTX=local
+SKIP_CONVERGE=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-lima [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (default: local)
+  --skip-converge       skip converge, validate, and post-provision steps
+  --teardown            delete existing VM and exit
+  -h, --help            show this help
+EOF
+      exit 0 ;;
+    --context=*) CTX="${1#*=}"; shift ;;
+    --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+# Verify prerequisites
+command -v limactl >/dev/null 2>&1 || { echo "ERROR: limactl not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if limactl list 2>/dev/null | grep -q "^ystack "; then
+    limactl delete -f ystack
+    limactl prune
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No Lima VM 'ystack' found"
+  fi
+  exit 0
+fi
+
+# Check for existing VM
+if limactl list 2>/dev/null | grep -q "^ystack "; then
+  echo "ERROR: Lima VM 'ystack' already exists. Delete it first with: limactl delete ystack && limactl prune" >&2
+  exit 1
+fi
+
+# Not reusing y-k3s-install, avoid breaking multipass provision
+K3S_INSTALLER_REVISION=50fa2d70c239b3984dab99a2fb1ddaa35c3f2051
+
+mkdir -p /tmp/lima/ystack/rancher/k3s
+curl -sfL https://github.com/k3s-io/k3s/raw/$K3S_INSTALLER_REVISION/install.sh > /tmp/lima/ystack/install.sh
+
+limactl start --tty=false $YSTACK_HOME/k3s/ystack.yaml
+cp $YSTACK_HOME/k3s/docker-image/registries.yaml /tmp/lima/ystack/rancher/k3s
+
+TOPOLOGY_ZONE="local"
+
+# Place airgap tarball before k3s starts
+AIRGAP_TAR=$(y-k3s-airgap-download)
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Placing airgap tarball into VM ..."
+  limactl shell ystack sudo mkdir -p /var/lib/rancher/k3s/agent/images
+  limactl shell ystack sudo cp "$AIRGAP_TAR" /var/lib/rancher/k3s/agent/images/
+fi
+
+limactl shell ystack sudo swapoff -a
+limactl shell ystack sudo cp -rv /tmp/lima/ystack/rancher /etc
+limactl shell ystack sh /tmp/lima/ystack/install.sh --node-label "topology.kubernetes.io/zone=$TOPOLOGY_ZONE"
+limactl shell ystack sudo sh -c 'until test -f /etc/rancher/k3s/k3s.yaml; do sleep 1; done; cat /etc/rancher/k3s/k3s.yaml' > "$KUBECONFIG.tmp"
+
+KUBECONFIG="$KUBECONFIG.tmp" kubectl config rename-context default $CTX
+
+# Set cluster name for y-cluster-local-detect (after context rename, remaining "default" refs are cluster/user)
+sed -i '' -e 's/name: default/name: ystack-lima/g' \
+          -e 's/cluster: default/cluster: ystack-lima/g' \
+          -e 's/user: default/user: ystack-lima/g' "$KUBECONFIG.tmp"
+k() {
+  KUBECONFIG="$KUBECONFIG.tmp" kubectl --context=$CTX "$@"
+}
+
+until k -n kube-system get pods 2>/dev/null; do
+  echo "==> Waiting for the cluster respond ..."
+  sleep 1
+done
+
+until k -n kube-system get serviceaccount default 2>/dev/null; do
+  echo "==> Waiting for the default service account to exist ..."
+  sleep 1
+done
+
+if [ "$SKIP_CONVERGE" = "true" ]; then
+  echo "# --skip-converge: skipping converge, validate, and post-provision steps"
+  y-kubeconfig-import "$KUBECONFIG.tmp"
+  exit 0
+fi
+
+echo "==> Testing amd64 compatibility ..."
+k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
+while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
+k delete --wait=false pod amd64test
+
+# Import kubeconfig before cache-load and converge (y-kubeconfig-import moves the .tmp file)
+y-kubeconfig-import "$KUBECONFIG.tmp"
+
+echo "# Saving ystack images to local cache ..."
+y-image-cache-ystack </dev/null
+
+echo "# Loading cached images into containerd ..."
+y-image-cache-load-all </dev/null || true
+
+CONVERGE_FLAGS="--context=$CTX --server-side"
+y-cluster-converge-ystack $CONVERGE_FLAGS
+
+# lima-specific: update VM /etc/hosts so containerd can resolve registry services
+BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
+limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
+
+echo "# Updating /etc/hosts (requires sudo) ..."
+y-k8s-ingress-hosts --context=$CTX -write -override-ip 127.0.0.1

@@ -2,49 +2,132 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+
 [ -z "$KUBECONFIG" ] && echo "Provision requires an explicit KUBECONFIG env" && exit 1
 
-[ -z "$CONTEXTNAME" ] && CONTEXTNAME=local
+CTX=local
 K3D_NAME=ystack
+YSTACK_HOST=ystack.local
+K3D_MEMORY="6G"
+K3D_AGENTS="0"
+K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
+SKIP_CONVERGE=false
 
-[ -z "$YSTACK_HOST" ] && YSTACK_HOST=ystack.local
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      cat >&2 <<EOF
+Usage: y-cluster-provision-k3d [flags]
+
+Flags:
+  --context=NAME        kubeconfig context name (default: local)
+  --memory=SIZE         server node memory limit (default: 6G)
+  --agents=N            number of agent nodes (default: 0)
+  --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
+  --host=HOSTNAME       hostname for ingress (default: ystack.local)
+  --skip-converge       skip converge, validate, and post-provision steps
+  --teardown            delete existing cluster and exit
+  -h, --help            show this help
+EOF
+      exit 0 ;;
+    --context=*) CTX="${1#*=}"; shift ;;
+    --memory=*) K3D_MEMORY="${1#*=}"; shift ;;
+    --agents=*) K3D_AGENTS="${1#*=}"; shift ;;
+    --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
+    --host=*) YSTACK_HOST="${1#*=}"; shift ;;
+    --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+# Verify prerequisites
+docker info >/dev/null 2>&1 || { echo "ERROR: Docker is not running" >&2; exit 1; }
+command -v y-k3d >/dev/null 2>&1 || { echo "ERROR: y-k3d not found in PATH" >&2; exit 1; }
+
+# Teardown mode
+if [ "$TEARDOWN" = "true" ]; then
+  if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
+    y-k3d cluster delete $K3D_NAME
+    kubectl config delete-context $CTX 2>/dev/null || true
+  else
+    echo "# No k3d cluster '$K3D_NAME' found"
+  fi
+  exit 0
+fi
+
+# Check for existing cluster
+if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
+  echo "ERROR: k3d cluster '$K3D_NAME' already exists. Delete it first with: y-k3d cluster delete $K3D_NAME" >&2
+  exit 1
+fi
+
 [ -z "$YSTACK_PORTS_IP" ] && export YSTACK_PORTS_IP=$(y-localhost $YSTACK_HOST show 2>/dev/null)
 [ -z "$YSTACK_PORTS_IP" ] || echo "Will bind ports to $YSTACK_PORTS_IP  $YSTACK_HOST"
-[ -z "$K3D_MEMORY" ] && K3D_MEMORY="6G"
-[ -z "$K3D_AGENTS" ] && K3D_AGENTS="0"
-[ -z "$K3D_DOCKER_UPDATE" ] && K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
+
+# k3s airgap image volume mount
+AIRGAP_TAR=$(y-k3s-airgap-download)
+K3D_AIRGAP_VOL=""
+if [ -f "$AIRGAP_TAR" ]; then
+  echo "# Mounting airgap tarball: $AIRGAP_TAR"
+  K3D_AIRGAP_VOL="-v $AIRGAP_TAR:/var/lib/rancher/k3s/agent/images/k3s-airgap-images.tar.zst@server:0"
+fi
+
+# Clean up renamed entries from failed provisions (must happen before k3d reads kubeconfig)
+kubectl config delete-context $CTX 2>/dev/null || true
+kubectl config delete-cluster ystack-k3d 2>/dev/null || true
+kubectl config delete-user ystack-k3d 2>/dev/null || true
+
+# Port-map traefik ports so the host can reach the gateway (Docker bridge IPs aren't routable on macOS)
+K3D_PORT_BIND="${YSTACK_PORTS_IP:+$YSTACK_PORTS_IP:}"
+
+# K3S version from the single source of truth (y-k3s-install)
+K3S_VERSION=$(grep '^export INSTALL_K3S_VERSION=' "$YSTACK_HOME/bin/y-k3s-install" | cut -d= -f2)
+K3D_IMAGE="rancher/k3s:${K3S_VERSION//+/-}"
 
 y-k3d cluster create $K3D_NAME \
   --registry-config "$YSTACK_HOME/k3s/docker-image/registries.yaml" \
-  --no-lb \
   --agents="$K3D_AGENTS" \
   --servers-memory="$K3D_MEMORY" \
-  $VM_RESOURCES
+  --image "$K3D_IMAGE" \
+  -p "${K3D_PORT_BIND}80:80@loadbalancer" \
+  -p "${K3D_PORT_BIND}443:443@loadbalancer" \
+  $K3D_AIRGAP_VOL
 
 # TODO support agents >0
 K3D_DOCKER_NAME=k3d-$K3D_NAME-server-0
 docker update $K3D_DOCKER_NAME $K3D_DOCKER_UPDATE
 docker inspect $K3D_DOCKER_NAME | grep Cpu
 
-kubectl config delete-context local || true
 # Could interfere with some k3d functionality. For example skaffold's k3d detection will probably not work.
-kubectl config rename-context k3d-ystack $CONTEXTNAME
+y-kubectl config rename-context k3d-ystack $CTX
 
-# y-cluster-assert-install --context=$CONTEXTNAME
+# Set cluster name for y-cluster-local-detect
+sed -e 's/name: k3d-ystack/name: ystack-k3d/g' \
+    -e 's/cluster: k3d-ystack/cluster: ystack-k3d/g' \
+    -e 's/name: admin@k3d-ystack/name: ystack-k3d/g' \
+    -e 's/user: admin@k3d-ystack/user: ystack-k3d/g' "$KUBECONFIG" > "$KUBECONFIG.tmp" \
+  && mv "$KUBECONFIG.tmp" "$KUBECONFIG"
 
-# This list of bases also exists in ../k3s/docker-ystack-proxy/Dockerfile, and in y-cluster-provision-multipass
-for base in \
-    00-ystack-namespace \
-    10-minio \
-    20-builds-registry \
-    21-prod-registry \
-    40-buildkit; do \
-  basepath="$YSTACK_HOME/k3s/$base/"
-  echo "# Applying $basepath ..."
-  kubectl --context=$CONTEXTNAME apply -k $basepath
-done
+if [ "$SKIP_CONVERGE" = "true" ]; then
+  echo "# --skip-converge: skipping converge, validate, and post-provision steps"
+  exit 0
+fi
 
-BUILDS_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
-PROD_REGISTRY_IP=$(kubectl --context=$CONTEXTNAME -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
+echo "# Saving ystack images to local cache ..."
+y-image-cache-ystack </dev/null
+
+echo "# Loading cached images into containerd ..."
+y-image-cache-load-all </dev/null || true
+
+y-cluster-converge-ystack --context=$CTX --server-side
+
+# k3d-specific: update node /etc/hosts for registry access
+BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
+PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
 docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
+
+echo "# Updating /etc/hosts (requires sudo) ..."
+y-k8s-ingress-hosts --context=$CTX -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"

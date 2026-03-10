@@ -1,17 +1,17 @@
-# https://github.com/lima-vm/lima/blob/master/templates/alpine.yaml
+# https://lima-vm.io/docs/templates/
 
 minimumLimaVersion: 1.1.1
 
 base:
-- template://_images/alpine
-- template://_default/mounts
+- template:_images/ubuntu-lts
+- template:_default/mounts
 
 cpus: 4
 memory: "8GiB"
 disk: "20GiB"
 
 env:
-  INSTALL_K3S_VERSION: v1.33.3+k3s1
+  INSTALL_K3S_VERSION: v1.35.1+k3s1
   INSTALL_K3S_EXEC: --kubelet-arg=address=0.0.0.0
   K3S_NODE_NAME: ystack-master
 
