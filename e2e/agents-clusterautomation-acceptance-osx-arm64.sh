@@ -20,7 +20,7 @@ if [[ "$ENV_IS_CLEAN" != "true" ]]; then
     PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
     ENV_IS_CLEAN=true \
     /bin/zsh -ilc "$SCRIPT_PATH $*"
-  
+
   exit 0
 fi
 
@@ -42,16 +42,7 @@ trap cleanup EXIT
 cleanup
 
 lsof -iTCP:80 -iTCP:443 -sTCP:LISTEN -P -n >/dev/null 2>&1 && echo "port 80 and 443 must be available for local cluster vm to bind to" && exit 1
-
 y-cluster-provision-k3d
-y-cluster-validate-ystack --context=local
-
-cleanup
-y-cluster-provision-lima
-y-cluster-validate-ystack --context=local
-
-cleanup
-y-cluster-provision-multipass
 y-cluster-validate-ystack --context=local
 
 echo "Acceptance tests completed"

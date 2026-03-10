@@ -22,16 +22,22 @@ fi
 echo "Acceptance test PATH:"
 echo "$PATH"
 
+set -eo pipefail
+
+cleanup() {
+  local provisioner
+  provisioner=$(y-cluster-local-detect 2>/dev/null) || return 0
+  echo "# Cleaning up $provisioner cluster ..."
+  y-cluster-provision-$provisioner --teardown || true
+}
+trap cleanup EXIT
+
 # --- acceptance tests begin here ---
 
-y-cluster-local-detect && (echo "tear down existing local cluster first" && exit 1) || true
+cleanup
 
 ss -tlnp 2>/dev/null | grep -qE ':80 |:443 ' && echo "port 80 and 443 must be available for local cluster to bind to" && exit 1
-
-y-cluster-provision-k3d --teardown
 y-cluster-provision-k3d
 y-cluster-validate-ystack --context=local
-
-y-cluster-provision-k3d --teardown
 
 echo "Acceptance tests completed"

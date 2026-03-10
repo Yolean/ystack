@@ -76,6 +76,7 @@ apply_base 30-monitoring-operator
 echo "# Waiting for prometheus-operator CRDs to register ..."
 until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
 until k get crd alertmanagers.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
 echo "# Validated: prometheus-operator CRDs registered"
 
 # 8. Monitoring CRs (Prometheus, Alertmanager, exporters)
