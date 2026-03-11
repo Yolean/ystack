@@ -6,6 +6,7 @@ YBIN="$(dirname $0)"
 [ -z "$KUBECONFIG" ] && echo "This script requires a KUBECONFIG" && exit 1
 
 CTX=""
+CHECK=false
 PASSTHROUGH=()
 
 while [ $# -gt 0 ]; do
@@ -17,11 +18,13 @@ Usage: y-k8s-ingress-hosts [flags]
 Flags:
   --context=NAME        kubeconfig context name (required)
   -write                rewrite host file
+  -check|--check        check if /etc/hosts includes required entries (no sudo)
   -override-ip=IP       use this IP for all entries
   -h, --help            show this help
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
+    -check|--check) CHECK=true; shift ;;
     *) PASSTHROUGH+=("$1"); shift ;;
   esac
 done
@@ -33,6 +36,25 @@ trap "rm -f $CONTEXT_KUBECONFIG" EXIT
 kubectl config view --raw --minify --context="$CTX" > "$CONTEXT_KUBECONFIG"
 
 version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
+
+if $CHECK; then
+  NEEDED=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" 2>/dev/null | grep -v '^#')
+  MISSING=0
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    HOST=$(echo "$line" | awk '{print $2}')
+    if ! grep -q "$HOST" /etc/hosts; then
+      echo "Missing: $line"
+      MISSING=1
+    fi
+  done <<< "$NEEDED"
+  if [ $MISSING -eq 1 ]; then
+    echo "# /etc/hosts needs updating. Run with -write to fix."
+    exit 1
+  fi
+  echo "# /etc/hosts is up to date"
+  exit 0
+fi
 
 [ $(id -u) -ne 0 ] && exec sudo -E $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"
 
