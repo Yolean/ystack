@@ -129,5 +129,8 @@ PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o
 docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
 
-echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts --context=$CTX -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"
+echo "# Checking /etc/hosts ..."
+if ! y-k8s-ingress-hosts --context=$CTX -check -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"; then
+  echo "# Updating /etc/hosts (requires sudo) ..."
+  y-k8s-ingress-hosts --context=$CTX -write -override-ip "${YSTACK_PORTS_IP:-127.0.0.1}"
+fi
