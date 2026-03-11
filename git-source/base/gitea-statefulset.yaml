@@ -30,12 +30,10 @@ spec:
           name: http
         volumeMounts:
         - name: git-data
-          mountPath: /data
-        - name: logs
-          mountPath: /var/log/gitea
-      volumes:
-      - name: logs
-        emptyDir: {}
+          mountPath: /var/lib/gitea
+        - name: git-data
+          mountPath: /etc/gitea
+          subPath: config
   volumeClaimTemplates:
   - metadata:
       name: git-data

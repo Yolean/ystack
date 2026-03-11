@@ -21,16 +21,16 @@ spec:
             db_name=gitea
             ssl_mode=disable
             charset=utf8
-            db_path=%2Fdata%2Fgitea%2Fgitea.db
+            db_path=%2Fvar%2Flib%2Fgitea%2Fdata%2Fgitea.db
             app_name=Y-stack+git
-            repo_root_path=%2Fdata%2Fgit%2Frepositories
-            lfs_root_path=%2Fdata%2Fgit%2Flfs
+            repo_root_path=%2Fvar%2Flib%2Fgitea%2Fgit%2Frepositories
+            lfs_root_path=%2Fvar%2Flib%2Fgitea%2Fgit%2Flfs
             run_user=git
             domain=localhost
             ssh_port=
             http_port=3000
             app_url=http%3A%2F%2Fgit.ystack.svc.cluster.local%2F
-            log_root_path=%2Fvar%2Flog%2Fgitea
+            log_root_path=%2Fvar%2Flib%2Fgitea%2Fdata%2Flog
             smtp_host=
             smtp_from=
             smtp_user=
@@ -97,7 +97,6 @@ spec:
           echo "Please verify manually that the git setup survives gitea-0 pod restart."
 
           [ "$ENABLE_EXAMPLE_ADMIN" != "true" ] && echo "Note that the first registered user will be come admin"
-          # For automation examples see https://github.com/y-stack/gitea-webhook-tekton/pull/1
 
       restartPolicy: Never
   backoffLimit: 0
