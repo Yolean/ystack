@@ -1,0 +1,7 @@
+[storage]
+type = "S3"
+bucket = "greptimedb"
+endpoint = "http://blobs-versitygw.ystack.svc.cluster.local"
+access_key_id = "YstackEXAMPLEKEY"
+secret_access_key = "github.com/Yolean/ystack-EXAMPLE"
+region = "us-east-1"

@@ -5,12 +5,3 @@ namespace: monitoring
 
 resources:
 - ../kube-state-metrics
-
-patchesStrategicMerge:
-- |-
-  apiVersion: monitoring.coreos.com/v1
-  kind: ServiceMonitor
-  metadata:
-    name: kube-state-metrics
-    labels:
-      prometheus: now

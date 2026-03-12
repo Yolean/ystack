@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+- greptimedb.yaml
+- bucket-create.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+- name: minio
+  literals:
+  - accesskey=YstackEXAMPLEKEY
+  - secretkey=github.com/Yolean/ystack-EXAMPLE
+
+configMapGenerator:
+- name: greptimedb-config
+  files:
+  - config.toml

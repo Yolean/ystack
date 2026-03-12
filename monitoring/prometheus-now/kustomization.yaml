@@ -7,3 +7,14 @@ resources:
 - ../rbac-prometheus
 - now-prometheus-service.yaml
 - now-prometheus.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: prometheus-now-config
+  files:
+  - prometheus.yml
+- name: prometheus-now-rules
+  files:
+  - rules/node-exporter.yml

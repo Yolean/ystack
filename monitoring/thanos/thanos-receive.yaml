@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-receive
+spec:
+  ports:
+  - name: grpc
+    port: 10901
+    targetPort: grpc
+  - name: http
+    port: 10902
+    targetPort: http
+  - name: remote-write
+    port: 19291
+    targetPort: remote-write
+  selector:
+    app: thanos-receive
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-receive
+  labels:
+    app: thanos-receive
+spec:
+  replicas: 1
+  serviceName: thanos-receive
+  selector:
+    matchLabels:
+      app: thanos-receive
+  template:
+    metadata:
+      labels:
+        app: thanos-receive
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      containers:
+      - name: thanos-receive
+        image: quay.io/thanos/thanos:v0.37.2
+        args:
+        - receive
+        - --tsdb.path=/data
+        - --tsdb.retention=2h
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:10902
+        - --remote-write.address=0.0.0.0:19291
+        - --label=receive_replica="0"
+        - --objstore.config-file=/etc/thanos/objstore.yml
+        # WARNING: Do not use these min/max-block-duration overrides in production.
+        # They force frequent block cuts for experiment verification only.
+        - --tsdb.min-block-duration=5m
+        - --tsdb.max-block-duration=5m
+        ports:
+        - name: grpc
+          containerPort: 10901
+        - name: http
+          containerPort: 10902
+        - name: remote-write
+          containerPort: 19291
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+          initialDelaySeconds: 15
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: objstore-config
+          mountPath: /etc/thanos
+      volumes:
+      - name: data
+        emptyDir: {}
+      - name: objstore-config
+        configMap:
+          name: thanos-objstore

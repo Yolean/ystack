@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: greptimedb
+spec:
+  ports:
+  - name: http
+    port: 4000
+    targetPort: http
+  - name: grpc
+    port: 4001
+    targetPort: grpc
+  selector:
+    app: greptimedb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greptimedb
+  labels:
+    app: greptimedb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: greptimedb
+  template:
+    metadata:
+      labels:
+        app: greptimedb
+    spec:
+      containers:
+      - name: greptimedb
+        image: greptime/greptimedb:v0.12.0
+        args:
+        - standalone
+        - start
+        - --config-file=/etc/greptimedb/config.toml
+        - --http-addr=0.0.0.0:4000
+        - --rpc-addr=0.0.0.0:4001
+        ports:
+        - name: http
+          containerPort: 4000
+        - name: grpc
+          containerPort: 4001
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 768Mi
+        volumeMounts:
+        - name: data
+          mountPath: /tmp/greptimedb
+        - name: config
+          mountPath: /etc/greptimedb
+      volumes:
+      - name: data
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: greptimedb-config
