@@ -110,6 +110,9 @@ sed -e 's/name: k3d-ystack/name: ystack-k3d/g' \
     -e 's/user: admin@k3d-ystack/user: ystack-k3d/g' "$KUBECONFIG" > "$KUBECONFIG.tmp" \
   && mv "$KUBECONFIG.tmp" "$KUBECONFIG"
 
+echo "# Waiting for API server to be ready ..."
+until kubectl --context=$CTX get nodes >/dev/null 2>&1; do sleep 2; done
+
 if [ "$SKIP_CONVERGE" = "true" ]; then
   echo "# --skip-converge: skipping converge, validate, and post-provision steps"
   exit 0
