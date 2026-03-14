@@ -13,6 +13,7 @@ K3D_MEMORY="6G"
 K3D_AGENTS="0"
 K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
 SKIP_CONVERGE=false
+SKIP_IMAGE_LOAD=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -27,6 +28,7 @@ Flags:
   --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
   --host=HOSTNAME       hostname for ingress (default: ystack.local)
   --skip-converge       skip converge, validate, and post-provision steps
+  --skip-image-load     skip image cache and load into containerd
   --teardown            delete existing cluster and exit
   -h, --help            show this help
 EOF
@@ -37,6 +39,7 @@ EOF
     --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
     --host=*) YSTACK_HOST="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -118,11 +121,15 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
-echo "# Saving ystack images to local cache ..."
-y-image-cache-ystack </dev/null
+if [ "$SKIP_IMAGE_LOAD" = "true" ]; then
+  echo "# --skip-image-load: skipping image cache and load"
+else
+  echo "# Saving ystack images to local cache ..."
+  y-image-cache-ystack </dev/null
 
-echo "# Loading cached images into containerd ..."
-y-image-cache-load-all </dev/null || true
+  echo "# Loading cached images into containerd ..."
+  y-image-cache-load-all </dev/null || true
+fi
 
 y-cluster-converge-ystack --context=$CTX --server-side
 

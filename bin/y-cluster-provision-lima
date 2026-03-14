@@ -8,6 +8,7 @@ YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
 CTX=local
 SKIP_CONVERGE=false
+SKIP_IMAGE_LOAD=false
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)
@@ -17,12 +18,14 @@ Usage: y-cluster-provision-lima [flags]
 Flags:
   --context=NAME        kubeconfig context name (default: local)
   --skip-converge       skip converge, validate, and post-provision steps
+  --skip-image-load     skip image cache and load into containerd
   --teardown            delete existing VM and exit
   -h, --help            show this help
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -107,11 +110,15 @@ k delete --wait=false pod amd64test
 # Import kubeconfig before cache-load and converge (y-kubeconfig-import moves the .tmp file)
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
-echo "# Saving ystack images to local cache ..."
-y-image-cache-ystack </dev/null
+if [ "$SKIP_IMAGE_LOAD" = "true" ]; then
+  echo "# --skip-image-load: skipping image cache and load"
+else
+  echo "# Saving ystack images to local cache ..."
+  y-image-cache-ystack </dev/null
 
-echo "# Loading cached images into containerd ..."
-y-image-cache-load-all </dev/null || true
+  echo "# Loading cached images into containerd ..."
+  y-image-cache-load-all </dev/null || true
+fi
 
 CONVERGE_FLAGS="--context=$CTX --server-side"
 y-cluster-converge-ystack $CONVERGE_FLAGS
