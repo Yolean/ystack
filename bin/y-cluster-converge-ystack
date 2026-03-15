@@ -60,6 +60,15 @@ apply_base 09-y-kustomize
 k -n ystack rollout status deploy/y-kustomize --timeout=60s
 echo "# Validated: y-kustomize server running"
 
+# 3.6. Update /etc/hosts so kustomize can reach y-kustomize via HTTPRoute
+echo "# Updating ingress hosts ..."
+"$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" -write
+echo "# Waiting for y-kustomize to be reachable from host ..."
+until curl -sf --connect-timeout 3 http://y-kustomize.ystack.svc.cluster.local/health >/dev/null 2>&1; do
+  sleep 2
+done
+echo "# Validated: y-kustomize reachable from host"
+
 # 4. VersityGW (S3-compatible blob store)
 apply_base 10-versitygw
 k -n ystack rollout status deploy/versitygw --timeout=120s
@@ -69,6 +78,15 @@ echo "# Validated: versitygw rollout complete"
 apply_base 09-blobs-versitygw
 k -n blobs get svc y-s3-api
 echo "# Validated: y-s3-api service exists in blobs namespace"
+
+# 4.6. Wait for y-kustomize to serve versitygw bases
+k -n ystack rollout restart deploy/y-kustomize
+k -n ystack rollout status deploy/y-kustomize --timeout=60s
+echo "# Waiting for y-kustomize to serve setup-bucket-job ..."
+until curl -sf --connect-timeout 3 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null 2>&1; do
+  sleep 2
+done
+echo "# Validated: y-kustomize serving blobs bases"
 
 # 5. Builds registry
 apply_base 20-builds-registry-versitygw
