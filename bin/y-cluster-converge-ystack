@@ -28,58 +28,100 @@ apply_base() {
   k apply $SERVER_SIDE -k "$basepath"
 }
 
-# 1. Namespaces
-apply_base 00-namespace-ystack
-k get ns ystack
-echo "# Validated: namespace ystack exists"
-apply_base 01-namespace-blobs
-k get ns blobs
-echo "# Validated: namespace blobs exists"
-apply_base 02-namespace-kafka
-k get ns kafka
-echo "# Validated: namespace kafka exists"
-apply_base 03-namespace-monitoring
-k get ns monitoring
-echo "# Validated: namespace monitoring exists"
+apply_base_gateway() {
+  local base="$1"
+  local basepath="$YSTACK_HOME/k3s/$base/"
+  echo "# Applying gateway resources from $basepath ..."
+  k kustomize "$basepath" | k apply $SERVER_SIDE -l yolean.se/module-part=gateway -f -
+}
 
-# 2. Gateway API CRDs (managed by k3s traefik-crd HelmChart) + traefik Gateway provider config
+BASES=(
+  00-namespace-ystack
+  01-namespace-blobs
+  02-namespace-kafka
+  03-namespace-monitoring
+  05-gateway-api
+  06-gateway
+  09-y-kustomize
+  10-versitygw
+  09-blobs-versitygw
+  20-builds-registry-versitygw
+  07-builds-registry-httproute
+  08-buildkitd-grpcroute
+  30-monitoring-operator
+  31-monitoring
+  09-prometheus-httproute
+  21-prod-registry
+  40-buildkit
+)
+
+# ============================================================
+# Pass 1: Apply gateway resources from all bases
+# ============================================================
+echo "# === Pass 1: gateway resources ==="
+
+# Namespaces first (no label filtering, they must all exist)
+for base in 00-namespace-ystack 01-namespace-blobs 02-namespace-kafka 03-namespace-monitoring; do
+  apply_base "$base"
+done
+
+# Gateway API CRDs
 echo "# Waiting for Gateway API CRDs (from k3s traefik-crd) ..."
 until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
 apply_base 05-gateway-api
 echo "# Validated: Gateway API CRDs installed"
 
-# 3. Gateway (wait for CRD to be served before applying)
 echo "# Waiting for Gateway resource type to be served ..."
 until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
-apply_base 06-gateway
-k -n ystack get gateway ystack
-echo "# Validated: gateway ystack exists"
 
-# 3.5. y-kustomize server (serves kustomize bases in-cluster)
-apply_base 09-y-kustomize
+# Apply only gateway-labeled resources from all remaining bases
+for base in "${BASES[@]}"; do
+  case "$base" in
+    0[0-3]-namespace-*|05-gateway-api) continue ;; # already applied
+    20-builds-registry-versitygw) continue ;; # requires y-kustomize HTTP, can't kustomize build yet
+  esac
+  apply_base_gateway "$base"
+done
+
+# y-kustomize needs to be fully deployed for its HTTPRoute to work
 k -n ystack rollout status deploy/y-kustomize --timeout=60s
 echo "# Validated: y-kustomize server running"
 
-# 3.6. Update /etc/hosts so kustomize can reach y-kustomize via HTTPRoute
+# ============================================================
+# Update /etc/hosts now that all HTTPRoutes exist
+# ============================================================
 echo "# Updating ingress hosts ..."
 "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" -write
+
 echo "# Waiting for y-kustomize to be reachable from host ..."
 until curl -sf --connect-timeout 3 http://y-kustomize.ystack.svc.cluster.local/health >/dev/null 2>&1; do
   sleep 2
 done
 echo "# Validated: y-kustomize reachable from host"
 
-# 4. VersityGW (S3-compatible blob store)
+# ============================================================
+# Pass 2: Full apply of all bases
+# ============================================================
+echo "# === Pass 2: full apply ==="
+
+# Gateway and namespaces already applied, skip CRD waits
+apply_base 06-gateway
+k -n ystack get gateway ystack
+echo "# Validated: gateway ystack exists"
+
+apply_base 09-y-kustomize
+
+# VersityGW (S3-compatible blob store)
 apply_base 10-versitygw
 k -n ystack rollout status deploy/versitygw --timeout=120s
 echo "# Validated: versitygw rollout complete"
 
-# 4.5. S3 API abstraction (points to versitygw)
+# S3 API abstraction (points to versitygw)
 apply_base 09-blobs-versitygw
 k -n blobs get svc y-s3-api
 echo "# Validated: y-s3-api service exists in blobs namespace"
 
-# 4.6. Wait for y-kustomize to serve versitygw bases
+# Restart y-kustomize to pick up versitygw bases
 k -n ystack rollout restart deploy/y-kustomize
 k -n ystack rollout status deploy/y-kustomize --timeout=60s
 echo "# Waiting for y-kustomize to serve setup-bucket-job ..."
@@ -88,7 +130,7 @@ until curl -sf --connect-timeout 3 http://y-kustomize.ystack.svc.cluster.local/v
 done
 echo "# Validated: y-kustomize serving blobs bases"
 
-# 5. Builds registry
+# Builds registry
 apply_base 20-builds-registry-versitygw
 k -n ystack get svc builds-registry
 CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}')
@@ -98,17 +140,16 @@ if [ "$CLUSTER_IP" != "10.43.0.50" ]; then
 fi
 echo "# Validated: builds-registry clusterIP=10.43.0.50"
 
-# 6. Builds registry HTTPRoute
+# HTTPRoutes and GRPCRoutes (already applied in pass 1, this ensures full state)
 apply_base 07-builds-registry-httproute
 k -n ystack get httproute builds-registry
 echo "# Validated: httproute builds-registry exists"
 
-# 6.5 Buildkitd GRPCRoute
 apply_base 08-buildkitd-grpcroute
 k -n ystack get grpcroute buildkitd
 echo "# Validated: grpcroute buildkitd exists"
 
-# 7. Monitoring operator + CRDs
+# Monitoring operator + CRDs
 apply_base 30-monitoring-operator
 echo "# Waiting for prometheus-operator CRDs to register ..."
 until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
@@ -116,22 +157,21 @@ until k get crd alertmanagers.monitoring.coreos.com >/dev/null 2>&1; do sleep 2;
 until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
 echo "# Validated: prometheus-operator CRDs registered"
 
-# 8. Monitoring CRs (Prometheus, Alertmanager, exporters)
+# Monitoring CRs (Prometheus, Alertmanager, exporters)
 apply_base 31-monitoring
 k -n monitoring get prometheus now
 echo "# Validated: monitoring stack exists"
 
-# 6.8 Prometheus HTTPRoute
 apply_base 09-prometheus-httproute
 k -n monitoring get httproute prometheus-now
 echo "# Validated: httproute prometheus-now exists"
 
-# 7. Prod registry
+# Prod registry
 apply_base 21-prod-registry
 k -n ystack get svc prod-registry
 echo "# Validated: prod-registry service exists"
 
-# 8. Buildkit
+# Buildkit
 apply_base 40-buildkit
 k -n ystack get statefulset buildkitd
 echo "# Validated: buildkitd statefulset exists"
