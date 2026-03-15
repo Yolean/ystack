@@ -1,7 +1,30 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
 namespace: ystack
-bases:
+
+resources:
 - ../../registry/builds-service
-- ../../registry/generic,versitygw
-patchesStrategicMerge:
-- builds-registry-magic-numbers.yaml
-- builds-registry-replicas-1.yaml
+- ../../registry/generic
+- ../../versitygw/defaultsecret
+- http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/setup-bucket-job.yaml
+
+patches:
+- path: builds-registry-magic-numbers.yaml
+- path: builds-registry-replicas-1.yaml
+- path: deployment-s3.yaml
+- target:
+    kind: Job
+    name: setup-bucket
+  patch: |
+    - op: replace
+      path: /spec/template/spec/containers/0/env/2/value
+      value: ystack-builds-registry
+- target:
+    kind: Secret
+    name: bucket
+  patch: |
+    - op: replace
+      path: /metadata/name
+      value: builds-registry-bucket

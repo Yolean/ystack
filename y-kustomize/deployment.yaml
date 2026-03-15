@@ -41,9 +41,9 @@ spec:
             memory: 32Mi
         volumeMounts:
         - name: base-blobs-setup-bucket-job
-          mountPath: /srv/blobs/setup-bucket-job
+          mountPath: /srv/v1/blobs/setup-bucket-job
         - name: base-kafka-setup-topic-job
-          mountPath: /srv/kafka/setup-topic-job
+          mountPath: /srv/v1/kafka/setup-topic-job
       volumes:
       - name: base-blobs-setup-bucket-job
         secret:
