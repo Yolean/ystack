@@ -120,17 +120,10 @@ else
   y-image-cache-load-all </dev/null || true
 fi
 
-CONVERGE_FLAGS="--context=$CTX --server-side"
-y-cluster-converge-ystack $CONVERGE_FLAGS
+YSTACK_OVERRIDE_IP=127.0.0.1 y-cluster-converge-ystack --context=$CTX --server-side
 
 # lima-specific: update VM /etc/hosts so containerd can resolve registry services
 BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
 PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
 limactl shell ystack sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 limactl shell ystack sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
-
-echo "# Checking /etc/hosts ..."
-if ! y-k8s-ingress-hosts --context=$CTX -check -override-ip 127.0.0.1; then
-  echo "# Updating /etc/hosts (requires sudo) ..."
-  y-k8s-ingress-hosts --context=$CTX -write -override-ip 127.0.0.1
-fi

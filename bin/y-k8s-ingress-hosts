@@ -7,6 +7,8 @@ YBIN="$(dirname $0)"
 
 CTX=""
 CHECK=false
+ENSURE=false
+EXPLICIT_OVERRIDE_IP=""
 PASSTHROUGH=()
 
 while [ $# -gt 0 ]; do
@@ -19,12 +21,20 @@ Flags:
   --context=NAME        kubeconfig context name (required)
   -write                rewrite host file
   -check|--check        check if /etc/hosts includes required entries (no sudo)
-  -override-ip=IP       use this IP for all entries
+  --ensure              check, then write if needed (combines -check and -write)
+  -override-ip=IP       use this IP for all entries (overrides gateway annotation)
+  -override-ip IP       use this IP for all entries (overrides gateway annotation)
   -h, --help            show this help
+
+If no -override-ip is given, reads yolean.se/override-ip annotation from
+the ystack gateway in ystack namespace.
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     -check|--check) CHECK=true; shift ;;
+    --ensure) ENSURE=true; shift ;;
+    -override-ip=*) EXPLICIT_OVERRIDE_IP="${1#*=}"; shift ;;
+    -override-ip) EXPLICIT_OVERRIDE_IP="$2"; shift; shift ;;
     *) PASSTHROUGH+=("$1"); shift ;;
   esac
 done
@@ -35,9 +45,22 @@ CONTEXT_KUBECONFIG=$(mktemp)
 trap "rm -f $CONTEXT_KUBECONFIG" EXIT
 kubectl config view --raw --minify --context="$CTX" > "$CONTEXT_KUBECONFIG"
 
+# Resolve override IP: explicit flag > gateway annotation
+OVERRIDE_IP="$EXPLICIT_OVERRIDE_IP"
+if [ -z "$OVERRIDE_IP" ]; then
+  OVERRIDE_IP=$(kubectl --context="$CTX" -n ystack get gateway ystack \
+    -o jsonpath='{.metadata.annotations.yolean\.se/override-ip}' 2>/dev/null || true)
+  if [ -n "$OVERRIDE_IP" ]; then
+    echo "# Using override-ip=$OVERRIDE_IP from gateway annotation"
+  fi
+fi
+if [ -n "$OVERRIDE_IP" ]; then
+  PASSTHROUGH+=("-override-ip" "$OVERRIDE_IP")
+fi
+
 version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
 
-if $CHECK; then
+if $CHECK || $ENSURE; then
   NEEDED=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" 2>/dev/null | grep -v '^#')
   MISSING=0
   while IFS= read -r line; do
@@ -48,12 +71,15 @@ if $CHECK; then
       MISSING=1
     fi
   done <<< "$NEEDED"
-  if [ $MISSING -eq 1 ]; then
-    echo "# /etc/hosts needs updating. Run with -write to fix."
+  if [ $MISSING -eq 0 ]; then
+    echo "# /etc/hosts is up to date"
+    exit 0
+  fi
+  if ! $ENSURE; then
+    echo "# /etc/hosts needs updating. Run with -write or --ensure to fix."
     exit 1
   fi
-  echo "# /etc/hosts is up to date"
-  exit 0
+  echo "# /etc/hosts needs updating, writing ..."
 fi
 
 [ $(id -u) -ne 0 ] && exec sudo -E $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"
