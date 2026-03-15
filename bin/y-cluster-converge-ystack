@@ -55,6 +55,11 @@ apply_base 06-gateway
 k -n ystack get gateway ystack
 echo "# Validated: gateway ystack exists"
 
+# 3.5. y-kustomize server (serves kustomize bases in-cluster)
+apply_base 09-y-kustomize
+k -n ystack rollout status deploy/y-kustomize --timeout=60s
+echo "# Validated: y-kustomize server running"
+
 # 4. VersityGW (S3-compatible blob store)
 apply_base 10-versitygw
 k -n ystack rollout status deploy/versitygw --timeout=120s
