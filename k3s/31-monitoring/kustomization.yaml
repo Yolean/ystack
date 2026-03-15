@@ -1,5 +1,4 @@
 resources:
-- ../../monitoring/namespace
 - ../../monitoring/prometheus-now
 - ../../monitoring/alertmanager-main
 - ../../monitoring/kube-state-metrics-now

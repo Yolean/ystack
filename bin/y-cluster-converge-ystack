@@ -28,10 +28,19 @@ apply_base() {
   k apply $SERVER_SIDE -k "$basepath"
 }
 
-# 1. Namespace
-apply_base 00-ystack-namespace
+# 1. Namespaces
+apply_base 00-namespace-ystack
 k get ns ystack
 echo "# Validated: namespace ystack exists"
+apply_base 01-namespace-blobs
+k get ns blobs
+echo "# Validated: namespace blobs exists"
+apply_base 02-namespace-kafka
+k get ns kafka
+echo "# Validated: namespace kafka exists"
+apply_base 03-namespace-monitoring
+k get ns monitoring
+echo "# Validated: namespace monitoring exists"
 
 # 2. Gateway API CRDs (managed by k3s traefik-crd HelmChart) + traefik Gateway provider config
 echo "# Waiting for Gateway API CRDs (from k3s traefik-crd) ..."
@@ -50,6 +59,11 @@ echo "# Validated: gateway ystack exists"
 apply_base 10-versitygw
 k -n ystack rollout status deploy/versitygw --timeout=120s
 echo "# Validated: versitygw rollout complete"
+
+# 4.5. S3 API abstraction (points to versitygw)
+apply_base 09-blobs-versitygw
+k -n blobs get svc y-s3-api
+echo "# Validated: y-s3-api service exists in blobs namespace"
 
 # 5. Builds registry
 apply_base 20-builds-registry-versitygw
