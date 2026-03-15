@@ -8,7 +8,7 @@ resources:
 - ../../registry/builds-service
 - ../../registry/generic
 - ../../versitygw/defaultsecret
-- http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/setup-bucket-job.yaml
+- http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml
 
 patches:
 - path: builds-registry-magic-numbers.yaml

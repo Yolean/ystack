@@ -1,7 +1,7 @@
-generatorOptions:
-  disableNameSuffixHash: true
 secretGenerator:
-- name: minio
+- name: versitygw-server
+  options:
+    disableNameSuffixHash: true
   literals:
-  - accesskey=YstackEXAMPLEKEY
-  - secretkey=github.com/Yolean/ystack-EXAMPLE
+  - root-accesskey=YstackEXAMPLEKEY
+  - root-secretkey=github.com/Yolean/ystack-EXAMPLE

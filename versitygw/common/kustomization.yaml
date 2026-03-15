@@ -1,11 +1,9 @@
 resources:
 - blobs-versitygw-service.yaml
 
-generatorOptions:
-  disableNameSuffixHash: true
-
 secretGenerator:
 - name: y-kustomize.blobs.setup-bucket-job
+  options:
+    disableNameSuffixHash: true
   files:
-  - kustomization.yaml=y-kustomize-bases/blobs/setup-bucket-job/kustomization.yaml
-  - setup-bucket-job.yaml=y-kustomize-bases/blobs/setup-bucket-job/setup-bucket-job.yaml
+  - base-for-annotations.yaml=y-kustomize-bases/blobs/setup-bucket-job/setup-bucket-job.yaml

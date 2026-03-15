@@ -23,6 +23,7 @@ spec:
         - --directory-listing=false
         - --health
         - --log-level=info
+        - --log-remote-address
         - --ignore-hidden-files=false
         - --disable-symlinks=false
         ports:
