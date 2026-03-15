@@ -4,8 +4,8 @@ set -eo pipefail
 
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Converge bases from y-cluster-converge-ystack
-BASES=$(grep 'apply_base ' "$YSTACK_HOME/bin/y-cluster-converge-ystack" | sed 's/apply_base //')
+# Converge bases from y-cluster-converge-ystack BASES array
+BASES=$(sed -n '/^BASES=(/,/^)/{ /^BASES=(/d; /^)/d; s/^[[:space:]]*//; p; }' "$YSTACK_HOME/bin/y-cluster-converge-ystack")
 for base in $BASES; do
   kubectl kustomize "$YSTACK_HOME/k3s/$base/" 2>/dev/null \
     | grep -oE 'image:\s*\S+' \

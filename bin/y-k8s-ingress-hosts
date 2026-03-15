@@ -43,12 +43,12 @@ done
 
 CONTEXT_KUBECONFIG=$(mktemp)
 trap "rm -f $CONTEXT_KUBECONFIG" EXIT
-kubectl config view --raw --minify --context="$CTX" > "$CONTEXT_KUBECONFIG"
+kubectl config view --raw --minify --context="$CTX" --request-timeout=5s > "$CONTEXT_KUBECONFIG"
 
 # Resolve override IP: explicit flag > gateway annotation
 OVERRIDE_IP="$EXPLICIT_OVERRIDE_IP"
 if [ -z "$OVERRIDE_IP" ]; then
-  OVERRIDE_IP=$(kubectl --context="$CTX" -n ystack get gateway ystack \
+  OVERRIDE_IP=$(kubectl --context="$CTX" --request-timeout=5s -n ystack get gateway ystack \
     -o jsonpath='{.metadata.annotations.yolean\.se/override-ip}' 2>/dev/null || true)
   if [ -n "$OVERRIDE_IP" ]; then
     echo "# Using override-ip=$OVERRIDE_IP from gateway annotation"
@@ -62,16 +62,22 @@ version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
 
 if $CHECK || $ENSURE; then
   NEEDED=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" 2>/dev/null | grep -v '^#')
-  MISSING=0
+  STALE=0
   while IFS= read -r line; do
     [ -z "$line" ] && continue
+    EXPECTED_IP=$(echo "$line" | awk '{print $1}')
     HOST=$(echo "$line" | awk '{print $2}')
-    if ! grep -q "$HOST" /etc/hosts; then
+    ACTUAL=$(grep -E "^[^#]*[[:space:]]$HOST([[:space:]]|$)" /etc/hosts 2>/dev/null || true)
+    if [ -z "$ACTUAL" ]; then
       echo "Missing: $line"
-      MISSING=1
+      STALE=1
+    elif ! echo "$ACTUAL" | grep -qE "^[[:space:]]*$EXPECTED_IP[[:space:]]"; then
+      ACTUAL_IP=$(echo "$ACTUAL" | awk '{print $1}')
+      echo "Stale: $HOST has $ACTUAL_IP, expected $EXPECTED_IP"
+      STALE=1
     fi
   done <<< "$NEEDED"
-  if [ $MISSING -eq 0 ]; then
+  if [ $STALE -eq 0 ]; then
     echo "# /etc/hosts is up to date"
     exit 0
   fi
@@ -80,6 +86,7 @@ if $CHECK || $ENSURE; then
     exit 1
   fi
   echo "# /etc/hosts needs updating, writing ..."
+  PASSTHROUGH+=("-write")
 fi
 
 [ $(id -u) -ne 0 ] && exec sudo -E $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"

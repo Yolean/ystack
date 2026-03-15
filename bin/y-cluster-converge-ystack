@@ -42,7 +42,7 @@ apply_rendered() {
   fi
   if [ -n "$label_selector" ]; then
     local filtered
-    filtered=$(k apply $SERVER_SIDE -l "$label_selector" -f "$outfile" --dry-run=client -o yaml 2>/dev/null || true)
+    filtered=$(k apply -l "$label_selector" -f "$outfile" --dry-run=client -o yaml 2>/dev/null || true)
     if [ -z "$filtered" ] || [ "$filtered" = "---" ]; then
       echo "#   (no matching resources for $label_selector, skipping)"
       return
@@ -129,11 +129,11 @@ fi
 # ============================================================
 "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure
 
-echo "# Waiting for y-kustomize to be reachable from host (timeout 30s) ..."
-DEADLINE=$((SECONDS + 30))
-until curl -sf --connect-timeout 3 http://y-kustomize.ystack.svc.cluster.local/health >/dev/null 2>&1; do
+echo "# Waiting for y-kustomize to be reachable from host (timeout 60s) ..."
+DEADLINE=$((SECONDS + 60))
+until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/health >/dev/null 2>&1; do
   if [ $SECONDS -ge $DEADLINE ]; then
-    echo "ERROR: y-kustomize not reachable from host after 30s" >&2
+    echo "ERROR: y-kustomize not reachable from host after 60s" >&2
     echo "# Check /etc/hosts and gateway routing" >&2
     exit 1
   fi
@@ -170,7 +170,7 @@ echo "# Validated: y-s3-api service exists in blobs namespace"
 k -n ystack rollout restart deploy/y-kustomize
 k -n ystack rollout status deploy/y-kustomize --timeout=60s
 echo "# Waiting for y-kustomize to serve setup-bucket-job ..."
-until curl -sf --connect-timeout 3 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null 2>&1; do
+until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null 2>&1; do
   sleep 2
 done
 echo "# Validated: y-kustomize serving blobs bases"

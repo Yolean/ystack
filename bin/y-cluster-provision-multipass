@@ -115,16 +115,12 @@ else
   y-image-cache-load-all </dev/null || true
 fi
 
-CONVERGE_FLAGS="--context=$CTX --server-side"
-y-cluster-converge-ystack $CONVERGE_FLAGS
+y-cluster-converge-ystack --context=$CTX --server-side
 
 # multipass-specific: update VM /etc/hosts so containerd can resolve registry services
 BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
 PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
 multipass exec "$VM_NAME" -- sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 multipass exec "$VM_NAME" -- sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
-
-echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts --context=$CTX -write
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"
