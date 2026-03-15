@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+secretGenerator:
+- name: y-kustomize.kafka.setup-topic-job
+  options:
+    disableNameSuffixHash: true
+  files:
+  - base-for-annotations.yaml=y-kustomize-bases/kafka/setup-topic-job/setup-topic-job.yaml

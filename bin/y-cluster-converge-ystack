@@ -61,6 +61,7 @@ BASES=(
   05-gateway-api
   06-gateway
   09-y-kustomize
+  09-kafka-common
   10-versitygw
   09-blobs-versitygw
   20-builds-registry-versitygw
@@ -166,14 +167,22 @@ apply_rendered "$RENDER_DIR/09-blobs-versitygw.yaml"
 k -n blobs get svc y-s3-api
 echo "# Validated: y-s3-api service exists in blobs namespace"
 
-# Restart y-kustomize to pick up versitygw bases
+# Kafka common (y-kustomize secret for topic job base)
+echo "# Applying 09-kafka-common ..."
+apply_rendered "$RENDER_DIR/09-kafka-common.yaml"
+
+# Restart y-kustomize to pick up versitygw and kafka bases
 k -n ystack rollout restart deploy/y-kustomize
 k -n ystack rollout status deploy/y-kustomize --timeout=60s
-echo "# Waiting for y-kustomize to serve setup-bucket-job ..."
+echo "# Waiting for y-kustomize to serve bases ..."
 until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null 2>&1; do
   sleep 2
 done
 echo "# Validated: y-kustomize serving blobs bases"
+until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null 2>&1; do
+  sleep 2
+done
+echo "# Validated: y-kustomize serving kafka bases"
 
 # Builds registry (render now that y-kustomize is reachable)
 render_base 20-builds-registry-versitygw
