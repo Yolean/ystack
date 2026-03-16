@@ -90,18 +90,11 @@ ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=10s 2>&1) \
   && report "registry rollout" "ok" \
   || report "registry rollout" "$ROLLOUT_REG"
 
-echo "[y-cluster-validate-ystack] Registry access (in-cluster curl)"
-REGISTRY_POD=$(k -n ystack get pod -l ystack-builds-registry=http -o=jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-if [ -n "$REGISTRY_POD" ]; then
-  CATALOG=$(k -n ystack exec "$REGISTRY_POD" -- wget -q -O- http://localhost/v2/_catalog 2>/dev/null)
-  if echo "$CATALOG" | grep -q "repositories"; then
-    report "in-cluster registry v2 API" "ok"
-  else
-    report "in-cluster registry v2 API" "no response"
-  fi
-else
-  report "in-cluster registry v2 API" "no registry pod"
-fi
+echo "[y-cluster-validate-ystack] Registry access"
+CATALOG=$(curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 http://builds-registry.ystack.svc.cluster.local/v2/_catalog 2>/dev/null) && \
+  echo "$CATALOG" | grep -q "repositories" \
+  && report "registry v2 API" "ok" \
+  || report "registry v2 API" "no response"
 
 echo "[y-cluster-validate-ystack] Build + deploy (y-build)"
 EXAMPLE_DIR="$YSTACK_HOME/examples/y-build"

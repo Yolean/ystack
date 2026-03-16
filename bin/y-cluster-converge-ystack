@@ -81,11 +81,11 @@ for base in "${BASES[@]}"; do
     # Before 6* bases, verify y-kustomize serves real content (secrets need time to propagate)
     if [ "$digit" = "6" ]; then
       echo "[y-cluster-converge-ystack] Verifying y-kustomize API"
-      curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/health
+      curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 http://y-kustomize.ystack.svc.cluster.local/health
       echo "[y-cluster-converge-ystack] y-kustomize health ok"
-      curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
+      curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
       echo "[y-cluster-converge-ystack] y-kustomize serving blobs bases"
-      curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
+      curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
       echo "[y-cluster-converge-ystack] y-kustomize serving kafka bases"
     fi
   fi
