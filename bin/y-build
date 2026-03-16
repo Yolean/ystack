@@ -81,7 +81,7 @@ DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
 if [ -z "$BUILDKIT_HOST" ]; then
   BUILDKIT_HOSTNAME=buildkitd.ystack.svc.cluster.local
-  # Prefer port 80 (Gateway API) for local clusters, fall back to 8547 (direct service)
+  # Prefer port 80 (Gateway API) for local clusters, fall back to 8547 (y-kubefwd for remote clusters)
   if BUILDKIT_HOST=tcp://$BUILDKIT_HOSTNAME:80 y-buildctl --timeout 2 debug workers >/dev/null 2>&1; then
     BUILDKIT_HOST=tcp://$BUILDKIT_HOSTNAME:80
   else
