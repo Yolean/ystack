@@ -6,4 +6,4 @@ secretGenerator:
   options:
     disableNameSuffixHash: true
   files:
-  - base-for-annotations.yaml=y-kustomize-bases/blobs/setup-bucket-job/setup-bucket-job.yaml
+  - base-for-annotations.yaml=y-kustomize-bases/blobs/setup-bucket-job/base-for-annotations.yaml
