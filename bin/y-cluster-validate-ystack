@@ -90,11 +90,6 @@ ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=10s 2>&1) \
   && report "registry rollout" "ok" \
   || report "registry rollout" "$ROLLOUT_REG"
 
-echo "[y-cluster-validate-ystack] Waiting for setup-bucket job (up to 10s)"
-k -n ystack wait --for=condition=complete job/setup-bucket --timeout=10s >/dev/null 2>&1 \
-  && report "setup-bucket job" "ok" \
-  || report "setup-bucket job" "not complete within 10s"
-
 echo "[y-cluster-validate-ystack] Registry access (in-cluster curl)"
 REGISTRY_POD=$(k -n ystack get pod -l ystack-builds-registry=http -o=jsonpath='{.items[0].metadata.name}' 2>/dev/null)
 if [ -n "$REGISTRY_POD" ]; then

@@ -15,6 +15,9 @@ metadata:
     yolean.se/converge-mode: replace
 spec:
   template:
+    metadata:
+      annotations:
+        yolean.se/bucket-name: ""
     spec:
       containers:
       - name: mc
@@ -31,7 +34,9 @@ spec:
               name: versitygw-server
               key: root-secretkey
         - name: BUCKET_NAME
-          value: default
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/bucket-name']
         - name: S3_ENDPOINT
           value: http://y-s3-api.blobs.svc.cluster.local
         command:

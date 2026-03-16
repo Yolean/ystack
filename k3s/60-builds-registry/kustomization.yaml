@@ -11,23 +11,10 @@ resources:
 - ../../registry/generic
 - ../../registry/httproute
 - ../../blobs-versitygw/defaultsecret
-- http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml
+- ../../registry/builds-bucket
+- ../../registry/builds-topic
 
 patches:
 - path: builds-registry-magic-numbers.yaml
 - path: builds-registry-replicas-1.yaml
 - path: deployment-s3.yaml
-- target:
-    kind: Job
-    name: setup-bucket
-  patch: |
-    - op: replace
-      path: /spec/template/spec/containers/0/env/2/value
-      value: ystack-builds-registry
-- target:
-    kind: Secret
-    name: bucket
-  patch: |
-    - op: replace
-      path: /metadata/name
-      value: builds-registry-bucket
