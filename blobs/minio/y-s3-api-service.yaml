@@ -2,7 +2,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: y-s3-api
-  namespace: blobs
 spec:
   selector:
     app: minio
