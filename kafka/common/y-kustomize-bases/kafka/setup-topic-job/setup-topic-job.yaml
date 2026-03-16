@@ -28,7 +28,7 @@ spec:
       activeDeadlineSeconds: 3600
       containers:
       - name: topic
-        image: ghcr.io/yolean/redpanda:v24.2.22@sha256:5132085d4fe35b0fd6ddedc7f0fe3d3ba7be12c5e3829e1a2b986cd41b1d3538
+        image: ghcr.io/yolean/redpanda:v24.2.14@sha256:a91cddd8a93181b85107a3cde0beebb5fcdc765d10b010af398e0dcad18d4dbf
         args:
         - |
           [ -n "$KAFKA_BOOTSTRAP" ] || exit 1
