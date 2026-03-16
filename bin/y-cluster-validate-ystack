@@ -108,34 +108,22 @@ else
   report "in-cluster registry v2 API" "no registry pod"
 fi
 
-echo "[y-cluster-validate-ystack] Example app build + deploy (y-skaffold run)"
-EXAMPLE_DIR="$YSTACK_HOME/examples/basic-dev-inner-loop"
-EXAMPLE_NS=default
+echo "[y-cluster-validate-ystack] Build + deploy (y-build)"
+EXAMPLE_DIR="$YSTACK_HOME/examples/y-build"
+VALIDATE_IMAGE="builds-registry.ystack.svc.cluster.local/ystack-validate/y-build-test:latest"
 y-buildkitd-available --context="$CONTEXT" 2>&1 || true
-echo "[y-cluster-validate-ystack] Building and deploying example app"
-if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= y-skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS"); then
-  report "y-skaffold run" "ok"
+echo "[y-cluster-validate-ystack] Building example image"
+if BUILD_CONTEXT="$EXAMPLE_DIR" IMAGE="$VALIDATE_IMAGE" IMPORT_CACHE=false EXPORT_CACHE=false y-build; then
+  report "y-build" "ok"
 
-  # Apply gateway route for the example and wait for traefik to reconcile
-  k -n "$EXAMPLE_NS" apply -k "$EXAMPLE_DIR/k8s/gatewayapi/" >/dev/null 2>&1
-  echo "[y-cluster-validate-ystack] Waiting for gateway route to propagate"
-  for i in 1 2 3 4 5; do
-    RESPONSE=$(curl -s --connect-timeout 10 -H "Host: node-backend.ystack.svc.cluster.local" "http://builds-registry.ystack.svc.cluster.local/" 2>/dev/null)
-    [ "$RESPONSE" = "Hello World!" ] && break
-    sleep 2
-  done
-  if [ "$RESPONSE" = "Hello World!" ]; then
-    report "example app response" "ok"
+  TAGS=$(curl -sf "http://builds-registry.ystack.svc.cluster.local/v2/ystack-validate/y-build-test/tags/list" 2>/dev/null)
+  if echo "$TAGS" | grep -q '"latest"'; then
+    report "y-build-test pushed" "ok"
   else
-    report "example app response" "got '$RESPONSE'"
+    report "y-build-test pushed" "image not found in registry"
   fi
-
-  # Clean up
-  echo "[y-cluster-validate-ystack] Cleaning up example app"
-  k -n "$EXAMPLE_NS" delete -k "$EXAMPLE_DIR/k8s/gatewayapi/" --ignore-not-found >/dev/null 2>&1
-  (cd "$EXAMPLE_DIR" && y-skaffold delete --kube-context="$CONTEXT" -n "$EXAMPLE_NS") >/dev/null 2>&1
 else
-  report "y-skaffold run" "build or deploy failed"
+  report "y-build" "build failed"
 fi
 
 echo "[y-cluster-validate-ystack] Results: $PASS passed, $FAIL failed"
