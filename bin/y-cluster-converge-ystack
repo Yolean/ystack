@@ -34,109 +34,110 @@ apply_base() {
 }
 
 # List bases in order, filter out -disabled suffix
-echo "# === Listing bases ==="
+echo "[y-cluster-converge-ystack] Listing bases"
 BASES=()
 for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
   base=$(basename "$dir")
   if [[ "$base" == *-disabled ]]; then
-    echo "#   (skipping disabled: $base)"
+    echo "[y-cluster-converge-ystack] Skipping disabled: $base"
     continue
   fi
   BASES+=("$base")
 done
-echo "# Bases: ${BASES[*]}"
+echo "[y-cluster-converge-ystack] Bases: ${BASES[*]}"
 
 # Apply 0* bases (namespaces, never deleted)
-echo "# === Applying namespace bases ==="
+echo "[y-cluster-converge-ystack] Applying namespace bases"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* ]] || continue
-  echo "# Applying $base ..."
+  echo "[y-cluster-converge-ystack] Applying $base"
   apply_base "$base"
 done
 
 # Apply CRDs explicitly using --server-side=true --force-conflicts
-echo "# === Applying CRDs ==="
+echo "[y-cluster-converge-ystack] Applying CRDs"
 # The yolean.se/module-part=crd selector is not yet supported.
 for base in "${BASES[@]}"; do
   [[ "$base" == 1* ]] || continue
-  echo "# Applying CRDs from $base (server-side) ..."
+  echo "[y-cluster-converge-ystack] Applying CRDs from $base (server-side)"
   render "$base" | k apply --server-side=true --force-conflicts -f -
 done
 
 # Validate CRDs are registered
-echo "# Waiting for Gateway API CRDs ..."
+echo "[y-cluster-converge-ystack] Waiting for Gateway API CRDs"
 until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
-echo "# Waiting for prometheus-operator CRDs ..."
+echo "[y-cluster-converge-ystack] Waiting for prometheus-operator CRDs"
 until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
 until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-echo "# Waiting for Gateway resource type to be served ..."
+echo "[y-cluster-converge-ystack] Waiting for Gateway resource type to be served"
 until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
 
 # Apply with yolean.se/module-part=config selector
-echo "# === Applying config resources ==="
+echo "[y-cluster-converge-ystack] Applying config resources"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "# Applying config from $base ..."
+  echo "[y-cluster-converge-ystack] Applying config from $base"
   apply_base "$base" "yolean.se/module-part=config"
 done
 
 # Apply with yolean.se/module-part=services selector
-echo "# === Applying services resources ==="
+echo "[y-cluster-converge-ystack] Applying services resources"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "# Applying services from $base ..."
+  echo "[y-cluster-converge-ystack] Applying services from $base"
   apply_base "$base" "yolean.se/module-part=services"
 done
 
 # Apply with yolean.se/module-part=gateway selector
-echo "# === Applying gateway resources ==="
+echo "[y-cluster-converge-ystack] Applying gateway resources"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "# Applying gateway from $base ..."
+  echo "[y-cluster-converge-ystack] Applying gateway from $base"
   apply_base "$base" "yolean.se/module-part=gateway"
 done
 
 # Persist override-ip as gateway annotation (set by provision scripts via YSTACK_OVERRIDE_IP env)
 if [ -n "${YSTACK_OVERRIDE_IP:-}" ]; then
-  echo "# Annotating gateway with yolean.se/override-ip=$YSTACK_OVERRIDE_IP"
+  echo "[y-cluster-converge-ystack] Annotating gateway with yolean.se/override-ip=$YSTACK_OVERRIDE_IP"
   k -n ystack annotate gateway ystack yolean.se/override-ip="$YSTACK_OVERRIDE_IP" --overwrite
 fi
 
 # Update /etc/hosts now that all HTTPRoutes exist
 if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
-  echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
+  echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
 fi
 
 # Verify y-kustomize schema compliance (config secrets mounted in-place, no restart needed)
-echo "# === Verifying y-kustomize API ==="
+echo "[y-cluster-converge-ystack] Verifying y-kustomize API"
 curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/health
+echo "[y-cluster-converge-ystack] y-kustomize health ok"
 curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
-echo "# Validated: y-kustomize serving blobs bases"
+echo "[y-cluster-converge-ystack] y-kustomize serving blobs bases"
 curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
-echo "# Validated: y-kustomize serving kafka bases"
+echo "[y-cluster-converge-ystack] y-kustomize serving kafka bases"
 
 # Full apply without selector
-echo "# === Full apply ==="
+echo "[y-cluster-converge-ystack] Full apply"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "# Applying $base ..."
+  echo "[y-cluster-converge-ystack] Applying $base"
   apply_base "$base"
 done
 
 # Update /etc/hosts again now that all routes exist
 if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
-  echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
+  echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
 fi
 
 # Validation
-echo "# === Validation ==="
+echo "[y-cluster-converge-ystack] Validation"
 k -n ystack get gateway ystack
 k -n ystack get deploy y-kustomize
 k -n blobs get svc y-s3-api
 k -n kafka get statefulset redpanda
 CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
 if [ -n "$CLUSTER_IP" ] && [ "$CLUSTER_IP" != "10.43.0.50" ]; then
-  echo "WARNING: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
+  echo "[y-cluster-converge-ystack] WARNING: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
 fi
 
-echo "# y-cluster-converge-ystack: all steps completed successfully"
+echo "[y-cluster-converge-ystack] Completed. To verify use: y-cluster-validate-ystack --context=$CONTEXT"

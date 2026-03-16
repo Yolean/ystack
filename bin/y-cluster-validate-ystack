@@ -26,37 +26,31 @@ report() {
   local result="$2"
   if [ "$result" = "ok" ]; then
     PASS=$((PASS + 1))
-    echo "  PASS  $name"
+    echo "[y-cluster-validate-ystack]   PASS  $name"
   else
     FAIL=$((FAIL + 1))
-    echo "  FAIL  $name - $result"
+    echo "[y-cluster-validate-ystack]   FAIL  $name - $result"
   fi
 }
 
-echo "=== Dev Cluster Validation: context=$CONTEXT ==="
-echo ""
+echo "[y-cluster-validate-ystack] Dev cluster validation: context=$CONTEXT"
 
-# 1. Namespace
 k get ns ystack >/dev/null 2>&1 \
   && report "namespace ystack" "ok" \
   || report "namespace ystack" "not found"
 
-# 2. Gateway API CRDs
 k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1 \
   && report "gateway-api CRDs" "ok" \
   || report "gateway-api CRDs" "not installed"
 
-# 3. Gateway
 k -n ystack get gateway ystack >/dev/null 2>&1 \
   && report "gateway ystack" "ok" \
   || report "gateway ystack" "not found"
 
-# 4. versitygw
 ROLLOUT=$(k -n blobs rollout status deploy/versitygw --timeout=5s 2>&1) \
   && report "versitygw rollout" "ok" \
   || report "versitygw rollout" "$ROLLOUT"
 
-# 5. builds-registry service + clusterIP
 CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
 if [ "$CLUSTER_IP" = "10.43.0.50" ]; then
   report "builds-registry clusterIP" "ok"
@@ -64,12 +58,10 @@ else
   report "builds-registry clusterIP" "got '$CLUSTER_IP', expected 10.43.0.50"
 fi
 
-# 6. HTTPRoute
 k -n ystack get httproute builds-registry >/dev/null 2>&1 \
   && report "httproute builds-registry" "ok" \
   || report "httproute builds-registry" "not found"
 
-# 7. prod-registry service
 PROD_IP=$(k -n ystack get svc prod-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
 if [ "$PROD_IP" = "10.43.0.51" ]; then
   report "prod-registry clusterIP" "ok"
@@ -77,41 +69,33 @@ else
   report "prod-registry clusterIP" "got '$PROD_IP', expected 10.43.0.51"
 fi
 
-# 7.5 Buildkitd GRPCRoute
 k -n ystack get grpcroute buildkitd >/dev/null 2>&1 \
   && report "grpcroute buildkitd" "ok" \
   || report "grpcroute buildkitd" "not found"
 
-# 7.6 Monitoring stack
 k -n monitoring get prometheus now >/dev/null 2>&1 \
   && report "prometheus now" "ok" \
   || report "prometheus now" "not found"
 
-# 7.7 Prometheus HTTPRoute
 k -n monitoring get httproute prometheus-now >/dev/null 2>&1 \
   && report "httproute prometheus-now" "ok" \
   || report "httproute prometheus-now" "not found"
 
-# 8. buildkitd statefulset
 k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
   && report "buildkitd statefulset" "ok" \
   || report "buildkitd statefulset" "not found"
 
-# 9. Registry pod running (wait for rollout)
-echo "  .... waiting for registry rollout (up to 10s)"
+echo "[y-cluster-validate-ystack] Waiting for registry rollout (up to 10s)"
 ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=10s 2>&1) \
   && report "registry rollout" "ok" \
   || report "registry rollout" "$ROLLOUT_REG"
 
-# 10. bucket-create job completed
-echo "  .... waiting for bucket-create job (up to 10s)"
-k -n ystack wait --for=condition=complete job/bucket-create-ystack-builds --timeout=10s >/dev/null 2>&1 \
-  && report "bucket-create job" "ok" \
-  || report "bucket-create job" "not complete within 10s"
+echo "[y-cluster-validate-ystack] Waiting for setup-bucket job (up to 10s)"
+k -n ystack wait --for=condition=complete job/setup-bucket --timeout=10s >/dev/null 2>&1 \
+  && report "setup-bucket job" "ok" \
+  || report "setup-bucket job" "not complete within 10s"
 
-# 11. In-cluster registry access via crane port-forward
-echo ""
-echo "--- Registry access (in-cluster curl) ---"
+echo "[y-cluster-validate-ystack] Registry access (in-cluster curl)"
 REGISTRY_POD=$(k -n ystack get pod -l ystack-builds-registry=http -o=jsonpath='{.items[0].metadata.name}' 2>/dev/null)
 if [ -n "$REGISTRY_POD" ]; then
   CATALOG=$(k -n ystack exec "$REGISTRY_POD" -- wget -q -O- http://localhost/v2/_catalog 2>/dev/null)
@@ -124,19 +108,17 @@ else
   report "in-cluster registry v2 API" "no registry pod"
 fi
 
-# 12. Build and deploy example app
-echo ""
-echo "--- Example app build + deploy (y-skaffold run) ---"
+echo "[y-cluster-validate-ystack] Example app build + deploy (y-skaffold run)"
 EXAMPLE_DIR="$YSTACK_HOME/examples/basic-dev-inner-loop"
 EXAMPLE_NS=default
 y-buildkitd-available --context="$CONTEXT" 2>&1 || true
-echo "  .... building and deploying example app"
+echo "[y-cluster-validate-ystack] Building and deploying example app"
 if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= y-skaffold run --cache-artifacts=false --kube-context="$CONTEXT" -n "$EXAMPLE_NS"); then
   report "y-skaffold run" "ok"
 
   # Apply gateway route for the example and wait for traefik to reconcile
   k -n "$EXAMPLE_NS" apply -k "$EXAMPLE_DIR/k8s/gatewayapi/" >/dev/null 2>&1
-  echo "  .... waiting for gateway route to propagate"
+  echo "[y-cluster-validate-ystack] Waiting for gateway route to propagate"
   for i in 1 2 3 4 5; do
     RESPONSE=$(curl -s --connect-timeout 10 -H "Host: node-backend.ystack.svc.cluster.local" "http://builds-registry.ystack.svc.cluster.local/" 2>/dev/null)
     [ "$RESPONSE" = "Hello World!" ] && break
@@ -149,15 +131,14 @@ if (cd "$EXAMPLE_DIR" && SKAFFOLD_DEFAULT_REPO= y-skaffold run --cache-artifacts
   fi
 
   # Clean up
-  echo "  .... cleaning up example app"
+  echo "[y-cluster-validate-ystack] Cleaning up example app"
   k -n "$EXAMPLE_NS" delete -k "$EXAMPLE_DIR/k8s/gatewayapi/" --ignore-not-found >/dev/null 2>&1
   (cd "$EXAMPLE_DIR" && y-skaffold delete --kube-context="$CONTEXT" -n "$EXAMPLE_NS") >/dev/null 2>&1
 else
   report "y-skaffold run" "build or deploy failed"
 fi
 
-echo ""
-echo "=== Results: $PASS passed, $FAIL failed ==="
+echo "[y-cluster-validate-ystack] Results: $PASS passed, $FAIL failed"
 
 if [ "$FAIL" -gt 0 ]; then
   exit 1

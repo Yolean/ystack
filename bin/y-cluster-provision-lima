@@ -43,7 +43,7 @@ if [ "$TEARDOWN" = "true" ]; then
     [ "$TEARDOWN_PRUNE" = "true" ] && limactl prune
     kubectl config delete-context $CTX 2>/dev/null || true
   else
-    echo "# No Lima VM 'ystack' found"
+    echo "[y-cluster-provision-lima] No Lima VM 'ystack' found"
   fi
   exit 0
 fi
@@ -68,7 +68,7 @@ TOPOLOGY_ZONE="local"
 # Place airgap tarball before k3s starts
 AIRGAP_TAR=$(y-k3s-airgap-download)
 if [ -f "$AIRGAP_TAR" ]; then
-  echo "# Placing airgap tarball into VM ..."
+  echo "[y-cluster-provision-lima] Placing airgap tarball into VM"
   limactl shell ystack sudo mkdir -p /var/lib/rancher/k3s/agent/images
   limactl shell ystack sudo cp "$AIRGAP_TAR" /var/lib/rancher/k3s/agent/images/
 fi
@@ -89,17 +89,17 @@ k() {
 }
 
 until k -n kube-system get pods 2>/dev/null; do
-  echo "==> Waiting for the cluster respond ..."
+  echo "[y-cluster-provision-lima] Waiting for the cluster to respond"
   sleep 1
 done
 
 until k -n kube-system get serviceaccount default 2>/dev/null; do
-  echo "==> Waiting for the default service account to exist ..."
+  echo "[y-cluster-provision-lima] Waiting for the default service account to exist"
   sleep 1
 done
 
 if [ "$SKIP_CONVERGE" = "true" ]; then
-  echo "# --skip-converge: skipping converge, validate, and post-provision steps"
+  echo "[y-cluster-provision-lima] --skip-converge: skipping converge, validate, and post-provision steps"
   y-kubeconfig-import "$KUBECONFIG.tmp"
   exit 0
 fi
@@ -113,12 +113,12 @@ fi
 y-kubeconfig-import "$KUBECONFIG.tmp"
 
 if [ "$SKIP_IMAGE_LOAD" = "true" ]; then
-  echo "# --skip-image-load: skipping image cache and load"
+  echo "[y-cluster-provision-lima] --skip-image-load: skipping image cache and load"
 else
-  echo "# Saving ystack images to local cache ..."
+  echo "[y-cluster-provision-lima] Saving ystack images to local cache"
   y-image-cache-ystack </dev/null
 
-  echo "# Loading cached images into containerd ..."
+  echo "[y-cluster-provision-lima] Loading cached images into containerd"
   y-image-cache-load-all </dev/null || true
 fi
 
