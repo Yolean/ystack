@@ -15,6 +15,8 @@ Converge principles:
 - Apply with `yolean.se/module-part=config` selector (`2*`+).
 - Apply with `yolean.se/module-part=services` selector (`2*`+).
 - Apply with `yolean.se/module-part=gateway` selector (`2*`+).
+  Render failures during selector phases are tolerated (bases with y-kustomize HTTP resources
+  can't render until y-kustomize is up, but they get applied in the full apply step).
 - Verify [y-kustomize api](../y-kustomize/openapi/openapi.yaml) endpoints using curl.
   Config secrets are mounted in-place, so no restart is needed — this supports repeated converge.
 - Full apply without selector (`2*`+).

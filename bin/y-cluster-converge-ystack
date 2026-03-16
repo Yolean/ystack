@@ -19,18 +19,25 @@ k() {
   kubectl --context="$CONTEXT" "$@"
 }
 
-render() {
-  k kustomize "$YSTACK_HOME/k3s/$1/"
-}
-
 apply_base() {
   local base="$1"
   local label_selector="${2:-}"
+  local output
   if [ -n "$label_selector" ]; then
-    render "$base" | k apply -l "$label_selector" -f - 2>/dev/null || true
+    output=$(k apply -k "$YSTACK_HOME/k3s/$base/" -l "$label_selector" 2>&1) || {
+      if echo "$output" | grep -q "no objects passed to apply"; then
+        return 0
+      fi
+      echo "$output" >&2
+      return 1
+    }
   else
-    render "$base" | k apply -f -
+    output=$(k apply -k "$YSTACK_HOME/k3s/$base/" 2>&1) || {
+      echo "$output" >&2
+      return 1
+    }
   fi
+  [ -n "$output" ] && echo "$output"
 }
 
 # List bases in order, filter out -disabled suffix
@@ -60,7 +67,7 @@ echo "[y-cluster-converge-ystack] Applying CRDs"
 for base in "${BASES[@]}"; do
   [[ "$base" == 1* ]] || continue
   echo "[y-cluster-converge-ystack] Applying CRDs from $base (server-side)"
-  render "$base" | k apply --server-side=true --force-conflicts -f -
+  k apply -k "$YSTACK_HOME/k3s/$base/" --server-side=true --force-conflicts
 done
 
 # Validate CRDs are registered
@@ -72,7 +79,7 @@ until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 
 echo "[y-cluster-converge-ystack] Waiting for Gateway resource type to be served"
 until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
 
-# Apply with yolean.se/module-part=config selector
+# Apply with yolean.se/module-part=config selector (skip 6* which depend on y-kustomize HTTP)
 echo "[y-cluster-converge-ystack] Applying config resources"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
@@ -80,7 +87,7 @@ for base in "${BASES[@]}"; do
   apply_base "$base" "yolean.se/module-part=config"
 done
 
-# Apply with yolean.se/module-part=services selector
+# Apply with yolean.se/module-part=services selector (skip 6*)
 echo "[y-cluster-converge-ystack] Applying services resources"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
@@ -88,7 +95,7 @@ for base in "${BASES[@]}"; do
   apply_base "$base" "yolean.se/module-part=services"
 done
 
-# Apply with yolean.se/module-part=gateway selector
+# Apply with yolean.se/module-part=gateway selector (skip 6*)
 echo "[y-cluster-converge-ystack] Applying gateway resources"
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
