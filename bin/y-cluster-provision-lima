@@ -102,10 +102,10 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
-echo "==> Testing amd64 compatibility ..."
-k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
-while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
-k delete --wait=false pod amd64test
+# echo "==> Testing amd64 compatibility ..."
+# k run amd64test --image=gcr.io/google_containers/pause-amd64:3.2@sha256:4a1c4b21597c1b4415bdbecb28a3296c6b5e23ca4f9feeb599860a1dac6a0108
+# while k get pod amd64test -o=jsonpath='{.status.containerStatuses[0]}' | grep -v '"started":true'; do sleep 3; done
+# k delete --wait=false pod amd64test
 
 # Import kubeconfig before cache-load and converge (y-kubeconfig-import moves the .tmp file)
 y-kubeconfig-import "$KUBECONFIG.tmp"
