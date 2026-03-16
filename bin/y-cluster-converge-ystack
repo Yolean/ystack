@@ -20,6 +20,7 @@ k() {
 }
 
 RENDER_DIR=$(mktemp -d)
+# REVIEW not necessary? we assume that mktemp dirs are cleaned up automatically
 trap "rm -rf $RENDER_DIR" EXIT
 
 # ============================================================
@@ -145,6 +146,7 @@ fi
 
 # Update /etc/hosts now that all HTTPRoutes exist
 if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
+  # continue here is only fine because the y-kustomize validation below will bail
   echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
 fi
 
