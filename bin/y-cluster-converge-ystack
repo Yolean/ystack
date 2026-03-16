@@ -19,16 +19,25 @@ k() {
   kubectl --context="$CONTEXT" "$@"
 }
 
-RENDER_DIR=$(mktemp -d)
-# REVIEW not necessary? we assume that mktemp dirs are cleaned up automatically
-trap "rm -rf $RENDER_DIR" EXIT
+render() {
+  k kustomize "$YSTACK_HOME/k3s/$1/"
+}
+
+apply_base() {
+  local base="$1"
+  local label_selector="${2:-}"
+  if [ -n "$label_selector" ]; then
+    render "$base" | k apply -l "$label_selector" -f - 2>/dev/null || true
+  else
+    render "$base" | k apply -f -
+  fi
+}
 
 # ============================================================
 # Step 1: List bases in order, filter out -disabled suffix
 # ============================================================
 echo "# === Step 1: Listing bases ==="
 BASES=()
-DEFERRED=()
 for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
   base=$(basename "$dir")
   if [[ "$base" == *-disabled ]]; then
@@ -40,56 +49,25 @@ done
 echo "# Bases: ${BASES[*]}"
 
 # ============================================================
-# Step 2: Render every base to tmp folder
-#   Bases referencing y-kustomize HTTP resources are deferred
+# Step 2: Apply 0* bases (namespaces, never deleted)
 # ============================================================
-echo "# === Step 2: Rendering bases ==="
-for base in "${BASES[@]}"; do
-  basepath="$YSTACK_HOME/k3s/$base/"
-  outfile="$RENDER_DIR/$base.yaml"
-  if grep -q 'y-kustomize\.ystack\.svc\.cluster\.local' "$basepath/kustomization.yaml" 2>/dev/null; then
-    echo "#   (deferred: $base — depends on y-kustomize HTTP)"
-    DEFERRED+=("$base")
-    continue
-  fi
-  echo "# Rendering $base ..."
-  k kustomize "$basepath" > "$outfile"
-done
-
-apply_rendered() {
-  local outfile="$1"
-  local label_selector="${2:-}"
-  if [ ! -s "$outfile" ]; then
-    echo "#   (empty, skipping)"
-    return
-  fi
-  if [ -n "$label_selector" ]; then
-    k apply -l "$label_selector" -f "$outfile" 2>/dev/null || true
-  else
-    k apply -f "$outfile"
-  fi
-}
-
-# ============================================================
-# Step 3: Apply 0* bases (namespaces, never deleted)
-# ============================================================
-echo "# === Step 3: Applying namespace bases ==="
+echo "# === Step 2: Applying namespace bases ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* ]] || continue
   echo "# Applying $base ..."
-  apply_rendered "$RENDER_DIR/$base.yaml"
+  apply_base "$base"
 done
 
 # ============================================================
-# Step 4: Apply CRDs explicitly using --server-side=true --force-conflicts
+# Step 3: Apply CRDs explicitly using --server-side=true --force-conflicts
 # ============================================================
-echo "# === Step 4: Applying CRDs ==="
+echo "# === Step 3: Applying CRDs ==="
 # The yolean.se/module-part=crd selector is not yet supported.
 # Apply CRD bases explicitly.
 for base in "${BASES[@]}"; do
   [[ "$base" == 1* ]] || continue
   echo "# Applying CRDs from $base (server-side) ..."
-  k apply --server-side=true --force-conflicts -f "$RENDER_DIR/$base.yaml"
+  render "$base" | k apply --server-side=true --force-conflicts -f -
 done
 
 # Validate CRDs are registered
@@ -106,36 +84,33 @@ echo "# Waiting for Gateway resource type to be served ..."
 until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
 
 # ============================================================
-# Step 5: Apply with yolean.se/module-part=config selector
+# Step 4: Apply with yolean.se/module-part=config selector
 # ============================================================
-echo "# === Step 5: Applying config resources ==="
+echo "# === Step 4: Applying config resources ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
   echo "# Applying config from $base ..."
-  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=config"
+  apply_base "$base" "yolean.se/module-part=config"
 done
 
 # ============================================================
-# Step 6: Apply with yolean.se/module-part=services selector
+# Step 5: Apply with yolean.se/module-part=services selector
 # ============================================================
-echo "# === Step 6: Applying services resources ==="
+echo "# === Step 5: Applying services resources ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
   echo "# Applying services from $base ..."
-  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=services"
+  apply_base "$base" "yolean.se/module-part=services"
 done
 
 # ============================================================
-# Step 7: Apply with yolean.se/module-part=gateway selector
+# Step 6: Apply with yolean.se/module-part=gateway selector
 # ============================================================
-echo "# === Step 7: Applying gateway resources ==="
+echo "# === Step 6: Applying gateway resources ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
   echo "# Applying gateway from $base ..."
-  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=gateway"
+  apply_base "$base" "yolean.se/module-part=gateway"
 done
 
 # Persist override-ip as gateway annotation (set by provision scripts via YSTACK_OVERRIDE_IP env)
@@ -151,9 +126,9 @@ if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
 fi
 
 # ============================================================
-# Step 8: Restart y-kustomize to pick up config changes from step 5
+# Step 7: Restart y-kustomize to pick up config changes from step 4
 # ============================================================
-echo "# === Step 8: Restarting y-kustomize ==="
+echo "# === Step 7: Restarting y-kustomize ==="
 k -n ystack rollout restart deploy/y-kustomize
 k -n ystack rollout status deploy/y-kustomize --timeout=60s
 echo "# Validated: y-kustomize rollout complete"
@@ -182,32 +157,16 @@ done
 echo "# Validated: y-kustomize serving kafka bases"
 
 # ============================================================
-# Step 9: Apply without selector
+# Step 8: Apply all bases without selector
 # ============================================================
-echo "# === Step 9: Full apply ==="
+echo "# === Step 8: Full apply ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
-  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
   echo "# Applying $base ..."
-  apply_rendered "$RENDER_DIR/$base.yaml"
+  apply_base "$base"
 done
 
-# ============================================================
-# Step 10: Render and apply deferred bases
-# ============================================================
-if [ ${#DEFERRED[@]} -gt 0 ]; then
-  echo "# === Step 10: Deferred bases ==="
-  for base in "${DEFERRED[@]}"; do
-    basepath="$YSTACK_HOME/k3s/$base/"
-    outfile="$RENDER_DIR/$base.yaml"
-    echo "# Rendering deferred $base ..."
-    k kustomize "$basepath" > "$outfile"
-    echo "# Applying $base ..."
-    apply_rendered "$outfile"
-  done
-fi
-
-# Update /etc/hosts again now that deferred routes (e.g. builds-registry) exist
+# Update /etc/hosts again now that all routes exist
 if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
   echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
 fi
