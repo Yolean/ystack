@@ -9,7 +9,7 @@ case $ctx in
   *) echo "Initial arg must be --context=local" && exit 1 ;;
 esac
 
-[ -z "$NAMESPACE" ] && NAMESPACE=ystack
+[ -z "$NAMESPACE" ] && NAMESPACE=blobs
 
 BUCKET="${1:-}"
 

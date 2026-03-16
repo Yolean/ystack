@@ -1,6 +1,3 @@
-resources:
-- blobs-versitygw-service.yaml
-
 secretGenerator:
 - name: y-kustomize.blobs.setup-bucket-job
   options:

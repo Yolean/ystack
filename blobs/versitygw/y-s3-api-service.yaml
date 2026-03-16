@@ -4,8 +4,9 @@ metadata:
   name: y-s3-api
   namespace: blobs
 spec:
-  type: ExternalName
-  externalName: blobs-versitygw.ystack.svc.cluster.local
+  selector:
+    app: versitygw
   ports:
   - name: http
     port: 80
+    targetPort: 7070

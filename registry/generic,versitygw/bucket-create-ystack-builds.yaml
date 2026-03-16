@@ -22,7 +22,7 @@ spec:
         - name: BUCKET_NAME
           value: ystack-builds-registry
         - name: S3_ENDPOINT
-          value: http://blobs-versitygw
+          value: http://y-s3-api.blobs.svc.cluster.local
         command:
         - sh
         - -ce

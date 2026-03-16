@@ -52,7 +52,7 @@ k -n ystack get gateway ystack >/dev/null 2>&1 \
   || report "gateway ystack" "not found"
 
 # 4. versitygw
-ROLLOUT=$(k -n ystack rollout status deploy/versitygw --timeout=5s 2>&1) \
+ROLLOUT=$(k -n blobs rollout status deploy/versitygw --timeout=5s 2>&1) \
   && report "versitygw rollout" "ok" \
   || report "versitygw rollout" "$ROLLOUT"
 

@@ -7,7 +7,7 @@ namespace: ystack
 resources:
 - ../../registry/builds-service
 - ../../registry/generic
-- ../../versitygw/defaultsecret
+- ../../blobs-versitygw/defaultsecret
 - http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml
 
 patches:

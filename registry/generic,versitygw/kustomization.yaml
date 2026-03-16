@@ -1,5 +1,5 @@
 bases:
-- ../../versitygw/defaultsecret
+- ../../blobs-versitygw/defaultsecret
 - ../generic
 resources:
 - bucket-create-ystack-builds.yaml

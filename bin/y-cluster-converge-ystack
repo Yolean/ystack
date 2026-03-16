@@ -62,6 +62,7 @@ BASES=(
   06-gateway
   09-y-kustomize
   09-kafka-common
+  09-blobs-common
   10-redpanda
   10-versitygw
   09-blobs-versitygw
@@ -165,7 +166,7 @@ echo "# Validated: redpanda rollout complete"
 # VersityGW (S3-compatible blob store)
 echo "# Applying 10-versitygw ..."
 apply_rendered "$RENDER_DIR/10-versitygw.yaml"
-k -n ystack rollout status deploy/versitygw --timeout=120s
+k -n blobs rollout status deploy/versitygw --timeout=120s
 echo "# Validated: versitygw rollout complete"
 
 # S3 API abstraction (points to versitygw)
@@ -174,9 +175,11 @@ apply_rendered "$RENDER_DIR/09-blobs-versitygw.yaml"
 k -n blobs get svc y-s3-api
 echo "# Validated: y-s3-api service exists in blobs namespace"
 
-# Kafka common (y-kustomize secret for topic job base)
+# y-kustomize secrets (deployed to ystack namespace for the static web server)
 echo "# Applying 09-kafka-common ..."
 apply_rendered "$RENDER_DIR/09-kafka-common.yaml"
+echo "# Applying 09-blobs-common ..."
+apply_rendered "$RENDER_DIR/09-blobs-common.yaml"
 
 # Restart y-kustomize to pick up versitygw and kafka bases
 k -n ystack rollout restart deploy/y-kustomize

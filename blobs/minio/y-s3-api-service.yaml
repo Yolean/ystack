@@ -4,8 +4,9 @@ metadata:
   name: y-s3-api
   namespace: blobs
 spec:
-  type: ExternalName
-  externalName: blobs-minio.ystack.svc.cluster.local
+  selector:
+    app: minio
   ports:
   - name: http
     port: 80
+    targetPort: 9000
