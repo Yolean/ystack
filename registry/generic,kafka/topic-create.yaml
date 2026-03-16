@@ -29,7 +29,6 @@ spec:
         -   $(REPLICATION_FACTOR)
         resources:
           limits:
-            cpu: 100m
             memory: 20Mi
       restartPolicy: Never
   backoffLimit: 20

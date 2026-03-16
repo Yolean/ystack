@@ -179,7 +179,6 @@ spec:
               mountPath: /var/lib/redpanda/data
           resources:
             limits:
-              cpu: 250m
               memory: 1171Mi
       volumes: 
         

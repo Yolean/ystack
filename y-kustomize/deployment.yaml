@@ -39,7 +39,6 @@ spec:
             cpu: 5m
             memory: 8Mi
           limits:
-            cpu: 50m
             memory: 32Mi
         volumeMounts:
         - name: base-blobs-setup-bucket-job

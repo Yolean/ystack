@@ -123,7 +123,6 @@ spec:
           value: "2147483647"
         resources:
           limits:
-            cpu: 10m
             memory: 20Mi
         volumeMounts:
         - mountPath: /dashboards

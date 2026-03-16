@@ -13,7 +13,6 @@ spec:
             cpu: 10m
             memory: 16Mi
           limits:
-            cpu: 100m
             memory: 200Mi
         ports:
         - containerPort: 443
