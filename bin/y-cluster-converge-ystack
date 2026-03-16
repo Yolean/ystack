@@ -33,10 +33,8 @@ apply_base() {
   fi
 }
 
-# ============================================================
-# Step 1: List bases in order, filter out -disabled suffix
-# ============================================================
-echo "# === Step 1: Listing bases ==="
+# List bases in order, filter out -disabled suffix
+echo "# === Listing bases ==="
 BASES=()
 for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
   base=$(basename "$dir")
@@ -48,22 +46,17 @@ for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
 done
 echo "# Bases: ${BASES[*]}"
 
-# ============================================================
-# Step 2: Apply 0* bases (namespaces, never deleted)
-# ============================================================
-echo "# === Step 2: Applying namespace bases ==="
+# Apply 0* bases (namespaces, never deleted)
+echo "# === Applying namespace bases ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* ]] || continue
   echo "# Applying $base ..."
   apply_base "$base"
 done
 
-# ============================================================
-# Step 3: Apply CRDs explicitly using --server-side=true --force-conflicts
-# ============================================================
-echo "# === Step 3: Applying CRDs ==="
+# Apply CRDs explicitly using --server-side=true --force-conflicts
+echo "# === Applying CRDs ==="
 # The yolean.se/module-part=crd selector is not yet supported.
-# Apply CRD bases explicitly.
 for base in "${BASES[@]}"; do
   [[ "$base" == 1* ]] || continue
   echo "# Applying CRDs from $base (server-side) ..."
@@ -73,40 +66,30 @@ done
 # Validate CRDs are registered
 echo "# Waiting for Gateway API CRDs ..."
 until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
-echo "# Validated: Gateway API CRDs installed"
-
 echo "# Waiting for prometheus-operator CRDs ..."
 until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
 until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-echo "# Validated: prometheus-operator CRDs registered"
-
 echo "# Waiting for Gateway resource type to be served ..."
 until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
 
-# ============================================================
-# Step 4: Apply with yolean.se/module-part=config selector
-# ============================================================
-echo "# === Step 4: Applying config resources ==="
+# Apply with yolean.se/module-part=config selector
+echo "# === Applying config resources ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
   echo "# Applying config from $base ..."
   apply_base "$base" "yolean.se/module-part=config"
 done
 
-# ============================================================
-# Step 5: Apply with yolean.se/module-part=services selector
-# ============================================================
-echo "# === Step 5: Applying services resources ==="
+# Apply with yolean.se/module-part=services selector
+echo "# === Applying services resources ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
   echo "# Applying services from $base ..."
   apply_base "$base" "yolean.se/module-part=services"
 done
 
-# ============================================================
-# Step 6: Apply with yolean.se/module-part=gateway selector
-# ============================================================
-echo "# === Step 6: Applying gateway resources ==="
+# Apply with yolean.se/module-part=gateway selector
+echo "# === Applying gateway resources ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
   echo "# Applying gateway from $base ..."
@@ -121,45 +104,19 @@ fi
 
 # Update /etc/hosts now that all HTTPRoutes exist
 if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
-  # continue here is only fine because the y-kustomize validation below will bail
   echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
 fi
 
-# ============================================================
-# Step 7: Restart y-kustomize to pick up config changes from step 4
-# ============================================================
-echo "# === Step 7: Restarting y-kustomize ==="
-k -n ystack rollout restart deploy/y-kustomize
-k -n ystack rollout status deploy/y-kustomize --timeout=60s
-echo "# Validated: y-kustomize rollout complete"
-
-echo "# Waiting for y-kustomize to be reachable from host (timeout 60s) ..."
-DEADLINE=$((SECONDS + 60))
-until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/health >/dev/null 2>&1; do
-  if [ $SECONDS -ge $DEADLINE ]; then
-    echo "ERROR: y-kustomize not reachable from host after 60s" >&2
-    echo "# Check /etc/hosts and gateway routing" >&2
-    exit 1
-  fi
-  sleep 2
-done
-echo "# Validated: y-kustomize reachable from host"
-
-# Verify y-kustomize API endpoints
-echo "# Verifying y-kustomize serves bases ..."
-until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null 2>&1; do
-  sleep 2
-done
+# Verify y-kustomize schema compliance (config secrets mounted in-place, no restart needed)
+echo "# === Verifying y-kustomize API ==="
+curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/health
+curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
 echo "# Validated: y-kustomize serving blobs bases"
-until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null 2>&1; do
-  sleep 2
-done
+curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
 echo "# Validated: y-kustomize serving kafka bases"
 
-# ============================================================
-# Step 8: Apply all bases without selector
-# ============================================================
-echo "# === Step 8: Full apply ==="
+# Full apply without selector
+echo "# === Full apply ==="
 for base in "${BASES[@]}"; do
   [[ "$base" == 0* || "$base" == 1* ]] && continue
   echo "# Applying $base ..."
@@ -171,9 +128,7 @@ if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
   echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
 fi
 
-# ============================================================
 # Validation
-# ============================================================
 echo "# === Validation ==="
 k -n ystack get gateway ystack
 k -n ystack get deploy y-kustomize

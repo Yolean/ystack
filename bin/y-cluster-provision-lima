@@ -20,12 +20,14 @@ Flags:
   --skip-converge       skip converge, validate, and post-provision steps
   --skip-image-load     skip image cache and load into containerd
   --teardown            delete existing VM and exit
+  --teardown-prune  also remove cached OS images (limactl prune)
   -h, --help            show this help
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
+    --teardown-prune) TEARDOWN=true; TEARDOWN_PRUNE=true; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -38,7 +40,7 @@ command -v limactl >/dev/null 2>&1 || { echo "ERROR: limactl not found in PATH" 
 if [ "$TEARDOWN" = "true" ]; then
   if limactl list 2>/dev/null | grep -q "^ystack "; then
     limactl delete -f ystack
-    limactl prune
+    [ "$TEARDOWN_PRUNE" = "true" ] && limactl prune
     kubectl config delete-context $CTX 2>/dev/null || true
   else
     echo "# No Lima VM 'ystack' found"

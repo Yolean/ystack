@@ -3,23 +3,23 @@ This structure is the configuration for [y-cluster-converge-ystack](../bin/y-clu
 
 Converge principles:
 
-1. List the bases in order.
-   We might invent include and exclude options for this listing later.
-   For now only filter out any name that ends with `-disabled`.
-2. Apply `0*-` bases.
-   Should only be namespaces.
-   `0*` should _never_ be used with delete (if and when we implement re-converge).
-3. Apply CRDs (`1*`) explicitly using `--server-side=true --force-conflicts` (required for large CRDs).
-   Use kubectl get to validate that applied CRDs are registered.
-   <!-- The yolean.se/module-part=crd selector is not yet supported. -->
-4. Apply with `yolean.se/module-part=config` selector (`2*`+).
-5. Apply with `yolean.se/module-part=services` selector (`2*`+).
-6. Apply with `yolean.se/module-part=gateway` selector (`2*`+).
-7. Restart y-kustomize to pick up config changes from step 4.
-   Wait for rollout, then verify [y-kustomize api](../y-kustomize/openapi/openapi.yaml) endpoints using curl.
-8. Full apply without selector (`2*`+).
-   Bases with remote y-kustomize HTTP resources (e.g. 60-builds-registry) render here,
-   after y-kustomize is already running from step 7.
+- List the bases in order.
+  We might invent include and exclude options for this listing later.
+  For now only filter out any name that ends with `-disabled`.
+- Apply `0*-` bases.
+  Should only be namespaces.
+  `0*` should _never_ be used with delete (if and when we implement re-converge).
+- Apply CRDs (`1*`) explicitly using `--server-side=true --force-conflicts` (required for large CRDs).
+  Use kubectl get to validate that applied CRDs are registered.
+  <!-- The yolean.se/module-part=crd selector is not yet supported. -->
+- Apply with `yolean.se/module-part=config` selector (`2*`+).
+- Apply with `yolean.se/module-part=services` selector (`2*`+).
+- Apply with `yolean.se/module-part=gateway` selector (`2*`+).
+- Verify [y-kustomize api](../y-kustomize/openapi/openapi.yaml) endpoints using curl.
+  Config secrets are mounted in-place, so no restart is needed — this supports repeated converge.
+- Full apply without selector (`2*`+).
+  Bases with remote y-kustomize HTTP resources (e.g. 60-builds-registry) render here,
+  after y-kustomize compliance is verified.
 
 Each base is rendered inline (`kubectl kustomize | kubectl apply`) — no prerendering or deferred passes.
 
