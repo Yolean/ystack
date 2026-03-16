@@ -1,3 +1,0 @@
-namespace: blobs
-bases:
-- ../../blobs-minio/standalone,defaultsecret

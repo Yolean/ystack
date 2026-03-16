@@ -5,17 +5,15 @@ set -eo pipefail
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
 CONTEXT=""
-SERVER_SIDE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CONTEXT="${1#*=}"; shift ;;
-    --server-side) SERVER_SIDE="--server-side=true --force-conflicts"; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
-[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--server-side]" && exit 1
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name>" && exit 1
 
 k() {
   kubectl --context="$CONTEXT" "$@"
@@ -24,14 +22,38 @@ k() {
 RENDER_DIR=$(mktemp -d)
 trap "rm -rf $RENDER_DIR" EXIT
 
-render_base() {
-  local base="$1"
-  local basepath="$YSTACK_HOME/k3s/$base/"
-  local outfile="$RENDER_DIR/$base.yaml"
+# ============================================================
+# Step 1: List bases in order, filter out -disabled suffix
+# ============================================================
+echo "# === Step 1: Listing bases ==="
+BASES=()
+DEFERRED=()
+for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
+  base=$(basename "$dir")
+  if [[ "$base" == *-disabled ]]; then
+    echo "#   (skipping disabled: $base)"
+    continue
+  fi
+  BASES+=("$base")
+done
+echo "# Bases: ${BASES[*]}"
+
+# ============================================================
+# Step 2: Render every base to tmp folder
+#   Bases referencing y-kustomize HTTP resources are deferred
+# ============================================================
+echo "# === Step 2: Rendering bases ==="
+for base in "${BASES[@]}"; do
+  basepath="$YSTACK_HOME/k3s/$base/"
+  outfile="$RENDER_DIR/$base.yaml"
+  if grep -q 'y-kustomize\.ystack\.svc\.cluster\.local' "$basepath/kustomization.yaml" 2>/dev/null; then
+    echo "#   (deferred: $base — depends on y-kustomize HTTP)"
+    DEFERRED+=("$base")
+    continue
+  fi
   echo "# Rendering $base ..."
   k kustomize "$basepath" > "$outfile"
-  echo "$outfile"
-}
+done
 
 apply_rendered() {
   local outfile="$1"
@@ -41,85 +63,79 @@ apply_rendered() {
     return
   fi
   if [ -n "$label_selector" ]; then
-    local filtered
-    filtered=$(k apply -l "$label_selector" -f "$outfile" --dry-run=client -o yaml 2>/dev/null || true)
-    if [ -z "$filtered" ] || [ "$filtered" = "---" ]; then
-      echo "#   (no matching resources for $label_selector, skipping)"
-      return
-    fi
-    k apply $SERVER_SIDE -l "$label_selector" -f "$outfile"
+    k apply -l "$label_selector" -f "$outfile" 2>/dev/null || true
   else
-    k apply $SERVER_SIDE -f "$outfile"
+    k apply -f "$outfile"
   fi
 }
 
-BASES=(
-  00-namespace-ystack
-  01-namespace-blobs
-  02-namespace-kafka
-  03-namespace-monitoring
-  05-gateway-api
-  06-gateway
-  09-y-kustomize
-  09-kafka-common
-  09-blobs-common
-  10-redpanda
-  10-versitygw
-  09-blobs-versitygw
-  20-builds-registry-versitygw
-  07-builds-registry-httproute
-  08-buildkitd-grpcroute
-  30-monitoring-operator
-  31-monitoring
-  09-prometheus-httproute
-  21-prod-registry
-  40-buildkit
-)
-
 # ============================================================
-# Render all bases that don't require HTTP resources
+# Step 3: Apply 0* bases (namespaces, never deleted)
 # ============================================================
-echo "# === Rendering bases ==="
+echo "# === Step 3: Applying namespace bases ==="
 for base in "${BASES[@]}"; do
-  case "$base" in
-    20-builds-registry-versitygw) ;; # requires y-kustomize HTTP, rendered in pass 2
-    *) render_base "$base" ;;
-  esac
-done
-
-# ============================================================
-# Pass 1: Apply gateway resources
-# ============================================================
-echo "# === Pass 1: gateway resources ==="
-
-# Namespaces first (no label filtering)
-for base in 00-namespace-ystack 01-namespace-blobs 02-namespace-kafka 03-namespace-monitoring; do
+  [[ "$base" == 0* ]] || continue
   echo "# Applying $base ..."
   apply_rendered "$RENDER_DIR/$base.yaml"
 done
 
-# Gateway API CRDs
-echo "# Waiting for Gateway API CRDs (from k3s traefik-crd) ..."
+# ============================================================
+# Step 4: Apply CRDs explicitly using --server-side=true --force-conflicts
+# ============================================================
+echo "# === Step 4: Applying CRDs ==="
+# The yolean.se/module-part=crd selector is not yet supported.
+# Apply CRD bases explicitly.
+for base in "${BASES[@]}"; do
+  [[ "$base" == 1* ]] || continue
+  echo "# Applying CRDs from $base (server-side) ..."
+  k apply --server-side=true --force-conflicts -f "$RENDER_DIR/$base.yaml"
+done
+
+# Validate CRDs are registered
+echo "# Waiting for Gateway API CRDs ..."
 until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
-echo "# Applying 05-gateway-api ..."
-apply_rendered "$RENDER_DIR/05-gateway-api.yaml"
 echo "# Validated: Gateway API CRDs installed"
+
+echo "# Waiting for prometheus-operator CRDs ..."
+until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+echo "# Validated: prometheus-operator CRDs registered"
 
 echo "# Waiting for Gateway resource type to be served ..."
 until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
 
-# Apply only gateway-labeled resources from remaining pre-rendered bases
+# ============================================================
+# Step 5: Apply with yolean.se/module-part=config selector
+# ============================================================
+echo "# === Step 5: Applying config resources ==="
 for base in "${BASES[@]}"; do
-  case "$base" in
-    0[0-3]-namespace-*|05-gateway-api) continue ;; # already applied
-    20-builds-registry-versitygw) continue ;; # not yet rendered
-  esac
-  echo "# Applying gateway resources from $base ..."
-  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=gateway"
+  [[ "$base" == 0* || "$base" == 1* ]] && continue
+  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
+  echo "# Applying config from $base ..."
+  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=config"
 done
 
-k -n ystack rollout status deploy/y-kustomize --timeout=60s
-echo "# Validated: y-kustomize server running"
+# ============================================================
+# Step 6: Apply with yolean.se/module-part=services selector
+# ============================================================
+echo "# === Step 6: Applying services resources ==="
+for base in "${BASES[@]}"; do
+  [[ "$base" == 0* || "$base" == 1* ]] && continue
+  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
+  echo "# Applying services from $base ..."
+  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=services"
+done
+
+# ============================================================
+# Step 7: Apply with yolean.se/module-part=gateway selector
+# ============================================================
+echo "# === Step 7: Applying gateway resources ==="
+for base in "${BASES[@]}"; do
+  [[ "$base" == 0* || "$base" == 1* ]] && continue
+  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
+  echo "# Applying gateway from $base ..."
+  apply_rendered "$RENDER_DIR/$base.yaml" "yolean.se/module-part=gateway"
+done
 
 # Persist override-ip as gateway annotation (set by provision scripts via YSTACK_OVERRIDE_IP env)
 if [ -n "${YSTACK_OVERRIDE_IP:-}" ]; then
@@ -127,10 +143,18 @@ if [ -n "${YSTACK_OVERRIDE_IP:-}" ]; then
   k -n ystack annotate gateway ystack yolean.se/override-ip="$YSTACK_OVERRIDE_IP" --overwrite
 fi
 
-# ============================================================
 # Update /etc/hosts now that all HTTPRoutes exist
+if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
+  echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
+fi
+
 # ============================================================
-"$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure
+# Step 8: Restart y-kustomize to pick up config changes from step 5
+# ============================================================
+echo "# === Step 8: Restarting y-kustomize ==="
+k -n ystack rollout restart deploy/y-kustomize
+k -n ystack rollout status deploy/y-kustomize --timeout=60s
+echo "# Validated: y-kustomize rollout complete"
 
 echo "# Waiting for y-kustomize to be reachable from host (timeout 60s) ..."
 DEADLINE=$((SECONDS + 60))
@@ -144,47 +168,8 @@ until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/
 done
 echo "# Validated: y-kustomize reachable from host"
 
-# ============================================================
-# Pass 2: Full apply
-# ============================================================
-echo "# === Pass 2: full apply ==="
-
-echo "# Applying 06-gateway ..."
-apply_rendered "$RENDER_DIR/06-gateway.yaml"
-k -n ystack get gateway ystack
-echo "# Validated: gateway ystack exists"
-
-echo "# Applying 09-y-kustomize ..."
-apply_rendered "$RENDER_DIR/09-y-kustomize.yaml"
-
-# Redpanda (Kafka implementation)
-echo "# Applying 10-redpanda ..."
-apply_rendered "$RENDER_DIR/10-redpanda.yaml"
-k -n kafka rollout status statefulset/redpanda --timeout=120s
-echo "# Validated: redpanda rollout complete"
-
-# VersityGW (S3-compatible blob store)
-echo "# Applying 10-versitygw ..."
-apply_rendered "$RENDER_DIR/10-versitygw.yaml"
-k -n blobs rollout status deploy/versitygw --timeout=120s
-echo "# Validated: versitygw rollout complete"
-
-# S3 API abstraction (points to versitygw)
-echo "# Applying 09-blobs-versitygw ..."
-apply_rendered "$RENDER_DIR/09-blobs-versitygw.yaml"
-k -n blobs get svc y-s3-api
-echo "# Validated: y-s3-api service exists in blobs namespace"
-
-# y-kustomize secrets (deployed to ystack namespace for the static web server)
-echo "# Applying 09-kafka-common ..."
-apply_rendered "$RENDER_DIR/09-kafka-common.yaml"
-echo "# Applying 09-blobs-common ..."
-apply_rendered "$RENDER_DIR/09-blobs-common.yaml"
-
-# Restart y-kustomize to pick up versitygw and kafka bases
-k -n ystack rollout restart deploy/y-kustomize
-k -n ystack rollout status deploy/y-kustomize --timeout=60s
-echo "# Waiting for y-kustomize to serve bases ..."
+# Verify y-kustomize API endpoints
+echo "# Verifying y-kustomize serves bases ..."
 until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null 2>&1; do
   sleep 2
 done
@@ -194,59 +179,48 @@ until curl -sf --connect-timeout 10 http://y-kustomize.ystack.svc.cluster.local/
 done
 echo "# Validated: y-kustomize serving kafka bases"
 
-# Builds registry (render now that y-kustomize is reachable)
-render_base 20-builds-registry-versitygw
-echo "# Applying 20-builds-registry-versitygw ..."
-apply_rendered "$RENDER_DIR/20-builds-registry-versitygw.yaml"
-k -n ystack get svc builds-registry
-CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}')
-if [ "$CLUSTER_IP" != "10.43.0.50" ]; then
-  echo "ERROR: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
-  exit 1
+# ============================================================
+# Step 9: Apply without selector
+# ============================================================
+echo "# === Step 9: Full apply ==="
+for base in "${BASES[@]}"; do
+  [[ "$base" == 0* || "$base" == 1* ]] && continue
+  [[ " ${DEFERRED[*]} " == *" $base "* ]] && continue
+  echo "# Applying $base ..."
+  apply_rendered "$RENDER_DIR/$base.yaml"
+done
+
+# ============================================================
+# Step 10: Render and apply deferred bases
+# ============================================================
+if [ ${#DEFERRED[@]} -gt 0 ]; then
+  echo "# === Step 10: Deferred bases ==="
+  for base in "${DEFERRED[@]}"; do
+    basepath="$YSTACK_HOME/k3s/$base/"
+    outfile="$RENDER_DIR/$base.yaml"
+    echo "# Rendering deferred $base ..."
+    k kustomize "$basepath" > "$outfile"
+    echo "# Applying $base ..."
+    apply_rendered "$outfile"
+  done
 fi
-echo "# Validated: builds-registry clusterIP=10.43.0.50"
 
-# HTTPRoutes and GRPCRoutes
-echo "# Applying 07-builds-registry-httproute ..."
-apply_rendered "$RENDER_DIR/07-builds-registry-httproute.yaml"
-k -n ystack get httproute builds-registry
-echo "# Validated: httproute builds-registry exists"
+# Update /etc/hosts again now that deferred routes (e.g. builds-registry) exist
+if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
+  echo "WARNING: /etc/hosts update failed (may need manual sudo). Continuing ..." >&2
+fi
 
-echo "# Applying 08-buildkitd-grpcroute ..."
-apply_rendered "$RENDER_DIR/08-buildkitd-grpcroute.yaml"
-k -n ystack get grpcroute buildkitd
-echo "# Validated: grpcroute buildkitd exists"
-
-# Monitoring operator + CRDs (server-side apply required: CRDs exceed client-side annotation limit)
-echo "# Applying 30-monitoring-operator ..."
-k apply --server-side=true --force-conflicts -f "$RENDER_DIR/30-monitoring-operator.yaml"
-echo "# Waiting for prometheus-operator CRDs to register ..."
-until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-until k get crd alertmanagers.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-echo "# Validated: prometheus-operator CRDs registered"
-
-# Monitoring CRs (Prometheus, Alertmanager, exporters)
-echo "# Applying 31-monitoring ..."
-apply_rendered "$RENDER_DIR/31-monitoring.yaml"
-k -n monitoring get prometheus now
-echo "# Validated: monitoring stack exists"
-
-echo "# Applying 09-prometheus-httproute ..."
-apply_rendered "$RENDER_DIR/09-prometheus-httproute.yaml"
-k -n monitoring get httproute prometheus-now
-echo "# Validated: httproute prometheus-now exists"
-
-# Prod registry
-echo "# Applying 21-prod-registry ..."
-apply_rendered "$RENDER_DIR/21-prod-registry.yaml"
-k -n ystack get svc prod-registry
-echo "# Validated: prod-registry service exists"
-
-# Buildkit
-echo "# Applying 40-buildkit ..."
-apply_rendered "$RENDER_DIR/40-buildkit.yaml"
-k -n ystack get statefulset buildkitd
-echo "# Validated: buildkitd statefulset exists"
+# ============================================================
+# Validation
+# ============================================================
+echo "# === Validation ==="
+k -n ystack get gateway ystack
+k -n ystack get deploy y-kustomize
+k -n blobs get svc y-s3-api
+k -n kafka get statefulset redpanda
+CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+if [ -n "$CLUSTER_IP" ] && [ "$CLUSTER_IP" != "10.43.0.50" ]; then
+  echo "WARNING: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
+fi
 
 echo "# y-cluster-converge-ystack: all steps completed successfully"

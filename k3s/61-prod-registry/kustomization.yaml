@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ystack
+resources:
+- ../../registry/prod-service
+patches:
+- path: prod-registry-magic-numbers.yaml

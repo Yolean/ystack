@@ -1,8 +1,0 @@
-namespace: ystack
-bases:
-- ../../buildkit
-- ../../buildkit/gateway-proxy
-resources:
-- buildkitd-nodeport-service.yaml
-patchesStrategicMerge:
-- buildkitd-replicas-0.yaml

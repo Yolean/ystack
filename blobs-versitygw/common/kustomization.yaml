@@ -2,5 +2,7 @@ secretGenerator:
 - name: y-kustomize.blobs.setup-bucket-job
   options:
     disableNameSuffixHash: true
+    labels:
+      yolean.se/module-part: config
   files:
   - base-for-annotations.yaml=y-kustomize-bases/blobs/setup-bucket-job/base-for-annotations.yaml
