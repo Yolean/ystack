@@ -49,8 +49,6 @@ spec:
       - name: base-blobs-setup-bucket-job
         secret:
           secretName: y-kustomize.blobs.setup-bucket-job
-          optional: true
       - name: base-kafka-setup-topic-job
         secret:
           secretName: y-kustomize.kafka.setup-topic-job
-          optional: true

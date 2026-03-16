@@ -6,4 +6,4 @@ resources:
 - ../../monitoring/alertmanager-main
 - ../../monitoring/kube-state-metrics-now
 - ../../monitoring/node-exporter-now
-- ../../monitoring/httproute
+- ../../monitoring/gateway

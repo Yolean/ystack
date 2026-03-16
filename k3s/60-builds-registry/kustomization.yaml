@@ -9,7 +9,7 @@ namespace: ystack
 resources:
 - ../../registry/builds-service
 - ../../registry/generic
-- ../../registry/httproute
+- ../../registry/gateway
 - ../../blobs-versitygw/defaultsecret
 - ../../registry/builds-bucket
 - ../../registry/builds-topic

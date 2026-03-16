@@ -21,22 +21,11 @@ k() {
 
 apply_base() {
   local base="$1"
-  local label_selector="${2:-}"
   local output
-  if [ -n "$label_selector" ]; then
-    output=$(k apply -k "$YSTACK_HOME/k3s/$base/" -l "$label_selector" 2>&1) || {
-      if echo "$output" | grep -q "no objects passed to apply"; then
-        return 0
-      fi
-      echo "$output" >&2
-      return 1
-    }
-  else
-    output=$(k apply -k "$YSTACK_HOME/k3s/$base/" 2>&1) || {
-      echo "$output" >&2
-      return 1
-    }
-  fi
+  output=$(k apply -k "$YSTACK_HOME/k3s/$base/" 2>&1) || {
+    echo "$output" >&2
+    return 1
+  }
   [ -n "$output" ] && echo "$output"
 }
 
@@ -53,85 +42,65 @@ for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
 done
 echo "[y-cluster-converge-ystack] Bases: ${BASES[*]}"
 
-# Apply 0* bases (namespaces, never deleted)
-echo "[y-cluster-converge-ystack] Applying namespace bases"
+prev_digit=""
 for base in "${BASES[@]}"; do
-  [[ "$base" == 0* ]] || continue
+  digit="${base:0:1}"
+
+  # Between digit groups, wait for readiness
+  if [ -n "$prev_digit" ] && [ "$digit" != "$prev_digit" ]; then
+    echo "[y-cluster-converge-ystack] Waiting for rollouts after ${prev_digit}* bases"
+
+    # After CRDs (1*), wait for them to be served
+    # TODO this must be generalized so we don't need specific names
+    if [ "$prev_digit" = "1" ]; then
+      echo "[y-cluster-converge-ystack] Waiting for Gateway API CRDs"
+      until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
+      echo "[y-cluster-converge-ystack] Waiting for prometheus-operator CRDs"
+      until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+      until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
+      echo "[y-cluster-converge-ystack] Waiting for Gateway resource type to be served"
+      until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
+    fi
+
+    # TOOD get namespaces from ./k3s/namespace-* (kube-system is not our business)
+    for ns in ystack blobs kafka monitoring kube-system; do
+      k -n "$ns" rollout status deploy --timeout=120s
+    done
+
+    # After 2* (gateway + y-kustomize), update /etc/hosts so curl can reach services
+    if [ "$prev_digit" = "2" ]; then
+      if [ -n "${YSTACK_OVERRIDE_IP:-}" ]; then
+        echo "[y-cluster-converge-ystack] Annotating gateway with yolean.se/override-ip=$YSTACK_OVERRIDE_IP"
+        k -n ystack annotate gateway ystack yolean.se/override-ip="$YSTACK_OVERRIDE_IP" --overwrite
+      fi
+      if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
+        echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
+      fi
+    fi
+
+    # Before 6* bases, verify y-kustomize serves real content (secrets need time to propagate)
+    if [ "$digit" = "6" ]; then
+      echo "[y-cluster-converge-ystack] Verifying y-kustomize API"
+      curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/health
+      echo "[y-cluster-converge-ystack] y-kustomize health ok"
+      curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
+      echo "[y-cluster-converge-ystack] y-kustomize serving blobs bases"
+      curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
+      echo "[y-cluster-converge-ystack] y-kustomize serving kafka bases"
+    fi
+  fi
+
   echo "[y-cluster-converge-ystack] Applying $base"
-  apply_base "$base"
+  if [[ "$base" == 1* ]]; then
+    k apply -k "$YSTACK_HOME/k3s/$base/" --server-side=true --force-conflicts
+  else
+    apply_base "$base"
+  fi
+
+  prev_digit="$digit"
 done
 
-# Apply CRDs explicitly using --server-side=true --force-conflicts
-echo "[y-cluster-converge-ystack] Applying CRDs"
-# The yolean.se/module-part=crd selector is not yet supported.
-for base in "${BASES[@]}"; do
-  [[ "$base" == 1* ]] || continue
-  echo "[y-cluster-converge-ystack] Applying CRDs from $base (server-side)"
-  k apply -k "$YSTACK_HOME/k3s/$base/" --server-side=true --force-conflicts
-done
-
-# Validate CRDs are registered
-echo "[y-cluster-converge-ystack] Waiting for Gateway API CRDs"
-until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
-echo "[y-cluster-converge-ystack] Waiting for prometheus-operator CRDs"
-until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-echo "[y-cluster-converge-ystack] Waiting for Gateway resource type to be served"
-until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
-
-# Apply with yolean.se/module-part=config selector (skip 6* which depend on y-kustomize HTTP)
-echo "[y-cluster-converge-ystack] Applying config resources"
-for base in "${BASES[@]}"; do
-  [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "[y-cluster-converge-ystack] Applying config from $base"
-  apply_base "$base" "yolean.se/module-part=config"
-done
-
-# Apply with yolean.se/module-part=services selector (skip 6*)
-echo "[y-cluster-converge-ystack] Applying services resources"
-for base in "${BASES[@]}"; do
-  [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "[y-cluster-converge-ystack] Applying services from $base"
-  apply_base "$base" "yolean.se/module-part=services"
-done
-
-# Apply with yolean.se/module-part=gateway selector (skip 6*)
-echo "[y-cluster-converge-ystack] Applying gateway resources"
-for base in "${BASES[@]}"; do
-  [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "[y-cluster-converge-ystack] Applying gateway from $base"
-  apply_base "$base" "yolean.se/module-part=gateway"
-done
-
-# Persist override-ip as gateway annotation (set by provision scripts via YSTACK_OVERRIDE_IP env)
-if [ -n "${YSTACK_OVERRIDE_IP:-}" ]; then
-  echo "[y-cluster-converge-ystack] Annotating gateway with yolean.se/override-ip=$YSTACK_OVERRIDE_IP"
-  k -n ystack annotate gateway ystack yolean.se/override-ip="$YSTACK_OVERRIDE_IP" --overwrite
-fi
-
-# Update /etc/hosts now that all HTTPRoutes exist
-if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
-  echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
-fi
-
-# Verify y-kustomize schema compliance (config secrets mounted in-place, no restart needed)
-echo "[y-cluster-converge-ystack] Verifying y-kustomize API"
-curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/health
-echo "[y-cluster-converge-ystack] y-kustomize health ok"
-curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
-echo "[y-cluster-converge-ystack] y-kustomize serving blobs bases"
-curl -sf --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
-echo "[y-cluster-converge-ystack] y-kustomize serving kafka bases"
-
-# Full apply without selector
-echo "[y-cluster-converge-ystack] Full apply"
-for base in "${BASES[@]}"; do
-  [[ "$base" == 0* || "$base" == 1* ]] && continue
-  echo "[y-cluster-converge-ystack] Applying $base"
-  apply_base "$base"
-done
-
-# Update /etc/hosts again now that all routes exist
+# Update /etc/hosts now that all routes exist
 if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
   echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
 fi
