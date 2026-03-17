@@ -9,6 +9,8 @@ case $ctx in
   *) echo "Initial arg must be --context=" && exit 1 ;;
 esac
 
+CONTEXT_NAME="${ctx#--context=}"
+
 [ "$YSTACK_BUILDKIT_REQUIRE" != "true" ] || [ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
 
 version=$(y-bin-download $YBIN/y-bin.optional.yaml kubefwd)
@@ -27,5 +29,6 @@ fi
 
 addargs="$ctx"
 [[ "$*" == *-l* ]] || addargs="$addargs -l ystack-kubefwd!=never"
+[[ "$CONTEXT_NAME" == "local" ]] || [[ "$*" == *--domain* ]] || addargs="$addargs --domain=$CONTEXT_NAME"
 
 $YBIN/y-kubefwd-v${version}-bin $addargs "$@" || exit $?
