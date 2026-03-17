@@ -1,5 +1,7 @@
 bases:
 - ../generic
+components:
+- ../images
 resources:
 - rbac.yaml
 - job.yaml
