@@ -416,22 +416,23 @@ lint_file() {
     has_help_failure=true
   fi
 
-  local status
   if [ "$has_static_failure" = "true" ]; then
     FAILED_STATIC=$((FAILED_STATIC + 1))
     FAIL_LIST="$FAIL_LIST $name"
-    status="FAIL"
   elif [ "$has_help_failure" = "true" ]; then
     FAILED_HELP=$((FAILED_HELP + 1))
-    status="WARN"
   else
     PASSED=$((PASSED + 1))
-    status="OK"
   fi
 
-  echo "  $name  $lang ${loc}L  $status"
+  echo "  $name  $lang ${loc}L"
   for err in "${errors[@]}"; do
-    echo "    $err"
+    # Static failures are FAIL, help-related are WARN
+    local level="WARN"
+    case "$err" in
+      "unrecognized or missing shebang"|"missing set -eo pipefail"*|"uses npx"|"uses eval"|"shellcheck "*) level="FAIL" ;;
+    esac
+    echo "    $level $err"
   done
 
   # Build JSON
