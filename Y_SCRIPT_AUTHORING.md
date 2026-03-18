@@ -7,6 +7,29 @@ with emphasis on making scripts useful to both humans and AI agents.
 The y-* convention spans multiple repositories.
 Each repo's `bin/` is added to PATH, and scripts can call each other across repos.
 
+## OS Compatibility
+
+Scripts must work on:
+- **macOS 14.8+** (Sonoma) — BSD userland, no GNU coreutils
+- **Debian Trixie+** (13)
+- **Ubuntu 24.04+** (Noble)
+
+macOS ships BSD versions of core utilities. Key incompatibilities:
+- `sed -i ''` on macOS vs `sed -i` on Linux — avoid `sed -i` entirely, use a temp file or `ed`
+- `stat -f %m` on macOS vs `stat -c %Y` on Linux
+- `date` flag differences (`-d` vs `-v`)
+- `readlink -f` unavailable on macOS without coreutils
+- `grep -P` (PCRE) unavailable on macOS, use `grep -E` (extended regex)
+
+When a portable solution is impractical, use platform detection:
+
+```bash
+case "$(uname -s)" in
+  Darwin) ;; # macOS-specific
+  Linux)  ;; # Linux-specific
+esac
+```
+
 ## Quick Reference: Making a Compliant Script
 
 `y-script-lint` validates scripts statically (no execution). To pass all checks:
