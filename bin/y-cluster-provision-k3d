@@ -9,7 +9,7 @@ YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 CTX=local
 K3D_NAME=ystack
 YSTACK_HOST=ystack.local
-K3D_MEMORY="6G"
+K3D_MEMORY="8G"
 K3D_AGENTS="0"
 K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
 SKIP_CONVERGE=false
@@ -24,7 +24,7 @@ Usage: y-cluster-provision-k3d [flags]
 
 Flags:
   --context=NAME        kubeconfig context name (default: local)
-  --memory=SIZE         server node memory limit (default: 6G)
+  --memory=SIZE         server node memory limit (default: 8G)
   --agents=N            number of agent nodes (default: 0)
   --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
   --host=HOSTNAME       hostname for ingress (default: ystack.local)
@@ -65,7 +65,7 @@ fi
 
 # Check for existing cluster
 if y-k3d cluster list 2>/dev/null | grep -q "^$K3D_NAME "; then
-  echo "ERROR: k3d cluster '$K3D_NAME' already exists. Delete it first with: y-k3d cluster delete $K3D_NAME" >&2
+  echo "ERROR: k3d cluster '$K3D_NAME' already exists. Delete it first with: y-cluster-provision-k3d --teardown" >&2
   exit 1
 fi
 

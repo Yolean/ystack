@@ -58,20 +58,15 @@ for base in "${BASES[@]}"; do
   if [ -n "$prev_digit" ] && [ "$digit" != "$prev_digit" ]; then
     echo "[y-cluster-converge-ystack] Waiting for rollouts after ${prev_digit}* bases"
 
-    # After CRDs (1*), wait for them to be served
-    # TODO this must be generalized so we don't need specific names
+    # After CRDs (1*), wait for all of them to be established
     if [ "$prev_digit" = "1" ]; then
-      echo "[y-cluster-converge-ystack] Waiting for Gateway API CRDs"
-      until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
-      echo "[y-cluster-converge-ystack] Waiting for prometheus-operator CRDs"
-      until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-      until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-      echo "[y-cluster-converge-ystack] Waiting for Gateway resource type to be served"
-      until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
+      echo "[y-cluster-converge-ystack] Waiting for all CRDs to be established"
+      k wait --for=condition=Established crd --all --timeout=60s
     fi
 
-    # TOOD get namespaces from ./k3s/namespace-* (kube-system is not our business)
-    for ns in ystack blobs kafka monitoring kube-system; do
+    # Wait for all deployments that exist in any namespace
+    for ns in $(k get deploy --all-namespaces --no-headers -o custom-columns=NS:.metadata.namespace 2>/dev/null | sort -u); do
+      echo "[y-cluster-converge-ystack] Waiting for deployments in $ns"
       k -n "$ns" rollout status deploy --timeout=120s
     done
 
