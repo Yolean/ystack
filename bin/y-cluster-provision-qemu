@@ -248,7 +248,5 @@ PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o
 ssh_vm "sudo sh -c 'echo \"$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local\" >> /etc/hosts'"
 ssh_vm "sudo sh -c 'echo \"$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local\" >> /etc/hosts'"
 
-y-cluster-validate-ystack --context=$CTX
-
 echo "[y-cluster-provision-qemu] Done. SSH: ssh -p $VM_SSH_PORT -i $VM_SSH_KEY ystack@localhost"
 echo "[y-cluster-provision-qemu] Export: y-cluster-provision-qemu --export-vmdk=appliance.vmdk"

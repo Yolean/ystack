@@ -8,6 +8,7 @@ case "$CLUSTER" in
   ystack-k3d)       PROVISIONER=k3d ;;
   ystack-multipass)  PROVISIONER=multipass ;;
   ystack-lima)       PROVISIONER=lima ;;
+  ystack-qemu)      PROVISIONER=qemu ;;
   *)
     echo "No recognized ystack cluster at --context=local (cluster name: '$CLUSTER')" >&2
     exit 1

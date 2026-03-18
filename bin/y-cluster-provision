@@ -14,6 +14,8 @@ fi
 
 if [ -n "$YSTACK_PROVISIONER" ]; then
   true
+elif command -v qemu-system-x86_64 >/dev/null 2>&1 && command -v qemu-img >/dev/null 2>&1 && command -v cloud-localds >/dev/null 2>&1 && [ -e /dev/kvm ]; then
+  YSTACK_PROVISIONER=qemu
 elif command -v multipass >/dev/null 2>&1; then
   YSTACK_PROVISIONER=multipass
 elif command -v docker >/dev/null 2>&1; then
