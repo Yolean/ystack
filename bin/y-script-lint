@@ -2,6 +2,9 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
+# Ensure Ctrl+C kills the whole process group
+trap 'exit 130' INT
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
@@ -187,7 +190,7 @@ fi
 run_shellcheck() {
   local file="$1"
   if [ "$HAS_SHELLCHECK" = "true" ]; then
-    y-shellcheck --severity=error "$file" >/dev/null 2>&1
+    timeout "$SANDBOX_TIMEOUT_S" y-shellcheck --severity=error "$file" >/dev/null 2>&1
   else
     return 0  # skip, not a failure
   fi
