@@ -81,7 +81,15 @@ for base in "${BASES[@]}"; do
       fi
     fi
 
-    # Before 6* bases, verify y-kustomize serves real content (secrets need time to propagate)
+    # After 4* (kafka secrets updated), restart y-kustomize so volume mounts refresh
+    # without waiting for kubelet sync (can take 60-120s)
+    if [ "$prev_digit" = "4" ]; then
+      echo "[y-cluster-converge-ystack] Restarting y-kustomize to pick up updated secrets"
+      k -n ystack rollout restart deploy/y-kustomize
+      k -n ystack rollout status deploy/y-kustomize --timeout=60s
+    fi
+
+    # Before 6* bases, verify y-kustomize serves real content
     if [ "$digit" = "6" ]; then
       echo "[y-cluster-converge-ystack] Verifying y-kustomize API"
       curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 http://y-kustomize.ystack.svc.cluster.local/health
