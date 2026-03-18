@@ -11,6 +11,7 @@ VM_NAME="ystack-master"
 VM_RESOURCES="-m 8G -d 40G -c 4"
 SKIP_CONVERGE=false
 SKIP_IMAGE_LOAD=false
+EXCLUDE=monitoring
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)
@@ -21,6 +22,7 @@ Flags:
   --context=NAME          kubeconfig context name (default: local)
   --vm-name=NAME          multipass VM name (default: ystack-master)
   --vm-resources=ARGS     multipass launch resource flags (default: -m 8G -d 40G -c 4)
+  --exclude=SUBSTRING     exclude k3s bases matching substring (default: monitoring)
   --skip-converge         skip converge, validate, and post-provision steps
   --skip-image-load       skip image cache and load into containerd
   --teardown              delete existing VM and exit
@@ -30,6 +32,7 @@ EOF
     --context=*) CTX="${1#*=}"; shift ;;
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
+    --exclude=*) EXCLUDE="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
     --teardown) TEARDOWN=true; shift ;;
@@ -115,7 +118,7 @@ else
   y-image-cache-load-all </dev/null || true
 fi
 
-y-cluster-converge-ystack --context=$CTX
+y-cluster-converge-ystack --context=$CTX --exclude=$EXCLUDE
 
 # multipass-specific: update VM /etc/hosts so containerd can resolve registry services
 BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')

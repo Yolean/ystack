@@ -5,15 +5,19 @@ set -eo pipefail
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
 CONTEXT=""
+EXCLUDE=""
+OVERRIDE_IP=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CONTEXT="${1#*=}"; shift ;;
+    --exclude=*) EXCLUDE="${1#*=}"; shift ;;
+    --override-ip=*) OVERRIDE_IP="${1#*=}"; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
-[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name>" && exit 1
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--exclude=SUBSTRING] [--override-ip=IP]" && exit 1
 
 k() {
   kubectl --context="$CONTEXT" "$@"
@@ -36,6 +40,10 @@ for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
   base=$(basename "$dir")
   if [[ "$base" == *-disabled ]]; then
     echo "[y-cluster-converge-ystack] Skipping disabled: $base"
+    continue
+  fi
+  if [ -n "$EXCLUDE" ] && [[ "$base" == *"$EXCLUDE"* ]]; then
+    echo "[y-cluster-converge-ystack] Skipping excluded (--exclude=$EXCLUDE): $base"
     continue
   fi
   BASES+=("$base")
@@ -69,9 +77,9 @@ for base in "${BASES[@]}"; do
 
     # After 2* (gateway + y-kustomize), update /etc/hosts so curl can reach services
     if [ "$prev_digit" = "2" ]; then
-      if [ -n "${YSTACK_OVERRIDE_IP:-}" ]; then
-        echo "[y-cluster-converge-ystack] Annotating gateway with yolean.se/override-ip=$YSTACK_OVERRIDE_IP"
-        k -n ystack annotate gateway ystack yolean.se/override-ip="$YSTACK_OVERRIDE_IP" --overwrite
+      if [ -n "$OVERRIDE_IP" ]; then
+        echo "[y-cluster-converge-ystack] Annotating gateway with yolean.se/override-ip=$OVERRIDE_IP"
+        k -n ystack annotate gateway ystack yolean.se/override-ip="$OVERRIDE_IP" --overwrite
       fi
       if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
         echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
