@@ -7,11 +7,9 @@ trap 'trap - INT; kill -INT -$$' INT
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-show_help() {
-  cat <<'EOF'
-y-script-lint - Static analysis and convention checks for y-* scripts
+YHELP='y-script-lint - Static analysis and convention checks for y-* scripts
 
-Usage: y-script-lint [options] [DIR...]
+Usage: y-script-lint [help] [options] [DIR...]
 
 Arguments:
   DIR              Directory to scan (default: all PATH dirs containing y-* scripts)
@@ -20,7 +18,6 @@ Options:
   --check          Exit non-zero if any script fails static checks (for CI)
   --phase1-only    Skip sandboxed --help execution (phase 2)
   --json           Write results to DIR/.y-script-lint.json
-  -h, --help       Show this help
 
 Phase 1 (static, never executes scripts):
   - Shebang detection and language classification
@@ -32,13 +29,13 @@ Phase 1 (static, never executes scripts):
 
 Phase 2 (sandboxed --help execution):
   - Only runs for scripts where phase 1 found a help handler
-  - Sandbox: env -i, temp HOME, temp workdir, timeout 5s
+  - Sandbox: env -i, temp HOME, temp workdir, timeout
   - Linux: network isolation via unshare --net
   - TODO: macOS sandboxing (currently skips phase 2 on Darwin)
   - Validates help output format: first line, Dependencies section
 
 Environment:
-  Y_SCRIPT_LINT_TIMEOUT_S  Phase 2 sandbox timeout in seconds (default: 5)
+  Y_SCRIPT_LINT_TIMEOUT_S  Sandbox timeout in seconds (default: 5)
 
 Dependencies:
   jq               Required for --json output
@@ -49,8 +46,12 @@ Exit codes:
   0                All scripts passed (or --check not set)
   1                Usage error
   2                One or more scripts failed checks (--check mode)
-EOF
-}
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
 
 CHECK_MODE=false
 PHASE1_ONLY=false
@@ -59,7 +60,6 @@ TARGET_DIRS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    -h|--help) show_help; exit 0 ;;
     --check) CHECK_MODE=true; shift ;;
     --phase1-only) PHASE1_ONLY=true; shift ;;
     --json) JSON_OUTPUT=true; shift ;;
