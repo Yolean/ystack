@@ -124,6 +124,17 @@ check_no_eval() {
   fi
 }
 
+# Detect trivial binary wrapper: header + YBIN + y-bin-download + versioned exec, nothing else
+is_bin_wrapper() {
+  local file="$1"
+  # Must be sh, exactly 8 lines, contain y-bin-download and "$@"
+  [ "$(wc -l < "$file")" -le 8 ] || return 1
+  grep -qE '^version=\$\(y-bin-download ' "$file" 2>/dev/null || return 1
+  grep -qE '"\$@"' "$file" 2>/dev/null || return 1
+  # Must not have anything beyond the wrapper pattern (no conditionals, loops, functions)
+  ! grep -qE '^(if |for |while |case |function |\w+\(\))' "$file" 2>/dev/null
+}
+
 SHELLCHECK_TIMEOUT_S="${Y_SCRIPT_LINT_TIMEOUT_S:-5}"
 HAS_SHELLCHECK=false
 command -v y-shellcheck >/dev/null 2>&1 && HAS_SHELLCHECK=true
@@ -258,7 +269,16 @@ lint_file() {
     checks_header=null; checks_debug=null
   fi
 
-  check_help_handler "$file" "$lang" && checks_help_handler=true || errors+=("no help handler found in source")
+  local bin_wrapper=false
+  is_shell "$lang" && is_bin_wrapper "$file" && bin_wrapper=true
+
+  if [ "$bin_wrapper" = "true" ]; then
+    checks_help_handler=true  # not required for trivial wrappers
+  elif check_help_handler "$file" "$lang"; then
+    checks_help_handler=true
+  else
+    errors+=("no help handler found in source")
+  fi
   check_no_npx "$file" "$lang" || { checks_no_npx=false; errors+=("uses npx"); }
   check_no_eval "$file" "$lang" || { checks_no_eval=false; errors+=("uses eval"); }
 
@@ -308,7 +328,9 @@ lint_file() {
     PASSED=$((PASSED + 1))
   fi
 
-  echo "  $name  $lang ${loc}L"
+  local type_label="$lang"
+  [ "$bin_wrapper" = "true" ] && type_label="$lang wrapper"
+  echo "  $name  $type_label ${loc}L"
   for err in "${errors[@]}"; do
     local level="WARN"
     case "$err" in
@@ -379,7 +401,7 @@ done
 NOTES=""
 [ "$HAS_SHELLCHECK" = "false" ] && NOTES="${NOTES}, no shellcheck"
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
-for jf in "${JSON_FILES[@]}"; do echo "Wrote $jf"; done
+for jf in "${JSON_FILES[@]}"; do echo "[y-script-lint] Wrote $jf"; done
 
 if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
   echo "FAILED:$FAIL_LIST"
