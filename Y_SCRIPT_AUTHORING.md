@@ -177,7 +177,7 @@ This is preferred over `--help`-only because:
 - It reads naturally: `y-crane help`, `y-cluster-provision-k3d help`
 - It follows the subcommand pattern used by git, docker, kubectl
 - The help check happens before argument parsing, before prerequisite checks,
-  before any side effects — so it always works, even in a sandboxed env
+  before any side effects
 - `--help` is accepted for backwards compatibility but not documented in new scripts
 
 Existing scripts use various patterns (`--help`, `-h|--help`, `[[ "$1" =~ help$ ]]`).
