@@ -190,7 +190,7 @@ fi
 run_shellcheck() {
   local file="$1"
   if [ "$HAS_SHELLCHECK" = "true" ]; then
-    timeout "$SANDBOX_TIMEOUT_S" y-shellcheck --severity=error "$file" >/dev/null 2>&1
+    timeout --kill-after=2 "$SANDBOX_TIMEOUT_S" y-shellcheck --severity=error "$file" >/dev/null 2>&1
   else
     return 0  # skip, not a failure
   fi
@@ -222,7 +222,7 @@ run_sandboxed_help() {
   local exit_code=0
 
   # Build sandbox command
-  local sandbox_cmd=(env -i PATH="$PATH" HOME="$tmpdir" timeout "$SANDBOX_TIMEOUT_S")
+  local sandbox_cmd=(env -i PATH="$PATH" HOME="$tmpdir" timeout --kill-after=2 "$SANDBOX_TIMEOUT_S")
   if [ "$HAS_UNSHARE" = "true" ]; then
     sandbox_cmd=(unshare --net "${sandbox_cmd[@]}")
   fi
