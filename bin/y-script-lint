@@ -34,6 +34,9 @@ Phase 2 (sandboxed --help execution):
   - TODO: macOS sandboxing (currently skips phase 2 on Darwin)
   - Validates help output format: first line, Dependencies section
 
+Environment:
+  Y_SCRIPT_LINT_TIMEOUT_S  Phase 2 sandbox timeout in seconds (default: 5)
+
 Dependencies:
   jq               Required for --json output
   y-shellcheck     Optional, shell lint (skipped if not available)
@@ -192,6 +195,8 @@ run_shellcheck() {
 
 # --- Phase 2: sandboxed --help execution ---
 
+SANDBOX_TIMEOUT_S="${Y_SCRIPT_LINT_TIMEOUT_S:-5}"
+
 CAN_SANDBOX=true
 HAS_UNSHARE=false
 if [ "$(uname -s)" = "Linux" ]; then
@@ -214,7 +219,7 @@ run_sandboxed_help() {
   local exit_code=0
 
   # Build sandbox command
-  local sandbox_cmd=(env -i PATH="$PATH" HOME="$tmpdir" timeout 5)
+  local sandbox_cmd=(env -i PATH="$PATH" HOME="$tmpdir" timeout "$SANDBOX_TIMEOUT_S")
   if [ "$HAS_UNSHARE" = "true" ]; then
     sandbox_cmd=(unshare --net "${sandbox_cmd[@]}")
   fi
