@@ -2,8 +2,8 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-# Ensure Ctrl+C kills the whole process group
-trap 'exit 130' INT
+# Ensure Ctrl+C kills the whole process group, including hung children
+trap 'trap - INT; kill -INT -$$' INT
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
