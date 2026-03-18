@@ -10,14 +10,15 @@ Each repo's `bin/` is added to PATH, and scripts can call each other across repo
 ## OS Compatibility
 
 Scripts must work on:
-- **macOS 14.8+** (Sonoma) — BSD userland, no GNU coreutils
-- **Debian Trixie+** (13)
-- **Ubuntu 24.04+** (Noble)
+- macOS 14.8+ (Sonoma) — BSD userland, no GNU coreutils
+- Debian Trixie+ (13)
+- Ubuntu 24.04+ (Noble)
 
 macOS ships BSD versions of core utilities. Key incompatibilities:
 - `sed -i ''` on macOS vs `sed -i` on Linux — avoid `sed -i` entirely, use a temp file or `ed`
 - `stat -f %m` on macOS vs `stat -c %Y` on Linux
-- `date` flag differences (`-d` vs `-v`)
+- `date -Iseconds` (GNU ISO 8601) unavailable on macOS, use `date -u +%Y-%m-%dT%H:%M:%SZ`
+- `date -d` (GNU parse) vs `date -v` (BSD adjust)
 - `readlink -f` unavailable on macOS without coreutils
 - `grep -P` (PCRE) unavailable on macOS, use `grep -E` (extended regex)
 
@@ -57,8 +58,6 @@ Environment:
   REGISTRY   Override default registry (default: docker.io)
 
 Dependencies:
-  y-crane    Used to resolve image digests
-  yq         Used for kustomization.yaml updates
 
 Exit codes:
   0          Success
@@ -93,7 +92,6 @@ Environment:
   MY_VAR         Description (default: value)
 
 Dependencies:
-  y-crane        Used to resolve digests (via shell)
 `;
 
 if (process.argv[2] === 'help' || process.argv[2] === '--help') {
@@ -148,17 +146,15 @@ Environment:
   ...
 
 Dependencies:
-  y-other    Why it's needed
-  jq         JSON processing
 
 Exit codes:
   0          Success
   1          Usage error
 ```
 
-**Rules:**
+Rules:
 - First line: `y-name - description` (the "index line", used by tooling for discovery)
-- `Dependencies:` section lists every y-* command and external tool the script calls
+- `Dependencies:` section is maintained by tooling — leave it empty in new scripts
 - Print help to stdout, exit 0
 - Keep it factual and compact — no ASCII art, no long examples
 
@@ -180,11 +176,11 @@ if (process.argv[2] === 'help' || process.argv[2] === '--help') {
 This is preferred over `--help`-only because:
 - It reads naturally: `y-crane help`, `y-cluster-provision-k3d help`
 - It follows the subcommand pattern used by git, docker, kubectl
-- The help check happens **before** argument parsing, before prerequisite checks,
+- The help check happens before argument parsing, before prerequisite checks,
   before any side effects — so it always works, even in a sandboxed env
 - `--help` is accepted for backwards compatibility but not documented in new scripts
 
-**Existing scripts** use various patterns (`--help`, `-h|--help`, `[[ "$1" =~ help$ ]]`).
+Existing scripts use various patterns (`--help`, `-h|--help`, `[[ "$1" =~ help$ ]]`).
 `y-script-lint` detects all of these. When touching an existing script, migrate to the
 `help` subcommand pattern.
 
@@ -238,10 +234,10 @@ else
 fi
 ```
 
-- **Token efficiency**: Keep output minimal. Avoid banners, progress bars, repeated info.
-- **Dry run**: Mutating commands should support `--dry-run`.
-- **Deterministic output**: Same inputs produce same output format.
-- **Error output to stderr**: `echo "ERROR: message" >&2`. Structured results go to stdout.
+- Token efficiency: Keep output minimal. Avoid banners, progress bars, repeated info.
+- Dry run: Mutating commands should support `--dry-run`.
+- Deterministic output: Same inputs produce same output format.
+- Error output to stderr: `echo "ERROR: message" >&2`. Structured results go to stdout.
 
 ### Naming
 
@@ -352,9 +348,9 @@ and want to avoid PATH ambiguity.
 
 `y-script-lint` reads script source files and extracts information statically:
 
-1. **Help handler detection**: Greps for known patterns (`"$1" = "help"`, `--help` in case,
+1. Help handler detection: Greps for known patterns (`"$1" = "help"`, `--help` in case,
    `process.argv.includes`). Detects existing scripts regardless of which pattern they use.
-2. **Summary and dependencies** (planned): Parse the `YHELP` variable from source to extract
+2. Summary and dependencies (planned): Parse the `YHELP` variable from source to extract
    the first line (index line) and `Dependencies:` section without executing the script.
 
 Scripts are never executed during lint. This means:
@@ -367,10 +363,10 @@ Scripts are never executed during lint. This means:
 
 Two complementary approaches:
 
-**1. Declared dependencies (preferred):**
+1. Declared dependencies (preferred):
 Parse the `Dependencies:` section from the `YHELP` variable in source.
 
-**2. Static analysis (works on existing scripts without changes):**
+2. Static analysis (works on existing scripts without changes):
 Grep script source for `y-*` invocations. For checkit-style `$YBIN/y-*` calls
 this is straightforward. For PATH-based calls, look for `y-[a-z]` patterns
 that aren't inside comments or strings.
@@ -379,10 +375,10 @@ that aren't inside comments or strings.
 
 When agents use y-* scripts, token cost and parse reliability matter:
 
-1. **Concise help**: Keep help text factual and compact.
-2. **Structured errors**: Prefix errors with `ERROR:` so agents can regex-match failures.
-3. **JSON mode**: For commands that list or query, support `--output json`.
-4. **Idempotency**: Where possible, make scripts safe to re-run. Document when a script is NOT idempotent.
-5. **Predictable exit codes**: 0 = success, 1 = usage error, 2+ = domain-specific.
-6. **No interactive prompts**: Never prompt for input. Use flags, env vars, or fail with a clear message.
-7. **Minimal side effects**: Scripts should do one thing.
+1. Concise help: Keep help text factual and compact.
+2. Structured errors: Prefix errors with `ERROR:` so agents can regex-match failures.
+3. JSON mode: For commands that list or query, support `--output json`.
+4. Idempotency: Where possible, make scripts safe to re-run. Document when a script is NOT idempotent.
+5. Predictable exit codes: 0 = success, 1 = usage error, 2+ = domain-specific.
+6. No interactive prompts: Never prompt for input. Use flags, env vars, or fail with a clear message.
+7. Minimal side effects: Scripts should do one thing.
