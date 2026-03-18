@@ -8,10 +8,10 @@ show_help() {
   cat <<'EOF'
 y-script-lint - Static analysis and convention checks for y-* scripts
 
-Usage: y-script-lint [options] [DIR]
+Usage: y-script-lint [options] [DIR...]
 
 Arguments:
-  DIR              Directory to scan (default: ./bin)
+  DIR              Directory to scan (default: all PATH dirs containing y-* scripts)
 
 Options:
   --check          Exit non-zero if any script fails static checks (for CI)
@@ -49,7 +49,7 @@ EOF
 CHECK_MODE=false
 PHASE1_ONLY=false
 JSON_OUTPUT=false
-TARGET_DIR=""
+TARGET_DIRS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -59,13 +59,35 @@ while [ $# -gt 0 ]; do
     --json) JSON_OUTPUT=true; shift ;;
     --) shift; break ;;
     -*) echo "Unknown flag: $1" >&2; exit 1 ;;
-    *) TARGET_DIR="$1"; shift ;;
+    *) TARGET_DIRS+=("$1"); shift ;;
   esac
 done
 
-[ -z "$TARGET_DIR" ] && TARGET_DIR="./bin"
-[ -d "$TARGET_DIR" ] || { echo "ERROR: directory not found: $TARGET_DIR" >&2; exit 1; }
-TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+# Default: discover from PATH
+if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
+  IFS=: read -ra path_entries <<< "$PATH"
+  for dir in "${path_entries[@]}"; do
+    [ -d "$dir" ] || continue
+    # Include directories that contain at least one y-* executable
+    for f in "$dir"/y-*; do
+      if [ -x "$f" ] && [ -f "$f" ]; then
+        TARGET_DIRS+=("$dir")
+        break
+      fi
+    done
+  done
+  if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
+    echo "ERROR: no y-* scripts found in PATH" >&2
+    exit 1
+  fi
+fi
+
+# Resolve to absolute paths
+RESOLVED_DIRS=()
+for dir in "${TARGET_DIRS[@]}"; do
+  [ -d "$dir" ] || { echo "ERROR: directory not found: $dir" >&2; exit 1; }
+  RESOLVED_DIRS+=("$(cd "$dir" && pwd)")
+done
 
 # --- Language detection ---
 
@@ -242,32 +264,12 @@ check_help_has_deps_section() {
   echo "$output" | grep -q '^Dependencies:' 2>/dev/null
 }
 
-# --- Main ---
+# --- Per-file lint ---
 
-TOTAL=0
-PASSED=0
-FAILED_STATIC=0
-FAILED_HELP=0
-SKIPPED=0
-FAIL_LIST=""
-
-# Collect results as JSON fragments
-JSON_SCRIPTS=""
-
-for file in "$TARGET_DIR"/y-*; do
-  [ -f "$file" ] || continue
+lint_file() {
+  local file="$1"
+  local name
   name=$(basename "$file")
-
-  # Skip spec/ directory entries, non-executable, yaml configs
-  [ -x "$file" ] || continue
-  case "$name" in
-    *.yaml|*.yml|*.md) continue ;;
-    *.spec.js|*.spec.ts|*.test.js|*.test.ts) continue ;;  # test files
-    *-bin)             continue ;;  # compiled binaries, not scripts
-    *-dist)            continue ;;
-  esac
-
-  TOTAL=$((TOTAL + 1))
 
   lang=$(detect_language "$file")
 
@@ -275,29 +277,29 @@ for file in "$TARGET_DIR"/y-*; do
   if [ "$lang" = "config" ] || [ "$lang" = "library" ]; then
     SKIPPED=$((SKIPPED + 1))
     if [ "$JSON_OUTPUT" = "true" ]; then
-      JSON_SCRIPTS="${JSON_SCRIPTS}$(jq -n \
+      DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
         --arg name "$name" \
         --arg lang "$lang" \
         '{($name): {language: $lang, skipped: true}}'
       ),"
     fi
     echo "  SKIP  $name ($lang)"
-    continue
+    return
   fi
 
-  errors=()
-  checks_shebang=true
-  checks_header=true
-  checks_debug=true
-  checks_help_handler=false
-  checks_shellcheck=null
-  checks_no_npx=true
-  checks_no_eval=true
-  checks_help_runs=null
-  checks_help_format=null
-  checks_deps_declared=null
-  summary=null
-  deps_json="[]"
+  local errors=()
+  local checks_shebang=true
+  local checks_header=true
+  local checks_debug=true
+  local checks_help_handler=false
+  local checks_shellcheck=null
+  local checks_no_npx=true
+  local checks_no_eval=true
+  local checks_help_runs=null
+  local checks_help_format=null
+  local checks_deps_declared=null
+  local summary=null
+  local deps_json="[]"
 
   # Unknown shebang
   if [ "$lang" = "unknown" ]; then
@@ -316,7 +318,6 @@ for file in "$TARGET_DIR"/y-*; do
       errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x")
     fi
   else
-    # Not applicable to non-shell scripts
     checks_header=null
     checks_debug=null
   fi
@@ -355,14 +356,15 @@ for file in "$TARGET_DIR"/y-*; do
   # Phase 2: sandboxed --help
   if [ "$PHASE1_ONLY" = "false" ] && [ "$checks_help_handler" = "true" ]; then
     if [ "$CAN_SANDBOX" = "false" ]; then
-      # TODO: macOS sandboxing
       checks_help_runs=null
       checks_help_format=null
       checks_deps_declared=null
     else
+      local help_output
       help_output=$(run_sandboxed_help "$file") || true
       if [ -n "$help_output" ]; then
         checks_help_runs=true
+        local first_line
         first_line=$(parse_help_summary "$help_output")
         summary="$first_line"
 
@@ -375,6 +377,7 @@ for file in "$TARGET_DIR"/y-*; do
 
         if check_help_has_deps_section "$help_output"; then
           checks_deps_declared=true
+          local deps_raw
           deps_raw=$(parse_help_dependencies "$help_output")
           if [ -n "$deps_raw" ]; then
             deps_json=$(echo "$deps_raw" | jq -R . | jq -s .)
@@ -393,19 +396,20 @@ for file in "$TARGET_DIR"/y-*; do
   fi
 
   # Determine pass/fail
-  has_static_failure=false
+  local has_static_failure=false
   if [ "$checks_shebang" = "false" ] || [ "$checks_header" = "false" ] \
      || [ "$checks_no_npx" = "false" ] || [ "$checks_no_eval" = "false" ] \
      || [ "$checks_shellcheck" = "false" ]; then
     has_static_failure=true
   fi
 
-  has_help_failure=false
+  local has_help_failure=false
   if [ "$checks_help_handler" = "false" ] || [ "$checks_help_runs" = "false" ] \
      || [ "$checks_help_format" = "false" ]; then
     has_help_failure=true
   fi
 
+  local status
   if [ "$has_static_failure" = "true" ]; then
     FAILED_STATIC=$((FAILED_STATIC + 1))
     FAIL_LIST="$FAIL_LIST $name"
@@ -418,10 +422,10 @@ for file in "$TARGET_DIR"/y-*; do
     status="OK  "
   fi
 
-  # Build error list for display
   if [ ${#errors[@]} -gt 0 ]; then
+    local error_detail
     error_detail=$(printf ", %s" "${errors[@]}")
-    error_detail=${error_detail:2}  # strip leading ", "
+    error_detail=${error_detail:2}
     echo "  $status $name ($lang): $error_detail"
   else
     echo "  $status $name ($lang)"
@@ -429,17 +433,17 @@ for file in "$TARGET_DIR"/y-*; do
 
   # Build JSON
   if [ "$JSON_OUTPUT" = "true" ]; then
-    errors_json="[]"
+    local errors_json="[]"
     if [ ${#errors[@]} -gt 0 ]; then
       errors_json=$(printf '%s\n' "${errors[@]}" | jq -R . | jq -s .)
     fi
 
-    summary_json="null"
+    local summary_json="null"
     if [ "$summary" != "null" ] && [ -n "$summary" ]; then
       summary_json=$(echo "$summary" | jq -R .)
     fi
 
-    # Build checks object - use jq to handle null vs bool properly
+    local checks_json
     checks_json=$(jq -n \
       --argjson shebang "$checks_shebang" \
       --argjson header "$checks_header" \
@@ -464,6 +468,7 @@ for file in "$TARGET_DIR"/y-*; do
         deps_declared: $deps_declared
       }')
 
+    local script_json
     script_json=$(jq -n \
       --arg lang "$lang" \
       --argjson summary "$summary_json" \
@@ -478,7 +483,71 @@ for file in "$TARGET_DIR"/y-*; do
         errors: $errors
       }')
 
-    JSON_SCRIPTS="${JSON_SCRIPTS}$(jq -n --arg name "$name" --argjson data "$script_json" '{($name): $data}'),"
+    DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n --arg name "$name" --argjson data "$script_json" '{($name): $data}'),"
+  fi
+}
+
+# --- Main ---
+
+TOTAL=0
+PASSED=0
+FAILED_STATIC=0
+FAILED_HELP=0
+SKIPPED=0
+FAIL_LIST=""
+
+# Track seen script names to skip PATH duplicates
+declare -A SEEN_SCRIPTS
+
+for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
+  # Collect y-* scripts in this directory
+  dir_scripts=()
+  for file in "$TARGET_DIR"/y-*; do
+    [ -f "$file" ] && [ -x "$file" ] || continue
+    name=$(basename "$file")
+    case "$name" in
+      *.yaml|*.yml|*.md) continue ;;
+      *.spec.js|*.spec.ts|*.test.js|*.test.ts) continue ;;
+      *-bin)             continue ;;
+      *-dist)            continue ;;
+    esac
+    # Skip duplicates (first PATH entry wins)
+    [ -n "${SEEN_SCRIPTS[$name]:-}" ] && continue
+    SEEN_SCRIPTS[$name]=1
+    dir_scripts+=("$file")
+  done
+
+  [ ${#dir_scripts[@]} -eq 0 ] && continue
+
+  echo ""
+  echo "  $TARGET_DIR (${#dir_scripts[@]} scripts)"
+
+  DIR_JSON_SCRIPTS=""
+
+  for file in "${dir_scripts[@]}"; do
+    TOTAL=$((TOTAL + 1))
+    lint_file "$file"
+  done
+
+  # Write per-directory JSON
+  if [ "$JSON_OUTPUT" = "true" ] && [ -n "$DIR_JSON_SCRIPTS" ]; then
+    command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required for --json output" >&2; exit 1; }
+
+    local_scripts_merged=$(echo "[${DIR_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)')
+
+    jq -n \
+      --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      --arg tool_version "1" \
+      --arg directory "$TARGET_DIR" \
+      --argjson scripts "$local_scripts_merged" \
+      '{
+        generated: $generated,
+        tool_version: $tool_version,
+        directory: $directory,
+        scripts: $scripts
+      }' > "$TARGET_DIR/.y-script-lint.json"
+
+    echo "  Wrote $TARGET_DIR/.y-script-lint.json"
   fi
 done
 
@@ -490,45 +559,6 @@ if [ "$HAS_SHELLCHECK" = "false" ]; then
 fi
 if [ "$CAN_SANDBOX" = "false" ]; then
   echo "  NOTE: macOS detected, phase 2 sandboxed execution was skipped (TODO)"
-fi
-
-# Write JSON output
-if [ "$JSON_OUTPUT" = "true" ]; then
-  command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required for --json output" >&2; exit 1; }
-
-  # Merge all script JSON fragments
-  if [ -n "$JSON_SCRIPTS" ]; then
-    # Remove trailing comma, wrap in array, merge with jq
-    scripts_merged=$(echo "[${JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)')
-  else
-    scripts_merged="{}"
-  fi
-
-  jq -n \
-    --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-    --arg tool_version "1" \
-    --arg directory "$TARGET_DIR" \
-    --argjson total "$TOTAL" \
-    --argjson passed "$PASSED" \
-    --argjson failed_static "$FAILED_STATIC" \
-    --argjson failed_help "$FAILED_HELP" \
-    --argjson skipped "$SKIPPED" \
-    --argjson scripts "$scripts_merged" \
-    '{
-      generated: $generated,
-      tool_version: $tool_version,
-      directory: $directory,
-      stats: {
-        total: $total,
-        passed: $passed,
-        failed_static: $failed_static,
-        failed_help: $failed_help,
-        skipped: $skipped
-      },
-      scripts: $scripts
-    }' > "$TARGET_DIR/.y-script-lint.json"
-
-  echo "  Wrote $TARGET_DIR/.y-script-lint.json"
 fi
 
 # --check mode: exit non-zero if any static failures
