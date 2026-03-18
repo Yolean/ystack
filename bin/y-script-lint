@@ -1,0 +1,514 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+show_help() {
+  cat <<'EOF'
+y-script-lint - Static analysis and convention checks for y-* scripts
+
+Usage: y-script-lint [options] [DIR]
+
+Arguments:
+  DIR              Directory to scan (default: ./bin)
+
+Options:
+  --check          Exit non-zero if any script fails static checks (for CI)
+  --phase1-only    Skip sandboxed --help execution (phase 2)
+  --json           Write results to DIR/.y-script-lint.json
+  -h, --help       Show this help
+
+Phase 1 (static, never executes scripts):
+  - Shebang detection and language classification
+  - Header checks: set -eo pipefail, DEBUG pattern
+  - Help handler detection in source
+  - shellcheck (if y-shellcheck is available)
+  - No npx usage
+  - No unguarded eval
+
+Phase 2 (sandboxed --help execution):
+  - Only runs for scripts where phase 1 found a help handler
+  - Sandbox: env -i, temp HOME, temp workdir, timeout 5s
+  - Linux: network isolation via unshare --net
+  - TODO: macOS sandboxing (currently skips phase 2 on Darwin)
+  - Validates help output format: first line, Dependencies section
+
+Dependencies:
+  jq               Required for --json output
+  y-shellcheck     Optional, shell lint (skipped if not available)
+  unshare          Optional, Linux network sandbox for phase 2
+
+Exit codes:
+  0                All scripts passed (or --check not set)
+  1                Usage error
+  2                One or more scripts failed checks (--check mode)
+EOF
+}
+
+CHECK_MODE=false
+PHASE1_ONLY=false
+JSON_OUTPUT=false
+TARGET_DIR=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help) show_help; exit 0 ;;
+    --check) CHECK_MODE=true; shift ;;
+    --phase1-only) PHASE1_ONLY=true; shift ;;
+    --json) JSON_OUTPUT=true; shift ;;
+    --) shift; break ;;
+    -*) echo "Unknown flag: $1" >&2; exit 1 ;;
+    *) TARGET_DIR="$1"; shift ;;
+  esac
+done
+
+[ -z "$TARGET_DIR" ] && TARGET_DIR="./bin"
+[ -d "$TARGET_DIR" ] || { echo "ERROR: directory not found: $TARGET_DIR" >&2; exit 1; }
+TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+
+# --- Language detection ---
+
+detect_language() {
+  local file="$1"
+  local shebang
+  shebang=$(head -1 "$file" 2>/dev/null) || true
+
+  case "$shebang" in
+    '#!/usr/bin/env bash'|'#!/bin/bash')  echo "bash" ;;
+    '#!/bin/sh')                          echo "sh" ;;
+    *node*)                               echo "node" ;;
+    *python*)                             echo "python" ;;
+    *y-bin-download*)                     echo "config" ;;
+    *)
+      # No recognized shebang - check extension
+      case "$file" in
+        *.js|*.ts) echo "library" ;;
+        *)         echo "unknown" ;;
+      esac
+      ;;
+  esac
+}
+
+is_shell() {
+  local lang="$1"
+  [ "$lang" = "bash" ] || [ "$lang" = "sh" ]
+}
+
+# --- Static checks (phase 1) ---
+
+check_header_pipefail() {
+  local file="$1"
+  grep -qE '^set -e(o pipefail)?$' "$file" 2>/dev/null
+}
+
+check_header_debug() {
+  local file="$1"
+  grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$file" 2>/dev/null
+}
+
+check_help_handler() {
+  local file="$1"
+  local lang="$2"
+
+  if is_shell "$lang"; then
+    # Match: -h|--help, "$1" = "help", "$1" = "--help", =~ help
+    grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help)' "$file" 2>/dev/null
+  elif [ "$lang" = "node" ]; then
+    grep -qE "(process\.argv\.includes\(['\"]--help['\"])" "$file" 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+check_no_npx() {
+  local file="$1"
+  # Ignore comments; match only lines where npx is used as a command
+  ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
+}
+
+check_no_eval() {
+  local file="$1"
+  # Ignore comments; match only lines where eval is used as a command
+  ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_eval|"uses eval"|No.*eval)' | grep -qE '\beval\b'
+}
+
+# --- Shellcheck ---
+
+HAS_SHELLCHECK=false
+if command -v y-shellcheck >/dev/null 2>&1; then
+  HAS_SHELLCHECK=true
+fi
+
+run_shellcheck() {
+  local file="$1"
+  if [ "$HAS_SHELLCHECK" = "true" ]; then
+    y-shellcheck --severity=error "$file" >/dev/null 2>&1
+  else
+    return 0  # skip, not a failure
+  fi
+}
+
+# --- Phase 2: sandboxed --help execution ---
+
+CAN_SANDBOX=true
+HAS_UNSHARE=false
+if [ "$(uname -s)" = "Linux" ]; then
+  # Test if unshare --net actually works (needs user namespace or root)
+  if command -v unshare >/dev/null 2>&1 && unshare --net true 2>/dev/null; then
+    HAS_UNSHARE=true
+  fi
+fi
+if [ "$(uname -s)" = "Darwin" ]; then
+  # TODO: macOS sandbox using sandbox-exec or similar
+  CAN_SANDBOX=false
+fi
+
+run_sandboxed_help() {
+  local script="$1"
+  local tmpdir
+  tmpdir=$(mktemp -d)
+
+  local output=""
+  local exit_code=0
+
+  # Build sandbox command
+  local sandbox_cmd=(env -i PATH="$PATH" HOME="$tmpdir" timeout 5)
+  if [ "$HAS_UNSHARE" = "true" ]; then
+    sandbox_cmd=(unshare --net "${sandbox_cmd[@]}")
+  fi
+
+  # Capture both stdout and stderr — some scripts print help to stderr
+  output=$("${sandbox_cmd[@]}" /bin/bash -c 'cd "$(mktemp -d)" && exec "$@"' _ "$script" --help 2>&1) || exit_code=$?
+
+  rm -rf "$tmpdir"
+
+  # Timeout (124) or signal kill (137) means the script hung
+  if [ $exit_code -eq 124 ] || [ $exit_code -eq 137 ]; then
+    return 1
+  fi
+
+  # Some scripts exit non-zero after printing help (e.g. prereq checks before help handler)
+  # Accept output even on non-zero exit if it looks like help text
+  if [ -n "$output" ]; then
+    echo "$output"
+    return 0
+  fi
+  return 1
+}
+
+parse_help_summary() {
+  local output="$1"
+  local first_line
+  first_line=$(echo "$output" | head -1)
+  echo "$first_line"
+}
+
+check_help_format() {
+  local first_line="$1"
+  local script_name="$2"
+  # Expected: y-name - description
+  echo "$first_line" | grep -qE "^${script_name} - .+" 2>/dev/null
+}
+
+parse_help_dependencies() {
+  local output="$1"
+  # Extract lines after "Dependencies:" until the next blank line or section
+  echo "$output" | awk '/^Dependencies:/{found=1; next} found && /^$/{exit} found && /^[A-Z]/{exit} found{print}' | \
+    awk '{print $1}' | grep -v '^$' || true
+}
+
+check_help_has_deps_section() {
+  local output="$1"
+  echo "$output" | grep -q '^Dependencies:' 2>/dev/null
+}
+
+# --- Main ---
+
+TOTAL=0
+PASSED=0
+FAILED_STATIC=0
+FAILED_HELP=0
+SKIPPED=0
+FAIL_LIST=""
+
+# Collect results as JSON fragments
+JSON_SCRIPTS=""
+
+for file in "$TARGET_DIR"/y-*; do
+  [ -f "$file" ] || continue
+  name=$(basename "$file")
+
+  # Skip spec/ directory entries, non-executable, yaml configs
+  [ -x "$file" ] || continue
+  case "$name" in
+    *.yaml|*.yml|*.md) continue ;;
+    *-bin)             continue ;;  # compiled binaries, not scripts
+    *-dist)            continue ;;
+  esac
+
+  TOTAL=$((TOTAL + 1))
+
+  lang=$(detect_language "$file")
+
+  # Skip non-script files
+  if [ "$lang" = "config" ] || [ "$lang" = "library" ]; then
+    SKIPPED=$((SKIPPED + 1))
+    if [ "$JSON_OUTPUT" = "true" ]; then
+      JSON_SCRIPTS="${JSON_SCRIPTS}$(jq -n \
+        --arg name "$name" \
+        --arg lang "$lang" \
+        '{($name): {language: $lang, skipped: true}}'
+      ),"
+    fi
+    echo "  SKIP  $name ($lang)"
+    continue
+  fi
+
+  errors=()
+  checks_shebang=true
+  checks_header=true
+  checks_debug=true
+  checks_help_handler=false
+  checks_shellcheck=null
+  checks_no_npx=true
+  checks_no_eval=true
+  checks_help_runs=null
+  checks_help_format=null
+  checks_deps_declared=null
+  summary=null
+  deps_json="[]"
+
+  # Unknown shebang
+  if [ "$lang" = "unknown" ]; then
+    checks_shebang=false
+    errors+=("unrecognized or missing shebang")
+  fi
+
+  # Header checks (shell scripts only)
+  if is_shell "$lang"; then
+    if ! check_header_pipefail "$file"; then
+      checks_header=false
+      errors+=("missing set -eo pipefail or set -e")
+    fi
+    if ! check_header_debug "$file"; then
+      checks_debug=false
+      errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x")
+    fi
+  fi
+
+  # Help handler
+  if check_help_handler "$file" "$lang"; then
+    checks_help_handler=true
+  else
+    errors+=("no help handler found in source")
+  fi
+
+  # npx check
+  if ! check_no_npx "$file"; then
+    checks_no_npx=false
+    errors+=("uses npx")
+  fi
+
+  # eval check
+  if ! check_no_eval "$file"; then
+    checks_no_eval=false
+    errors+=("uses eval")
+  fi
+
+  # Shellcheck (shell scripts only)
+  if is_shell "$lang"; then
+    if [ "$HAS_SHELLCHECK" = "true" ]; then
+      if run_shellcheck "$file"; then
+        checks_shellcheck=true
+      else
+        checks_shellcheck=false
+        errors+=("shellcheck --severity=error failed")
+      fi
+    fi
+  fi
+
+  # Phase 2: sandboxed --help
+  if [ "$PHASE1_ONLY" = "false" ] && [ "$checks_help_handler" = "true" ]; then
+    if [ "$CAN_SANDBOX" = "false" ]; then
+      # TODO: macOS sandboxing
+      checks_help_runs=null
+      checks_help_format=null
+      checks_deps_declared=null
+    else
+      help_output=$(run_sandboxed_help "$file") || true
+      if [ -n "$help_output" ]; then
+        checks_help_runs=true
+        first_line=$(parse_help_summary "$help_output")
+        summary="$first_line"
+
+        if check_help_format "$first_line" "$name"; then
+          checks_help_format=true
+        else
+          checks_help_format=false
+          errors+=("help first line does not match format: $name - description")
+        fi
+
+        if check_help_has_deps_section "$help_output"; then
+          checks_deps_declared=true
+          deps_raw=$(parse_help_dependencies "$help_output")
+          if [ -n "$deps_raw" ]; then
+            deps_json=$(echo "$deps_raw" | jq -R . | jq -s .)
+          else
+            deps_json="[]"
+          fi
+        else
+          checks_deps_declared=false
+          errors+=("no Dependencies section in help output")
+        fi
+      else
+        checks_help_runs=false
+        errors+=("--help produced no output or failed")
+      fi
+    fi
+  fi
+
+  # Determine pass/fail
+  has_static_failure=false
+  if [ "$checks_shebang" = "false" ] || [ "$checks_header" = "false" ] \
+     || [ "$checks_no_npx" = "false" ] || [ "$checks_no_eval" = "false" ] \
+     || [ "$checks_shellcheck" = "false" ]; then
+    has_static_failure=true
+  fi
+
+  has_help_failure=false
+  if [ "$checks_help_handler" = "false" ] || [ "$checks_help_runs" = "false" ] \
+     || [ "$checks_help_format" = "false" ]; then
+    has_help_failure=true
+  fi
+
+  if [ "$has_static_failure" = "true" ]; then
+    FAILED_STATIC=$((FAILED_STATIC + 1))
+    FAIL_LIST="$FAIL_LIST $name"
+    status="FAIL"
+  elif [ "$has_help_failure" = "true" ]; then
+    FAILED_HELP=$((FAILED_HELP + 1))
+    status="WARN"
+  else
+    PASSED=$((PASSED + 1))
+    status="OK  "
+  fi
+
+  # Build error list for display
+  if [ ${#errors[@]} -gt 0 ]; then
+    error_detail=$(printf ", %s" "${errors[@]}")
+    error_detail=${error_detail:2}  # strip leading ", "
+    echo "  $status $name ($lang): $error_detail"
+  else
+    echo "  $status $name ($lang)"
+  fi
+
+  # Build JSON
+  if [ "$JSON_OUTPUT" = "true" ]; then
+    errors_json="[]"
+    if [ ${#errors[@]} -gt 0 ]; then
+      errors_json=$(printf '%s\n' "${errors[@]}" | jq -R . | jq -s .)
+    fi
+
+    summary_json="null"
+    if [ "$summary" != "null" ] && [ -n "$summary" ]; then
+      summary_json=$(echo "$summary" | jq -R .)
+    fi
+
+    # Build checks object - use jq to handle null vs bool properly
+    checks_json=$(jq -n \
+      --argjson shebang "$checks_shebang" \
+      --argjson header "$checks_header" \
+      --argjson debug "$checks_debug" \
+      --argjson help_handler "$checks_help_handler" \
+      --argjson shellcheck "$checks_shellcheck" \
+      --argjson no_npx "$checks_no_npx" \
+      --argjson no_eval "$checks_no_eval" \
+      --argjson help_runs "$checks_help_runs" \
+      --argjson help_format "$checks_help_format" \
+      --argjson deps_declared "$checks_deps_declared" \
+      '{
+        shebang: $shebang,
+        header: $header,
+        debug: $debug,
+        help_handler: $help_handler,
+        shellcheck: $shellcheck,
+        no_npx: $no_npx,
+        no_eval: $no_eval,
+        help_runs: $help_runs,
+        help_format: $help_format,
+        deps_declared: $deps_declared
+      }')
+
+    script_json=$(jq -n \
+      --arg lang "$lang" \
+      --argjson summary "$summary_json" \
+      --argjson deps "$deps_json" \
+      --argjson checks "$checks_json" \
+      --argjson errors "$errors_json" \
+      '{
+        language: $lang,
+        summary: $summary,
+        dependencies: $deps,
+        checks: $checks,
+        errors: $errors
+      }')
+
+    JSON_SCRIPTS="${JSON_SCRIPTS}$(jq -n --arg name "$name" --argjson data "$script_json" '{($name): $data}'),"
+  fi
+done
+
+echo ""
+echo "  Total: $TOTAL  Passed: $PASSED  Failed(static): $FAILED_STATIC  Failed(help): $FAILED_HELP  Skipped: $SKIPPED"
+
+if [ "$HAS_SHELLCHECK" = "false" ]; then
+  echo "  NOTE: y-shellcheck not found, shell lint checks were skipped"
+fi
+if [ "$CAN_SANDBOX" = "false" ]; then
+  echo "  NOTE: macOS detected, phase 2 sandboxed execution was skipped (TODO)"
+fi
+
+# Write JSON output
+if [ "$JSON_OUTPUT" = "true" ]; then
+  command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required for --json output" >&2; exit 1; }
+
+  # Merge all script JSON fragments
+  if [ -n "$JSON_SCRIPTS" ]; then
+    # Remove trailing comma, wrap in array, merge with jq
+    scripts_merged=$(echo "[${JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)')
+  else
+    scripts_merged="{}"
+  fi
+
+  jq -n \
+    --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --arg tool_version "1" \
+    --arg directory "$TARGET_DIR" \
+    --argjson total "$TOTAL" \
+    --argjson passed "$PASSED" \
+    --argjson failed_static "$FAILED_STATIC" \
+    --argjson failed_help "$FAILED_HELP" \
+    --argjson skipped "$SKIPPED" \
+    --argjson scripts "$scripts_merged" \
+    '{
+      generated: $generated,
+      tool_version: $tool_version,
+      directory: $directory,
+      stats: {
+        total: $total,
+        passed: $passed,
+        failed_static: $failed_static,
+        failed_help: $failed_help,
+        skipped: $skipped
+      },
+      scripts: $scripts
+    }' > "$TARGET_DIR/.y-script-lint.json"
+
+  echo "  Wrote $TARGET_DIR/.y-script-lint.json"
+fi
+
+# --check mode: exit non-zero if any static failures
+if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
+  echo "  FAILED: $FAIL_LIST"
+  exit 2
+fi
