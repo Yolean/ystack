@@ -13,7 +13,6 @@ Arguments:
 
 Options:
   --check              Exit non-zero if any script fails static checks (for CI)
-  --json               Write results to DIR/.y-script-lint.json
   --dependencies-add   Detect y-* invocations and add to Dependencies section in YHELP
 
 All checks are static (source parsing only, no script execution).
@@ -37,14 +36,13 @@ case "${1:-}" in
 esac
 
 CHECK_MODE=false
-JSON_OUTPUT=false
 DEPS_ADD=false
+JSON_OUTPUT=true
 TARGET_DIRS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --check) CHECK_MODE=true; shift ;;
-    --json) JSON_OUTPUT=true; shift ;;
     --dependencies-add) DEPS_ADD=true; shift ;;
     --) shift; break ;;
     -*) echo "Unknown flag: $1" >&2; exit 1 ;;
@@ -368,8 +366,7 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
     lint_file "$file"
   done
 
-  if [ "$JSON_OUTPUT" = "true" ] && [ -n "$DIR_JSON_SCRIPTS" ]; then
-    command -v jq >/dev/null 2>&1 || { echo "ERROR: jq required for --json" >&2; exit 1; }
+  if [ -n "$DIR_JSON_SCRIPTS" ] && command -v jq >/dev/null 2>&1; then
     JSON_FILE="$TARGET_DIR/.y-script-lint.json"
     echo "[${DIR_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
       jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "2" \
@@ -384,4 +381,7 @@ NOTES=""
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
 for jf in "${JSON_FILES[@]}"; do echo "Wrote $jf"; done
 
-[ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ] && { echo "FAILED:$FAIL_LIST"; exit 2; }
+if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
+  echo "FAILED:$FAIL_LIST"
+  exit 2
+fi
