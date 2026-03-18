@@ -77,6 +77,7 @@ detect_language() {
   case "$shebang" in
     '#!/usr/bin/env bash'|'#!/bin/bash')  echo "bash" ;;
     '#!/bin/sh')                          echo "sh" ;;
+    *node*experimental-strip-types*)      echo "typescript" ;;
     *node*)                               echo "node" ;;
     *python*)                             echo "python" ;;
     *y-bin-download*)                     echo "config" ;;
@@ -93,6 +94,11 @@ detect_language() {
 is_shell() {
   local lang="$1"
   [ "$lang" = "bash" ] || [ "$lang" = "sh" ]
+}
+
+is_node() {
+  local lang="$1"
+  [ "$lang" = "node" ] || [ "$lang" = "typescript" ]
 }
 
 # --- Static checks (phase 1) ---
@@ -114,8 +120,9 @@ check_help_handler() {
   if is_shell "$lang"; then
     # Match: -h|--help, "$1" = "help", "$1" = "--help", =~ help
     grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help)' "$file" 2>/dev/null
-  elif [ "$lang" = "node" ]; then
-    grep -qE "(process\.argv\.includes\(['\"]--help['\"])" "$file" 2>/dev/null
+  elif is_node "$lang"; then
+    # Match: process.argv.includes('--help') or includes('-h')
+    grep -qE "process\.argv\.includes\(['\"](-h|--help)['\"]" "$file" 2>/dev/null
   else
     return 1
   fi
@@ -123,14 +130,26 @@ check_help_handler() {
 
 check_no_npx() {
   local file="$1"
-  # Ignore comments; match only lines where npx is used as a command
-  ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
+  local lang="$2"
+  if is_node "$lang"; then
+    # JS/TS: ignore // comments
+    ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\bnpx\b'
+  else
+    # Shell: ignore # comments and self-references
+    ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
+  fi
 }
 
 check_no_eval() {
   local file="$1"
-  # Ignore comments; match only lines where eval is used as a command
-  ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_eval|"uses eval"|No.*eval)' | grep -qE '\beval\b'
+  local lang="$2"
+  if is_node "$lang"; then
+    # JS/TS: match eval( function call, ignore comments
+    ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\beval\s*\('
+  else
+    # Shell: match bare eval command, ignore comments and self-references
+    ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_eval|"uses eval"|No.*eval)' | grep -qE '\beval\b'
+  fi
 }
 
 # --- Shellcheck ---
@@ -243,6 +262,7 @@ for file in "$TARGET_DIR"/y-*; do
   [ -x "$file" ] || continue
   case "$name" in
     *.yaml|*.yml|*.md) continue ;;
+    *.spec.js|*.spec.ts|*.test.js|*.test.ts) continue ;;  # test files
     *-bin)             continue ;;  # compiled binaries, not scripts
     *-dist)            continue ;;
   esac
@@ -251,7 +271,7 @@ for file in "$TARGET_DIR"/y-*; do
 
   lang=$(detect_language "$file")
 
-  # Skip non-script files
+  # Skip non-script files (configs, libraries without shebangs)
   if [ "$lang" = "config" ] || [ "$lang" = "library" ]; then
     SKIPPED=$((SKIPPED + 1))
     if [ "$JSON_OUTPUT" = "true" ]; then
@@ -295,6 +315,10 @@ for file in "$TARGET_DIR"/y-*; do
       checks_debug=false
       errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x")
     fi
+  else
+    # Not applicable to non-shell scripts
+    checks_header=null
+    checks_debug=null
   fi
 
   # Help handler
@@ -305,13 +329,13 @@ for file in "$TARGET_DIR"/y-*; do
   fi
 
   # npx check
-  if ! check_no_npx "$file"; then
+  if ! check_no_npx "$file" "$lang"; then
     checks_no_npx=false
     errors+=("uses npx")
   fi
 
   # eval check
-  if ! check_no_eval "$file"; then
+  if ! check_no_eval "$file" "$lang"; then
     checks_no_eval=false
     errors+=("uses eval")
   fi
