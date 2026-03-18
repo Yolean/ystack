@@ -288,9 +288,11 @@ lint_file() {
         '{($name): {language: $lang, skipped: true}}'
       ),"
     fi
-    echo "  SKIP  $name ($lang)"
     return
   fi
+
+  local loc
+  loc=$(wc -l < "$file")
 
   local errors=()
   local checks_shebang=true
@@ -424,17 +426,13 @@ lint_file() {
     status="WARN"
   else
     PASSED=$((PASSED + 1))
-    status="OK  "
+    status="OK"
   fi
 
-  if [ ${#errors[@]} -gt 0 ]; then
-    local error_detail
-    error_detail=$(printf ", %s" "${errors[@]}")
-    error_detail=${error_detail:2}
-    echo "  $status $name ($lang): $error_detail"
-  else
-    echo "  $status $name ($lang)"
-  fi
+  echo "  $name  $lang ${loc}L  $status"
+  for err in "${errors[@]}"; do
+    echo "    $err"
+  done
 
   # Build JSON
   if [ "$JSON_OUTPUT" = "true" ]; then
@@ -503,6 +501,7 @@ FAIL_LIST=""
 
 # Track seen script names to skip PATH duplicates
 declare -A SEEN_SCRIPTS
+JSON_FILES=()
 
 for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
   # Collect y-* scripts in this directory
@@ -524,8 +523,7 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
 
   [ ${#dir_scripts[@]} -eq 0 ] && continue
 
-  echo ""
-  echo "  $TARGET_DIR (${#dir_scripts[@]} scripts)"
+  echo "[y-script-lint] $TARGET_DIR (${#dir_scripts[@]} scripts)"
 
   DIR_JSON_SCRIPTS=""
 
@@ -540,6 +538,7 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
 
     local_scripts_merged=$(echo "[${DIR_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)')
 
+    JSON_FILE="$TARGET_DIR/.y-script-lint.json"
     jq -n \
       --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
       --arg tool_version "1" \
@@ -550,24 +549,27 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
         tool_version: $tool_version,
         directory: $directory,
         scripts: $scripts
-      }' > "$TARGET_DIR/.y-script-lint.json"
+      }' > "$JSON_FILE"
 
-    echo "  Wrote $TARGET_DIR/.y-script-lint.json"
+    JSON_FILES+=("$JSON_FILE")
   fi
 done
 
-echo ""
-echo "  Total: $TOTAL  Passed: $PASSED  Failed(static): $FAILED_STATIC  Failed(help): $FAILED_HELP  Skipped: $SKIPPED"
-
+NOTES=""
 if [ "$HAS_SHELLCHECK" = "false" ]; then
-  echo "  NOTE: y-shellcheck not found, shell lint checks were skipped"
+  NOTES="${NOTES}, no shellcheck"
 fi
 if [ "$CAN_SANDBOX" = "false" ]; then
-  echo "  NOTE: macOS detected, phase 2 sandboxed execution was skipped (TODO)"
+  NOTES="${NOTES}, no macOS sandbox"
 fi
+
+echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
+for jf in "${JSON_FILES[@]}"; do
+  echo "Wrote $jf"
+done
 
 # --check mode: exit non-zero if any static failures
 if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
-  echo "  FAILED: $FAIL_LIST"
+  echo "FAILED:$FAIL_LIST"
   exit 2
 fi
