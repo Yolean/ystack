@@ -258,7 +258,7 @@ lint_file() {
   local checks_help_handler=false checks_shellcheck=null
   local checks_no_npx=true checks_no_eval=true
   local checks_help_format=null checks_deps_declared=null
-  local summary=null deps_json="[]" detected_deps=""
+  local summary=null help_line=null deps_json="[]" detected_deps=""
 
   [ "$lang" = "unknown" ] && { checks_shebang=false; errors+=("unrecognized or missing shebang"); }
 
@@ -273,7 +273,11 @@ lint_file() {
   is_shell "$lang" && is_bin_wrapper "$file" && bin_wrapper=true
 
   if [ "$bin_wrapper" = "true" ]; then
-    checks_help_handler=true  # not required for trivial wrappers
+    checks_help_handler=true
+    # Extract wrapped binary name for help_line
+    local wrapped_bin
+    wrapped_bin=$(grep 'y-bin-download' "$file" 2>/dev/null | sed 's/.*y-bin-download [^ ]* //;s/[)].*//')
+    [ -n "$wrapped_bin" ] && help_line="$wrapped_bin binary wrapper"
   elif check_help_handler "$file" "$lang"; then
     checks_help_handler=true
   else
@@ -294,6 +298,7 @@ lint_file() {
     first_line=$(parse_summary_from_yhelp "$yhelp")
     if echo "$first_line" | grep -qE "^${name} - .+"; then
       checks_help_format=true; summary="$first_line"
+      help_line="${first_line#"${name} - "}"
     else
       checks_help_format=false; errors+=("YHELP first line does not match: $name - description")
     fi
@@ -340,9 +345,10 @@ lint_file() {
   done
 
   if [ "$JSON_OUTPUT" = "true" ]; then
-    local errors_json="[]" summary_json="null"
+    local errors_json="[]" summary_json="null" help_line_json="null"
     [ ${#errors[@]} -gt 0 ] && errors_json=$(printf '%s\n' "${errors[@]}" | jq -R . | jq -s .)
     [ "$summary" != "null" ] && [ -n "$summary" ] && summary_json=$(echo "$summary" | jq -R .)
+    [ "$help_line" != "null" ] && [ -n "$help_line" ] && help_line_json=$(echo "$help_line" | jq -R .)
     local checks_json
     checks_json=$(jq -n \
       --argjson shebang "$checks_shebang" --argjson header "$checks_header" \
@@ -355,10 +361,12 @@ lint_file() {
         help_format:$help_format,deps_declared:$deps_declared}')
     DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
       --arg name "$name" --arg lang "$lang" --argjson summary "$summary_json" \
+      --argjson help_line "$help_line_json" \
       --argjson deps "$deps_json" --argjson detected "$detected_deps_json" \
       --argjson checks "$checks_json" --argjson errors "$errors_json" \
-      '{($name):{language:$lang,summary:$summary,dependencies:$deps,
-        detected_dependencies:$detected,checks:$checks,errors:$errors}}'),"
+      --argjson lint_ok "$([ "$has_static_failure" = "false" ] && [ "$has_help_failure" = "false" ] && echo true || echo false)" \
+      '{($name):{language:$lang,summary:$summary,help_line:$help_line,lint_ok:$lint_ok,
+        dependencies:$deps,detected_dependencies:$detected,checks:$checks,errors:$errors}}'),"
   fi
 }
 
