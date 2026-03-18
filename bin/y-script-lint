@@ -2,50 +2,33 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-# Ensure Ctrl+C kills the whole process group, including hung children
 trap 'trap - INT; kill -INT -$$' INT
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 YHELP='y-script-lint - Static analysis and convention checks for y-* scripts
 
 Usage: y-script-lint [help] [options] [DIR...]
 
 Arguments:
-  DIR              Directory to scan (default: all PATH dirs containing y-* scripts)
+  DIR                  Directory to scan (default: all PATH dirs containing y-* scripts)
 
 Options:
-  --check          Exit non-zero if any script fails static checks (for CI)
-  --phase1-only    Skip sandboxed --help execution (phase 2)
-  --json           Write results to DIR/.y-script-lint.json
+  --check              Exit non-zero if any script fails static checks (for CI)
+  --json               Write results to DIR/.y-script-lint.json
+  --dependencies-add   Detect y-* invocations and add to Dependencies section in YHELP
 
-Phase 1 (static, never executes scripts):
-  - Shebang detection and language classification
-  - Header checks: set -eo pipefail, DEBUG pattern
-  - Help handler detection in source
-  - shellcheck (if y-shellcheck is available)
-  - No npx usage
-  - No unguarded eval
-
-Phase 2 (sandboxed --help execution):
-  - Only runs for scripts where phase 1 found a help handler
-  - Sandbox: env -i, temp HOME, temp workdir, timeout
-  - Linux: network isolation via unshare --net
-  - TODO: macOS sandboxing (currently skips phase 2 on Darwin)
-  - Validates help output format: first line, Dependencies section
+All checks are static (source parsing only, no script execution).
 
 Environment:
-  Y_SCRIPT_LINT_TIMEOUT_S  Sandbox timeout in seconds (default: 5)
+  Y_SCRIPT_LINT_TIMEOUT_S  Shellcheck timeout in seconds (default: 5)
 
 Dependencies:
-  jq               Required for --json output
-  y-shellcheck     Optional, shell lint (skipped if not available)
-  unshare          Optional, Linux network sandbox for phase 2
+  y-bin-download
+  y-shellcheck
 
 Exit codes:
-  0                All scripts passed (or --check not set)
-  1                Usage error
-  2                One or more scripts failed checks (--check mode)
+  0                    All scripts passed (or --check not set)
+  1                    Usage error
+  2                    One or more scripts failed checks (--check mode)
 '
 
 case "${1:-}" in
@@ -54,27 +37,25 @@ case "${1:-}" in
 esac
 
 CHECK_MODE=false
-PHASE1_ONLY=false
 JSON_OUTPUT=false
+DEPS_ADD=false
 TARGET_DIRS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --check) CHECK_MODE=true; shift ;;
-    --phase1-only) PHASE1_ONLY=true; shift ;;
     --json) JSON_OUTPUT=true; shift ;;
+    --dependencies-add) DEPS_ADD=true; shift ;;
     --) shift; break ;;
     -*) echo "Unknown flag: $1" >&2; exit 1 ;;
     *) TARGET_DIRS+=("$1"); shift ;;
   esac
 done
 
-# Default: discover from PATH
 if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
   IFS=: read -ra path_entries <<< "$PATH"
   for dir in "${path_entries[@]}"; do
     [ -d "$dir" ] || continue
-    # Include directories that contain at least one y-* executable
     for f in "$dir"/y-*; do
       if [ -x "$f" ] && [ -f "$f" ]; then
         TARGET_DIRS+=("$dir")
@@ -82,13 +63,9 @@ if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
       fi
     done
   done
-  if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
-    echo "ERROR: no y-* scripts found in PATH" >&2
-    exit 1
-  fi
+  [ ${#TARGET_DIRS[@]} -eq 0 ] && { echo "ERROR: no y-* scripts found in PATH" >&2; exit 1; }
 fi
 
-# Resolve to absolute paths
 RESOLVED_DIRS=()
 for dir in "${TARGET_DIRS[@]}"; do
   [ -d "$dir" ] || { echo "ERROR: directory not found: $dir" >&2; exit 1; }
@@ -98,10 +75,8 @@ done
 # --- Language detection ---
 
 detect_language() {
-  local file="$1"
   local shebang
-  shebang=$(head -1 "$file" 2>/dev/null) || true
-
+  shebang=$(head -1 "$1" 2>/dev/null) || true
   case "$shebang" in
     '#!/usr/bin/env bash'|'#!/bin/bash')  echo "bash" ;;
     '#!/bin/sh')                          echo "sh" ;;
@@ -109,319 +84,226 @@ detect_language() {
     *node*)                               echo "node" ;;
     *python*)                             echo "python" ;;
     *y-bin-download*)                     echo "config" ;;
-    *)
-      # No recognized shebang - check extension
-      case "$file" in
-        *.js|*.ts) echo "library" ;;
-        *)         echo "unknown" ;;
-      esac
-      ;;
+    *) case "$1" in *.js|*.ts) echo "library" ;; *) echo "unknown" ;; esac ;;
   esac
 }
 
-is_shell() {
-  local lang="$1"
-  [ "$lang" = "bash" ] || [ "$lang" = "sh" ]
-}
+is_shell() { [ "$1" = "bash" ] || [ "$1" = "sh" ]; }
+is_node() { [ "$1" = "node" ] || [ "$1" = "typescript" ]; }
 
-is_node() {
-  local lang="$1"
-  [ "$lang" = "node" ] || [ "$lang" = "typescript" ]
-}
+# --- Static checks ---
 
-# --- Static checks (phase 1) ---
-
-check_header_pipefail() {
-  local file="$1"
-  grep -qE '^set -e(o pipefail)?$' "$file" 2>/dev/null
-}
-
-check_header_debug() {
-  local file="$1"
-  grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$file" 2>/dev/null
-}
+check_header_pipefail() { grep -qE '^set -e(o pipefail)?$' "$1" 2>/dev/null; }
+check_header_debug() { grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$1" 2>/dev/null; }
 
 check_help_handler() {
-  local file="$1"
-  local lang="$2"
-
+  local file="$1" lang="$2"
   if is_shell "$lang"; then
-    # Match: -h|--help, "$1" = "help", "$1" = "--help", =~ help
     grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help)' "$file" 2>/dev/null
   elif is_node "$lang"; then
-    # Match: process.argv.includes('--help') or includes('-h')
-    grep -qE "process\.argv\.includes\(['\"](-h|--help)['\"]" "$file" 2>/dev/null
+    grep -qE "process\.argv\.includes\(['\"](-h|--help)['\"]" "$file" 2>/dev/null ||
+      grep -qE "process\.argv\[2\] === ['\"]help['\"]" "$file" 2>/dev/null
   else
     return 1
   fi
 }
 
 check_no_npx() {
-  local file="$1"
-  local lang="$2"
+  local file="$1" lang="$2"
   if is_node "$lang"; then
-    # JS/TS: ignore // comments
     ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\bnpx\b'
   else
-    # Shell: ignore # comments and self-references
     ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
   fi
 }
 
 check_no_eval() {
-  local file="$1"
-  local lang="$2"
+  local file="$1" lang="$2"
   if is_node "$lang"; then
-    # JS/TS: match eval( function call, ignore comments
     ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\beval\s*\('
   else
-    # Shell: match bare eval command, ignore comments and self-references
     ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_eval|"uses eval"|No.*eval)' | grep -qE '\beval\b'
   fi
 }
 
-# --- Shellcheck ---
-
+SHELLCHECK_TIMEOUT_S="${Y_SCRIPT_LINT_TIMEOUT_S:-5}"
 HAS_SHELLCHECK=false
-if command -v y-shellcheck >/dev/null 2>&1; then
-  HAS_SHELLCHECK=true
-fi
+command -v y-shellcheck >/dev/null 2>&1 && HAS_SHELLCHECK=true
 
 run_shellcheck() {
-  local file="$1"
-  if [ "$HAS_SHELLCHECK" = "true" ]; then
-    timeout --kill-after=2 "$SANDBOX_TIMEOUT_S" y-shellcheck --severity=error "$file" >/dev/null 2>&1
+  [ "$HAS_SHELLCHECK" = "true" ] && timeout --kill-after=2 "$SHELLCHECK_TIMEOUT_S" y-shellcheck --severity=error "$1" >/dev/null 2>&1
+}
+
+# --- YHELP source parsing ---
+
+parse_yhelp_from_source() {
+  local file="$1" lang="$2"
+  if is_shell "$lang"; then
+    awk "
+      /^YHELP='/ {
+        sub(/^YHELP='/, \"\")
+        if (/'$/) { sub(/'$/, \"\"); print; next }
+        print
+        while (getline > 0) {
+          if (/'$/) { sub(/'$/, \"\"); print; exit }
+          print
+        }
+      }
+    " "$file"
+  elif is_node "$lang"; then
+    awk '
+      /const YHELP = `/ {
+        sub(/.*const YHELP = `/, "")
+        if (/`;/) { sub(/`;.*/, ""); print; next }
+        if (/`/) { sub(/`.*/, ""); print; exit }
+        print
+        while (getline > 0) {
+          if (/`;/) { sub(/`;.*/, ""); print; exit }
+          if (/`/) { sub(/`.*/, ""); print; exit }
+          print
+        }
+      }
+    ' "$file"
+  fi
+}
+
+parse_summary_from_yhelp() { echo "$1" | grep -m1 -vE '^\s*$'; }
+parse_deps_from_yhelp() { echo "$1" | awk '/^Dependencies:/{f=1;next} f&&/^$/{exit} f&&/^[A-Z]/{exit} f{print}' | awk 'NF{print $1}' || true; }
+yhelp_has_deps_section() { echo "$1" | grep -q '^Dependencies:' 2>/dev/null; }
+
+# --- Static dependency detection ---
+
+detect_y_invocations() {
+  local file="$1" lang="$2" self
+  self=$(basename "$file")
+  local content
+  if is_shell "$lang"; then
+    content=$(grep -vE '^\s*#' "$file" 2>/dev/null || true)
+  elif is_node "$lang"; then
+    content=$(grep -vE '^\s*//' "$file" 2>/dev/null || true)
   else
-    return 0  # skip, not a failure
+    content=$(cat "$file" 2>/dev/null || true)
   fi
+  echo "$content" | grep -oE '\by-[a-z][a-z0-9_-]*' | grep -v "^${self}$" | sort -u || true
 }
 
-# --- Phase 2: sandboxed --help execution ---
+# --- --dependencies-add ---
 
-SANDBOX_TIMEOUT_S="${Y_SCRIPT_LINT_TIMEOUT_S:-5}"
+add_deps_to_file() {
+  local file="$1" lang="$2" detected_deps="$3"
+  [ -z "$detected_deps" ] && return
 
-CAN_SANDBOX=true
-HAS_UNSHARE=false
-if [ "$(uname -s)" = "Linux" ]; then
-  # Test if unshare --net actually works (needs user namespace or root)
-  if command -v unshare >/dev/null 2>&1 && unshare --net true 2>/dev/null; then
-    HAS_UNSHARE=true
+  local yhelp
+  yhelp=$(parse_yhelp_from_source "$file" "$lang")
+  [ -z "$yhelp" ] && return
+  yhelp_has_deps_section "$yhelp" || return
+
+  local existing_deps
+  existing_deps=$(parse_deps_from_yhelp "$yhelp")
+
+  local new_deps=()
+  while IFS= read -r dep; do
+    [ -z "$dep" ] && continue
+    echo "$existing_deps" | grep -qxF "$dep" || new_deps+=("$dep")
+  done <<< "$detected_deps"
+  [ ${#new_deps[@]} -eq 0 ] && return
+
+  # Find the line number of Dependencies: in the file, insert after it
+  local deps_line
+  deps_line=$(grep -n '^Dependencies:' "$file" | head -1 | cut -d: -f1)
+  [ -z "$deps_line" ] && return
+
+  local tmpfile insert_file
+  tmpfile=$(mktemp)
+  insert_file=$(mktemp)
+  for dep in "${new_deps[@]}"; do echo "  ${dep}" >> "$insert_file"; done
+
+  head -n "$deps_line" "$file" > "$tmpfile"
+  cat "$insert_file" >> "$tmpfile"
+  tail -n +"$((deps_line + 1))" "$file" >> "$tmpfile"
+
+  if ! cmp -s "$file" "$tmpfile"; then
+    cp "$tmpfile" "$file"
+    for dep in "${new_deps[@]}"; do echo "    + $dep"; done
   fi
-fi
-if [ "$(uname -s)" = "Darwin" ]; then
-  # TODO: macOS sandbox using sandbox-exec or similar
-  CAN_SANDBOX=false
-fi
-
-run_sandboxed_help() {
-  local script="$1"
-  local tmpdir
-  tmpdir=$(mktemp -d)
-
-  local output=""
-  local exit_code=0
-
-  # Build sandbox command
-  local sandbox_cmd=(env -i PATH="$PATH" HOME="$tmpdir" timeout --kill-after=2 "$SANDBOX_TIMEOUT_S")
-  if [ "$HAS_UNSHARE" = "true" ]; then
-    sandbox_cmd=(unshare --net "${sandbox_cmd[@]}")
-  fi
-
-  # Capture both stdout and stderr — some scripts print help to stderr
-  output=$("${sandbox_cmd[@]}" /bin/bash -c 'cd "$(mktemp -d)" && exec "$@"' _ "$script" --help 2>&1) || exit_code=$?
-
-  rm -rf "$tmpdir"
-
-  # Timeout (124) or signal kill (137) means the script hung
-  if [ $exit_code -eq 124 ] || [ $exit_code -eq 137 ]; then
-    return 1
-  fi
-
-  # Some scripts exit non-zero after printing help (e.g. prereq checks before help handler)
-  # Accept output even on non-zero exit if it looks like help text
-  if [ -n "$output" ]; then
-    echo "$output"
-    return 0
-  fi
-  return 1
-}
-
-parse_help_summary() {
-  local output="$1"
-  local first_line
-  first_line=$(echo "$output" | head -1)
-  echo "$first_line"
-}
-
-check_help_format() {
-  local first_line="$1"
-  local script_name="$2"
-  # Expected: y-name - description
-  echo "$first_line" | grep -qE "^${script_name} - .+" 2>/dev/null
-}
-
-parse_help_dependencies() {
-  local output="$1"
-  # Extract lines after "Dependencies:" until the next blank line or section
-  echo "$output" | awk '/^Dependencies:/{found=1; next} found && /^$/{exit} found && /^[A-Z]/{exit} found{print}' | \
-    awk '{print $1}' | grep -v '^$' || true
-}
-
-check_help_has_deps_section() {
-  local output="$1"
-  echo "$output" | grep -q '^Dependencies:' 2>/dev/null
+  rm -f "$tmpfile" "$insert_file"
 }
 
 # --- Per-file lint ---
 
 lint_file() {
-  local file="$1"
-  local name
+  local file="$1" name
   name=$(basename "$file")
-
   lang=$(detect_language "$file")
 
-  # Skip non-script files (configs, libraries without shebangs)
   if [ "$lang" = "config" ] || [ "$lang" = "library" ]; then
     SKIPPED=$((SKIPPED + 1))
-    if [ "$JSON_OUTPUT" = "true" ]; then
-      DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
-        --arg name "$name" \
-        --arg lang "$lang" \
-        '{($name): {language: $lang, skipped: true}}'
-      ),"
-    fi
+    [ "$JSON_OUTPUT" = "true" ] && DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
+      --arg name "$name" --arg lang "$lang" '{($name): {language: $lang, skipped: true}}'),"
     return
   fi
 
-  local loc
+  local loc errors=()
   loc=$(wc -l < "$file")
+  local checks_shebang=true checks_header=true checks_debug=true
+  local checks_help_handler=false checks_shellcheck=null
+  local checks_no_npx=true checks_no_eval=true
+  local checks_help_format=null checks_deps_declared=null
+  local summary=null deps_json="[]" detected_deps=""
 
-  local errors=()
-  local checks_shebang=true
-  local checks_header=true
-  local checks_debug=true
-  local checks_help_handler=false
-  local checks_shellcheck=null
-  local checks_no_npx=true
-  local checks_no_eval=true
-  local checks_help_runs=null
-  local checks_help_format=null
-  local checks_deps_declared=null
-  local summary=null
-  local deps_json="[]"
+  [ "$lang" = "unknown" ] && { checks_shebang=false; errors+=("unrecognized or missing shebang"); }
 
-  # Unknown shebang
-  if [ "$lang" = "unknown" ]; then
-    checks_shebang=false
-    errors+=("unrecognized or missing shebang")
-  fi
-
-  # Header checks (shell scripts only)
   if is_shell "$lang"; then
-    if ! check_header_pipefail "$file"; then
-      checks_header=false
-      errors+=("missing set -eo pipefail or set -e")
-    fi
-    if ! check_header_debug "$file"; then
-      checks_debug=false
-      errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x")
-    fi
+    check_header_pipefail "$file" || { checks_header=false; errors+=("missing set -eo pipefail or set -e"); }
+    check_header_debug "$file" || { checks_debug=false; errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x"); }
   else
-    checks_header=null
-    checks_debug=null
+    checks_header=null; checks_debug=null
   fi
 
-  # Help handler
-  if check_help_handler "$file" "$lang"; then
-    checks_help_handler=true
-  else
-    errors+=("no help handler found in source")
+  check_help_handler "$file" "$lang" && checks_help_handler=true || errors+=("no help handler found in source")
+  check_no_npx "$file" "$lang" || { checks_no_npx=false; errors+=("uses npx"); }
+  check_no_eval "$file" "$lang" || { checks_no_eval=false; errors+=("uses eval"); }
+
+  if is_shell "$lang" && [ "$HAS_SHELLCHECK" = "true" ]; then
+    run_shellcheck "$file" && checks_shellcheck=true || { checks_shellcheck=false; errors+=("shellcheck --severity=error failed"); }
   fi
 
-  # npx check
-  if ! check_no_npx "$file" "$lang"; then
-    checks_no_npx=false
-    errors+=("uses npx")
-  fi
-
-  # eval check
-  if ! check_no_eval "$file" "$lang"; then
-    checks_no_eval=false
-    errors+=("uses eval")
-  fi
-
-  # Shellcheck (shell scripts only)
-  if is_shell "$lang"; then
-    if [ "$HAS_SHELLCHECK" = "true" ]; then
-      if run_shellcheck "$file"; then
-        checks_shellcheck=true
-      else
-        checks_shellcheck=false
-        errors+=("shellcheck --severity=error failed")
-      fi
-    fi
-  fi
-
-  # Phase 2: sandboxed --help
-  if [ "$PHASE1_ONLY" = "false" ] && [ "$checks_help_handler" = "true" ]; then
-    if [ "$CAN_SANDBOX" = "false" ]; then
-      checks_help_runs=null
-      checks_help_format=null
-      checks_deps_declared=null
+  # Parse YHELP from source
+  local yhelp
+  yhelp=$(parse_yhelp_from_source "$file" "$lang")
+  if [ -n "$yhelp" ]; then
+    local first_line
+    first_line=$(parse_summary_from_yhelp "$yhelp")
+    if echo "$first_line" | grep -qE "^${name} - .+"; then
+      checks_help_format=true; summary="$first_line"
     else
-      local help_output
-      help_output=$(run_sandboxed_help "$file") || true
-      if [ -n "$help_output" ]; then
-        checks_help_runs=true
-        local first_line
-        first_line=$(parse_help_summary "$help_output")
-        summary="$first_line"
-
-        if check_help_format "$first_line" "$name"; then
-          checks_help_format=true
-        else
-          checks_help_format=false
-          errors+=("help first line does not match format: $name - description")
-        fi
-
-        if check_help_has_deps_section "$help_output"; then
-          checks_deps_declared=true
-          local deps_raw
-          deps_raw=$(parse_help_dependencies "$help_output")
-          if [ -n "$deps_raw" ]; then
-            deps_json=$(echo "$deps_raw" | jq -R . | jq -s .)
-          else
-            deps_json="[]"
-          fi
-        else
-          checks_deps_declared=false
-          errors+=("no Dependencies section in help output")
-        fi
-      else
-        checks_help_runs=false
-        errors+=("--help produced no output or failed")
-      fi
+      checks_help_format=false; errors+=("YHELP first line does not match: $name - description")
+    fi
+    if yhelp_has_deps_section "$yhelp"; then
+      checks_deps_declared=true
+      local declared_deps
+      declared_deps=$(parse_deps_from_yhelp "$yhelp")
+      [ -n "$declared_deps" ] && deps_json=$(echo "$declared_deps" | jq -R . | jq -s .)
+    else
+      checks_deps_declared=false; errors+=("YHELP missing Dependencies: section")
     fi
   fi
 
-  # Determine pass/fail
-  local has_static_failure=false
-  if [ "$checks_shebang" = "false" ] || [ "$checks_header" = "false" ] \
-     || [ "$checks_no_npx" = "false" ] || [ "$checks_no_eval" = "false" ] \
-     || [ "$checks_shellcheck" = "false" ]; then
-    has_static_failure=true
-  fi
+  detected_deps=$(detect_y_invocations "$file" "$lang")
+  [ "$DEPS_ADD" = "true" ] && [ -n "$detected_deps" ] && add_deps_to_file "$file" "$lang" "$detected_deps"
 
-  local has_help_failure=false
-  if [ "$checks_help_handler" = "false" ] || [ "$checks_help_runs" = "false" ] \
-     || [ "$checks_help_format" = "false" ]; then
-    has_help_failure=true
-  fi
+  local detected_deps_json="[]"
+  [ -n "$detected_deps" ] && detected_deps_json=$(echo "$detected_deps" | jq -R . | jq -s .)
+
+  # Pass/fail
+  local has_static_failure=false has_help_failure=false
+  { [ "$checks_shebang" = "false" ] || [ "$checks_header" = "false" ] \
+    || [ "$checks_no_npx" = "false" ] || [ "$checks_no_eval" = "false" ] \
+    || [ "$checks_shellcheck" = "false" ]; } && has_static_failure=true
+  { [ "$checks_help_handler" = "false" ] || [ "$checks_help_format" = "false" ]; } && has_help_failure=true
 
   if [ "$has_static_failure" = "true" ]; then
-    FAILED_STATIC=$((FAILED_STATIC + 1))
-    FAIL_LIST="$FAIL_LIST $name"
+    FAILED_STATIC=$((FAILED_STATIC + 1)); FAIL_LIST="$FAIL_LIST $name"
   elif [ "$has_help_failure" = "true" ]; then
     FAILED_HELP=$((FAILED_HELP + 1))
   else
@@ -430,7 +312,6 @@ lint_file() {
 
   echo "  $name  $lang ${loc}L"
   for err in "${errors[@]}"; do
-    # Static failures are FAIL, help-related are WARN
     local level="WARN"
     case "$err" in
       "unrecognized or missing shebang"|"missing set -eo pipefail"*|"uses npx"|"uses eval"|"shellcheck "*) level="FAIL" ;;
@@ -438,142 +319,69 @@ lint_file() {
     echo "    $level $err"
   done
 
-  # Build JSON
   if [ "$JSON_OUTPUT" = "true" ]; then
-    local errors_json="[]"
-    if [ ${#errors[@]} -gt 0 ]; then
-      errors_json=$(printf '%s\n' "${errors[@]}" | jq -R . | jq -s .)
-    fi
-
-    local summary_json="null"
-    if [ "$summary" != "null" ] && [ -n "$summary" ]; then
-      summary_json=$(echo "$summary" | jq -R .)
-    fi
-
+    local errors_json="[]" summary_json="null"
+    [ ${#errors[@]} -gt 0 ] && errors_json=$(printf '%s\n' "${errors[@]}" | jq -R . | jq -s .)
+    [ "$summary" != "null" ] && [ -n "$summary" ] && summary_json=$(echo "$summary" | jq -R .)
     local checks_json
     checks_json=$(jq -n \
-      --argjson shebang "$checks_shebang" \
-      --argjson header "$checks_header" \
-      --argjson debug "$checks_debug" \
-      --argjson help_handler "$checks_help_handler" \
-      --argjson shellcheck "$checks_shellcheck" \
-      --argjson no_npx "$checks_no_npx" \
-      --argjson no_eval "$checks_no_eval" \
-      --argjson help_runs "$checks_help_runs" \
-      --argjson help_format "$checks_help_format" \
+      --argjson shebang "$checks_shebang" --argjson header "$checks_header" \
+      --argjson debug "$checks_debug" --argjson help_handler "$checks_help_handler" \
+      --argjson shellcheck "$checks_shellcheck" --argjson no_npx "$checks_no_npx" \
+      --argjson no_eval "$checks_no_eval" --argjson help_format "$checks_help_format" \
       --argjson deps_declared "$checks_deps_declared" \
-      '{
-        shebang: $shebang,
-        header: $header,
-        debug: $debug,
-        help_handler: $help_handler,
-        shellcheck: $shellcheck,
-        no_npx: $no_npx,
-        no_eval: $no_eval,
-        help_runs: $help_runs,
-        help_format: $help_format,
-        deps_declared: $deps_declared
-      }')
-
-    local script_json
-    script_json=$(jq -n \
-      --arg lang "$lang" \
-      --argjson summary "$summary_json" \
-      --argjson deps "$deps_json" \
-      --argjson checks "$checks_json" \
-      --argjson errors "$errors_json" \
-      '{
-        language: $lang,
-        summary: $summary,
-        dependencies: $deps,
-        checks: $checks,
-        errors: $errors
-      }')
-
-    DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n --arg name "$name" --argjson data "$script_json" '{($name): $data}'),"
+      '{shebang:$shebang,header:$header,debug:$debug,help_handler:$help_handler,
+        shellcheck:$shellcheck,no_npx:$no_npx,no_eval:$no_eval,
+        help_format:$help_format,deps_declared:$deps_declared}')
+    DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
+      --arg name "$name" --arg lang "$lang" --argjson summary "$summary_json" \
+      --argjson deps "$deps_json" --argjson detected "$detected_deps_json" \
+      --argjson checks "$checks_json" --argjson errors "$errors_json" \
+      '{($name):{language:$lang,summary:$summary,dependencies:$deps,
+        detected_dependencies:$detected,checks:$checks,errors:$errors}}'),"
   fi
 }
 
 # --- Main ---
 
-TOTAL=0
-PASSED=0
-FAILED_STATIC=0
-FAILED_HELP=0
-SKIPPED=0
+TOTAL=0 PASSED=0 FAILED_STATIC=0 FAILED_HELP=0 SKIPPED=0
 FAIL_LIST=""
-
-# Track seen script names to skip PATH duplicates
 declare -A SEEN_SCRIPTS
 JSON_FILES=()
 
 for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
-  # Collect y-* scripts in this directory
   dir_scripts=()
   for file in "$TARGET_DIR"/y-*; do
     [ -f "$file" ] && [ -x "$file" ] || continue
     name=$(basename "$file")
-    case "$name" in
-      *.yaml|*.yml|*.md) continue ;;
-      *.spec.js|*.spec.ts|*.test.js|*.test.ts) continue ;;
-      *-bin)             continue ;;
-      *-dist)            continue ;;
-    esac
-    # Skip duplicates (first PATH entry wins)
+    case "$name" in *.yaml|*.yml|*.md|*.spec.js|*.spec.ts|*.test.js|*.test.ts|*-bin|*-dist) continue ;; esac
     [ -n "${SEEN_SCRIPTS[$name]:-}" ] && continue
     SEEN_SCRIPTS[$name]=1
     dir_scripts+=("$file")
   done
-
   [ ${#dir_scripts[@]} -eq 0 ] && continue
 
   echo "[y-script-lint] $TARGET_DIR (${#dir_scripts[@]} scripts)"
-
   DIR_JSON_SCRIPTS=""
-
   for file in "${dir_scripts[@]}"; do
     TOTAL=$((TOTAL + 1))
     lint_file "$file"
   done
 
-  # Write per-directory JSON
   if [ "$JSON_OUTPUT" = "true" ] && [ -n "$DIR_JSON_SCRIPTS" ]; then
-    command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required for --json output" >&2; exit 1; }
-
-    local_scripts_merged=$(echo "[${DIR_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)')
-
+    command -v jq >/dev/null 2>&1 || { echo "ERROR: jq required for --json" >&2; exit 1; }
     JSON_FILE="$TARGET_DIR/.y-script-lint.json"
-    jq -n \
-      --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-      --arg tool_version "1" \
-      --arg directory "$TARGET_DIR" \
-      --argjson scripts "$local_scripts_merged" \
-      '{
-        generated: $generated,
-        tool_version: $tool_version,
-        directory: $directory,
-        scripts: $scripts
-      }' > "$JSON_FILE"
-
+    echo "[${DIR_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
+      jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "2" \
+        --arg directory "$TARGET_DIR" --argjson scripts "$(cat)" \
+        '{generated:$generated,tool_version:$tool_version,directory:$directory,scripts:$scripts}' > "$JSON_FILE"
     JSON_FILES+=("$JSON_FILE")
   fi
 done
 
 NOTES=""
-if [ "$HAS_SHELLCHECK" = "false" ]; then
-  NOTES="${NOTES}, no shellcheck"
-fi
-if [ "$CAN_SANDBOX" = "false" ]; then
-  NOTES="${NOTES}, no macOS sandbox"
-fi
-
+[ "$HAS_SHELLCHECK" = "false" ] && NOTES="${NOTES}, no shellcheck"
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
-for jf in "${JSON_FILES[@]}"; do
-  echo "Wrote $jf"
-done
+for jf in "${JSON_FILES[@]}"; do echo "Wrote $jf"; done
 
-# --check mode: exit non-zero if any static failures
-if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
-  echo "FAILED:$FAIL_LIST"
-  exit 2
-fi
+[ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ] && { echo "FAILED:$FAIL_LIST"; exit 2; }
