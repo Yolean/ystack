@@ -102,6 +102,15 @@ CATALOG=$(curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeo
   && report "registry v2 API" "ok" \
   || report "registry v2 API" "no response"
 
+echo "[y-cluster-validate-ystack] y-kustomize bases"
+YKUSTOMIZE_HOST="http://y-kustomize.ystack.svc.cluster.local"
+curl -sf "$YKUSTOMIZE_HOST/v1/blobs/setup-bucket-job/base-for-annotations.yaml" | k apply --dry-run=client -f - >/dev/null 2>&1 \
+  && report "y-kustomize blobs base" "ok" \
+  || report "y-kustomize blobs base" "not serving valid YAML"
+curl -sf "$YKUSTOMIZE_HOST/v1/kafka/setup-topic-job/base-for-annotations.yaml" | k apply --dry-run=client -f - >/dev/null 2>&1 \
+  && report "y-kustomize kafka base" "ok" \
+  || report "y-kustomize kafka base" "not serving valid YAML"
+
 echo "[y-cluster-validate-ystack] Build + deploy (y-build)"
 EXAMPLE_DIR="$YSTACK_HOME/examples/y-build"
 VALIDATE_IMAGE="$REGISTRY_HOST/ystack-validate/y-build-test:latest"
