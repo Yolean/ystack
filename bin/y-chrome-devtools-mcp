@@ -45,4 +45,5 @@ elif ! echo "$@" | grep -q "\-\-isolated"; then
   [ "DEVTOOLS_MCP_ALLOW_NON_ISOLATED" = "1" ] && echo "Overriding due to DEVTOOLS_MCP_ALLOW_NON_ISOLATED=$DEVTOOLS_MCP_ALLOW_NON_ISOLATED" 1>&2 || exit 1
 fi
 
-/usr/bin/env node $BIN_DIR/build/src/index.js "$@"
+BIN_ENTRY=$(jq -r '.bin["chrome-devtools-mcp"]' "$BIN_DIR/package.json")
+/usr/bin/env node "$BIN_DIR/$BIN_ENTRY" "$@"
