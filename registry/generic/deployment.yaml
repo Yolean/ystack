@@ -48,7 +48,7 @@ spec:
             scheme: HTTP
         volumeMounts:
         - name: etc-registry
-          mountPath: /etc/docker/registry
+          mountPath: /etc/distribution
         - name: storage-temporary
           mountPath: /var/lib/registry
       volumes:

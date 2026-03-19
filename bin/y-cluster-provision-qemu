@@ -166,6 +166,16 @@ CLOUDINIT
 
 cloud-localds "$VM_SEED" "$CLOUD_INIT"
 
+# Port 80 must be bindable for kustomize to fetch resources from y-kustomize service
+UNPRIV_PORT_START=$(cat /proc/sys/net/ipv4/ip_unprivileged_port_start 2>/dev/null || echo 1024)
+if [ "$UNPRIV_PORT_START" -gt 80 ]; then
+  echo "ERROR: Cannot bind to port 80 (ip_unprivileged_port_start=$UNPRIV_PORT_START)" >&2
+  echo "" >&2
+  echo "  sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80" >&2
+  echo "  # To persist: echo 'net.ipv4.ip_unprivileged_port_start=80' | sudo tee /etc/sysctl.d/50-unprivileged-ports.conf" >&2
+  exit 1
+fi
+
 # Start VM
 echo "[y-cluster-provision-qemu] Starting VM ..."
 qemu-system-x86_64 \
@@ -176,7 +186,7 @@ qemu-system-x86_64 \
   -m "$VM_MEMORY" \
   -drive file="$VM_DISK",format=qcow2,if=virtio \
   -drive file="$VM_SEED",format=raw,if=virtio \
-  -netdev user,id=net0,hostfwd=tcp::"$VM_SSH_PORT"-:22,hostfwd=tcp::6443-:6443 \
+  -netdev user,id=net0,hostfwd=tcp::"$VM_SSH_PORT"-:22,hostfwd=tcp::6443-:6443,hostfwd=tcp::80-:80,hostfwd=tcp::443-:443 \
   -device virtio-net-pci,netdev=net0 \
   -serial file:"$VM_DIR/$VM_NAME-console.log" \
   -display none \

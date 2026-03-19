@@ -33,3 +33,5 @@ spec:
           value: "true"
         - name: REGISTRY_STORAGE_REDIRECT_DISABLE
           value: "true"
+        - name: REGISTRY_STORAGE_CACHE_BLOBDESCRIPTOR
+          value: inmemory

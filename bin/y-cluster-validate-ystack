@@ -19,6 +19,13 @@ k() {
   kubectl --context="$CONTEXT" "$@"
 }
 
+# HTTP requests to cluster services via the K8s API proxy (works regardless of provisioner)
+# Usage: kurl <namespace> <service> <path>
+kurl() {
+  local ns="$1" svc="$2" path="$3"
+  k get --raw "/api/v1/namespaces/$ns/services/$svc:80/proxy/$path"
+}
+
 PASS=0
 FAIL=0
 report() {
@@ -33,94 +40,118 @@ report() {
   fi
 }
 
+run_pre_build_checks() {
+  local phase="$1"
+  echo "[y-cluster-validate-ystack] Pre-build checks ($phase)"
+
+  k get ns ystack >/dev/null 2>&1 \
+    && report "namespace ystack ($phase)" "ok" \
+    || report "namespace ystack ($phase)" "not found"
+
+  k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1 \
+    && report "gateway-api CRDs ($phase)" "ok" \
+    || report "gateway-api CRDs ($phase)" "not installed"
+
+  k -n ystack get gateway ystack >/dev/null 2>&1 \
+    && report "gateway ystack ($phase)" "ok" \
+    || report "gateway ystack ($phase)" "not found"
+
+  ROLLOUT=$(k -n blobs rollout status deploy/versitygw --timeout=5s 2>&1) \
+    && report "versitygw rollout ($phase)" "ok" \
+    || report "versitygw rollout ($phase)" "$ROLLOUT"
+
+  CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
+  if [ "$CLUSTER_IP" = "10.43.0.50" ]; then
+    report "builds-registry clusterIP ($phase)" "ok"
+  else
+    report "builds-registry clusterIP ($phase)" "got '$CLUSTER_IP', expected 10.43.0.50"
+  fi
+
+  k -n ystack get httproute builds-registry >/dev/null 2>&1 \
+    && report "httproute builds-registry ($phase)" "ok" \
+    || report "httproute builds-registry ($phase)" "not found"
+
+  PROD_IP=$(k -n ystack get svc prod-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
+  if [ "$PROD_IP" = "10.43.0.51" ]; then
+    report "prod-registry clusterIP ($phase)" "ok"
+  else
+    report "prod-registry clusterIP ($phase)" "got '$PROD_IP', expected 10.43.0.51"
+  fi
+
+  k -n ystack get grpcroute buildkitd >/dev/null 2>&1 \
+    && report "grpcroute buildkitd ($phase)" "ok" \
+    || report "grpcroute buildkitd ($phase)" "not found"
+
+  if k get ns monitoring >/dev/null 2>&1; then
+    k -n monitoring get prometheus now >/dev/null 2>&1 \
+      && report "prometheus now ($phase)" "ok" \
+      || report "prometheus now ($phase)" "not found"
+
+    k -n monitoring get httproute prometheus-now >/dev/null 2>&1 \
+      && report "httproute prometheus-now ($phase)" "ok" \
+      || report "httproute prometheus-now ($phase)" "not found"
+  else
+    echo "[y-cluster-validate-ystack]   SKIP  prometheus - monitoring namespace not installed"
+    echo "[y-cluster-validate-ystack]   SKIP  httproute prometheus-now - monitoring namespace not installed"
+  fi
+
+  k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
+    && report "buildkitd statefulset ($phase)" "ok" \
+    || report "buildkitd statefulset ($phase)" "not found"
+
+  echo "[y-cluster-validate-ystack] Waiting for registry rollout (up to 10s)"
+  ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=10s 2>&1) \
+    && report "registry rollout ($phase)" "ok" \
+    || report "registry rollout ($phase)" "$ROLLOUT_REG"
+
+  echo "[y-cluster-validate-ystack] Registry access"
+  CATALOG=$(kurl ystack builds-registry v2/_catalog 2>&1) && \
+    echo "$CATALOG" | grep -q "repositories" \
+    && report "registry v2 API ($phase)" "ok" \
+    || report "registry v2 API ($phase)" "no response"
+
+  echo "[y-cluster-validate-ystack] y-kustomize bases"
+  kurl ystack y-kustomize v1/blobs/setup-bucket-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
+    && report "y-kustomize blobs base ($phase)" "ok" \
+    || report "y-kustomize blobs base ($phase)" "not serving valid YAML"
+  kurl ystack y-kustomize v1/kafka/setup-topic-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
+    && report "y-kustomize kafka base ($phase)" "ok" \
+    || report "y-kustomize kafka base ($phase)" "not serving valid YAML"
+}
+
 echo "[y-cluster-validate-ystack] Dev cluster validation: context=$CONTEXT"
 
-k get ns ystack >/dev/null 2>&1 \
-  && report "namespace ystack" "ok" \
-  || report "namespace ystack" "not found"
+# Run 1: verify all resources exist and services respond
+run_pre_build_checks "run-1"
 
-k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1 \
-  && report "gateway-api CRDs" "ok" \
-  || report "gateway-api CRDs" "not installed"
+# Targeted restarts to validate persistence
+echo "[y-cluster-validate-ystack] Restarting stateful services to validate persistence"
 
-k -n ystack get gateway ystack >/dev/null 2>&1 \
-  && report "gateway ystack" "ok" \
-  || report "gateway ystack" "not found"
-
-ROLLOUT=$(k -n blobs rollout status deploy/versitygw --timeout=5s 2>&1) \
-  && report "versitygw rollout" "ok" \
-  || report "versitygw rollout" "$ROLLOUT"
-
-CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
-if [ "$CLUSTER_IP" = "10.43.0.50" ]; then
-  report "builds-registry clusterIP" "ok"
-else
-  report "builds-registry clusterIP" "got '$CLUSTER_IP', expected 10.43.0.50"
+if k get ns blobs >/dev/null 2>&1; then
+  echo "[y-cluster-validate-ystack] Restarting versitygw"
+  k -n blobs rollout restart deploy/versitygw
+  k -n blobs rollout status deploy/versitygw --timeout=60s
 fi
 
-k -n ystack get httproute builds-registry >/dev/null 2>&1 \
-  && report "httproute builds-registry" "ok" \
-  || report "httproute builds-registry" "not found"
-
-PROD_IP=$(k -n ystack get svc prod-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
-if [ "$PROD_IP" = "10.43.0.51" ]; then
-  report "prod-registry clusterIP" "ok"
-else
-  report "prod-registry clusterIP" "got '$PROD_IP', expected 10.43.0.51"
+if k get ns ystack >/dev/null 2>&1; then
+  echo "[y-cluster-validate-ystack] Restarting registry"
+  k -n ystack rollout restart deploy/registry
+  k -n ystack rollout status deploy/registry --timeout=60s
 fi
 
-k -n ystack get grpcroute buildkitd >/dev/null 2>&1 \
-  && report "grpcroute buildkitd" "ok" \
-  || report "grpcroute buildkitd" "not found"
-
-if k get ns monitoring >/dev/null 2>&1; then
-  k -n monitoring get prometheus now >/dev/null 2>&1 \
-    && report "prometheus now" "ok" \
-    || report "prometheus now" "not found"
-
-  k -n monitoring get httproute prometheus-now >/dev/null 2>&1 \
-    && report "httproute prometheus-now" "ok" \
-    || report "httproute prometheus-now" "not found"
-else
-  echo "[y-cluster-validate-ystack]   SKIP  prometheus - monitoring namespace not installed"
-  echo "[y-cluster-validate-ystack]   SKIP  httproute prometheus-now - monitoring namespace not installed"
-fi
-
-k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
-  && report "buildkitd statefulset" "ok" \
-  || report "buildkitd statefulset" "not found"
-
-echo "[y-cluster-validate-ystack] Waiting for registry rollout (up to 10s)"
-ROLLOUT_REG=$(k -n ystack rollout status deploy/registry --timeout=10s 2>&1) \
-  && report "registry rollout" "ok" \
-  || report "registry rollout" "$ROLLOUT_REG"
-
-REGISTRY_HOST="builds-registry.ystack.svc.cluster.local"
-echo "[y-cluster-validate-ystack] Registry access"
-CATALOG=$(curl -sf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 http://$REGISTRY_HOST/v2/_catalog 2>/dev/null) && \
-  echo "$CATALOG" | grep -q "repositories" \
-  && report "registry v2 API" "ok" \
-  || report "registry v2 API" "no response"
-
-echo "[y-cluster-validate-ystack] y-kustomize bases"
-YKUSTOMIZE_HOST="http://y-kustomize.ystack.svc.cluster.local"
-curl -sf "$YKUSTOMIZE_HOST/v1/blobs/setup-bucket-job/base-for-annotations.yaml" | k apply --dry-run=client -f - >/dev/null 2>&1 \
-  && report "y-kustomize blobs base" "ok" \
-  || report "y-kustomize blobs base" "not serving valid YAML"
-curl -sf "$YKUSTOMIZE_HOST/v1/kafka/setup-topic-job/base-for-annotations.yaml" | k apply --dry-run=client -f - >/dev/null 2>&1 \
-  && report "y-kustomize kafka base" "ok" \
-  || report "y-kustomize kafka base" "not serving valid YAML"
+# Run 2: confirm state survived restarts
+run_pre_build_checks "run-2"
 
 echo "[y-cluster-validate-ystack] Build + deploy (y-build)"
 EXAMPLE_DIR="$YSTACK_HOME/examples/y-build"
+REGISTRY_HOST="builds-registry.ystack.svc.cluster.local"
 VALIDATE_IMAGE="$REGISTRY_HOST/ystack-validate/y-build-test:latest"
 y-buildkitd-available --context="$CONTEXT" 2>&1 || true
 echo "[y-cluster-validate-ystack] Building example image"
 if BUILD_CONTEXT="$EXAMPLE_DIR" IMAGE="$VALIDATE_IMAGE" IMPORT_CACHE=false EXPORT_CACHE=false y-build; then
   report "y-build" "ok"
 
-  curl -sSf --retry 20 --retry-delay 2 --retry-all-errors --connect-timeout 2 \
-    "http://$REGISTRY_HOST/v2/ystack-validate/y-build-test/tags/list" | grep -q '"latest"' \
+  kurl ystack builds-registry v2/ystack-validate/y-build-test/tags/list 2>&1 | grep -q '"latest"' \
     && report "y-build-test pushed" "ok" \
     || report "y-build-test pushed" "image not found in registry"
 else

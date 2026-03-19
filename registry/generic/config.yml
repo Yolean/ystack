@@ -3,8 +3,16 @@ log:
   fields:
     service: registry
 storage:
+  s3:
+    region: us-east-1
+  # bucket, credentials, endpoint override via REGISTRY_STORAGE_S3_* env vars
   cache:
     blobdescriptor: inmemory
+  maintenance:
+    uploadpurging:
+      enabled: false
+  redirect:
+    disable: true
 http:
   headers:
     X-Content-Type-Options: [nosniff]
