@@ -38,6 +38,7 @@ esac
 CHECK_MODE=false
 DEPS_ADD=false
 JSON_OUTPUT=true
+SINGLE_FILE=""
 TARGET_DIRS=()
 
 while [ $# -gt 0 ]; do
@@ -50,25 +51,56 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
-  IFS=: read -ra path_entries <<< "$PATH"
-  for dir in "${path_entries[@]}"; do
-    [ -d "$dir" ] || continue
-    for f in "$dir"/y-*; do
-      if [ -x "$f" ] && [ -f "$f" ]; then
-        TARGET_DIRS+=("$dir")
+# Detect single-script mode: one arg that is a file or a bare script name
+if [ ${#TARGET_DIRS[@]} -eq 1 ]; then
+  arg="${TARGET_DIRS[0]}"
+  if [ -f "$arg" ]; then
+    # Explicit path to a file
+    SINGLE_FILE="$(cd "$(dirname "$arg")" && pwd)/$(basename "$arg")"
+  elif [ -d "$arg" ]; then
+    : # directory, handled below
+  elif [[ "$arg" != */* ]]; then
+    # Bare name like "y-turbo" — search PATH
+    found=""
+    IFS=: read -ra path_entries <<< "$PATH"
+    for dir in "${path_entries[@]}"; do
+      if [ -x "$dir/$arg" ] && [ -f "$dir/$arg" ]; then
+        found="$dir/$arg"
         break
       fi
     done
-  done
-  [ ${#TARGET_DIRS[@]} -eq 0 ] && { echo "ERROR: no y-* scripts found in PATH" >&2; exit 1; }
+    [ -z "$found" ] && { echo "ERROR: $arg not found in PATH" >&2; exit 1; }
+    SINGLE_FILE="$found"
+  else
+    # Path with / but not a file
+    echo "ERROR: file not found: $arg" >&2; exit 1
+  fi
 fi
 
-RESOLVED_DIRS=()
-for dir in "${TARGET_DIRS[@]}"; do
-  [ -d "$dir" ] || { echo "ERROR: directory not found: $dir" >&2; exit 1; }
-  RESOLVED_DIRS+=("$(cd "$dir" && pwd)")
-done
+if [ -n "$SINGLE_FILE" ]; then
+  JSON_OUTPUT=false
+  RESOLVED_DIRS=()
+else
+  if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
+    IFS=: read -ra path_entries <<< "$PATH"
+    for dir in "${path_entries[@]}"; do
+      [ -d "$dir" ] || continue
+      for f in "$dir"/y-*; do
+        if [ -x "$f" ] && [ -f "$f" ]; then
+          TARGET_DIRS+=("$dir")
+          break
+        fi
+      done
+    done
+    [ ${#TARGET_DIRS[@]} -eq 0 ] && { echo "ERROR: no y-* scripts found in PATH" >&2; exit 1; }
+  fi
+
+  RESOLVED_DIRS=()
+  for dir in "${TARGET_DIRS[@]}"; do
+    [ -d "$dir" ] || { echo "ERROR: directory not found: $dir" >&2; exit 1; }
+    RESOLVED_DIRS+=("$(cd "$dir" && pwd)")
+  done
+fi
 
 # --- Language detection ---
 
@@ -97,7 +129,7 @@ check_header_debug() { grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$1" 2>/dev/nu
 check_help_handler() {
   local file="$1" lang="$2"
   if is_shell "$lang"; then
-    grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help)' "$file" 2>/dev/null
+    grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help|^\s*help\))' "$file" 2>/dev/null
   elif is_node "$lang"; then
     grep -qE "process\.argv\.includes\(['\"](-h|--help)['\"]" "$file" 2>/dev/null ||
       grep -qE "process\.argv\[2\] === ['\"]help['\"]" "$file" 2>/dev/null
@@ -374,6 +406,19 @@ lint_file() {
 
 TOTAL=0 PASSED=0 FAILED_STATIC=0 FAILED_HELP=0 SKIPPED=0
 FAIL_LIST=""
+
+# Single-file mode: lint one script, exit with its result
+if [ -n "$SINGLE_FILE" ]; then
+  TOTAL=1
+  lint_file "$SINGLE_FILE"
+  if [ "$FAILED_STATIC" -gt 0 ]; then
+    exit 2
+  elif [ "$FAILED_HELP" -gt 0 ]; then
+    exit 1
+  fi
+  exit 0
+fi
+
 declare -A SEEN_SCRIPTS
 JSON_FILES=()
 
