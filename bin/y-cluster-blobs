@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YHELP='y-cluster-blobs - List and read objects in cluster blob storage
+
+Usage: y-cluster-blobs SUBCOMMAND [options] [CONTEXT://BUCKET/PATH]
+
+Subcommands:
+  ls [CONTEXT://BUCKET[/PREFIX]]    List buckets or objects
+  cat CONTEXT://BUCKET/OBJECT       Print object contents to stdout
+  help                              Show this help
+
+Options:
+  -l          Long listing with size and timestamp (ls only)
+
+URL format:
+  local://                  List all buckets
+  local://BUCKET            List objects in bucket
+  local://BUCKET/PREFIX     List objects matching prefix
+  local://BUCKET/KEY        Read object (cat)
+
+The CONTEXT part maps to --context for kubectl (currently only local).
+Modeled after gcloud storage ls / gcloud storage cat.
+Uses the S3 API via minio/mc run as a one-shot pod.
+
+Environment:
+  NAMESPACE    Override blob store namespace (default: ystack)
+
+Dependencies:
+
+Exit codes:
+  0          Success
+  1          Usage error
+  2          S3 endpoint or bucket not found
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
+
+SUBCMD="${1:-}"
+shift || true
+
+case "$SUBCMD" in
+  ls|cat) ;;
+  "") echo "ERROR: subcommand required (ls, cat, help)" >&2; exit 1 ;;
+  *) echo "ERROR: unknown subcommand '$SUBCMD'" >&2; exit 1 ;;
+esac
+
+# Parse flags
+LONG=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l) LONG=true; shift ;;
+    -*) echo "ERROR: unknown flag '$1'" >&2; exit 1 ;;
+    *) break ;;
+  esac
+done
+
+URL="${1:-}"
+[ -z "$NAMESPACE" ] && NAMESPACE=ystack
+
+# Parse URL: context://bucket/path
+CTX=""
+BUCKET=""
+OBJPATH=""
+
+if [ -n "$URL" ]; then
+  case "$URL" in
+    *://*)
+      CTX="--context=${URL%%://*}"
+      rest="${URL#*://}"
+      BUCKET="${rest%%/*}"
+      if [ "$rest" = "$BUCKET" ]; then
+        OBJPATH=""
+      else
+        OBJPATH="${rest#*/}"
+      fi
+      ;;
+    *)
+      echo "ERROR: URL must use context:// format, got '$URL'" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [ -z "$CTX" ]; then
+  echo "ERROR: URL required, e.g. local://" >&2
+  exit 1
+fi
+
+# Read S3 credentials from the same secret the registry uses
+S3_ENDPOINT=$(kubectl $CTX -n "$NAMESPACE" get secret builds-registry-bucket -o jsonpath='{.data.endpoint}' 2>/dev/null | base64 -d)
+S3_ACCESS=$(kubectl $CTX -n "$NAMESPACE" get secret builds-registry-bucket -o jsonpath='{.data.accesskey}' 2>/dev/null | base64 -d)
+S3_SECRET=$(kubectl $CTX -n "$NAMESPACE" get secret builds-registry-bucket -o jsonpath='{.data.secretkey}' 2>/dev/null | base64 -d)
+
+if [ -z "$S3_ENDPOINT" ] || [ -z "$S3_ACCESS" ]; then
+  echo "ERROR: could not read S3 credentials from secret builds-registry-bucket in namespace $NAMESPACE" >&2
+  exit 2
+fi
+
+# Get the mc image from the bucket-setup job
+MC_IMAGE=$(kubectl $CTX -n "$NAMESPACE" get job -o jsonpath='{.items[?(@.metadata.name=="builds-registry-setup-bucket")].spec.template.spec.containers[0].image}' 2>/dev/null)
+[ -z "$MC_IMAGE" ] && MC_IMAGE="minio/mc:latest"
+
+# Build the mc command: configure alias then run the operation
+S3PATH="s3/${BUCKET}${OBJPATH:+/$OBJPATH}"
+# Ensure trailing slash for bucket listing (mc needs it to list contents vs. match prefix)
+if [ -n "$BUCKET" ] && [ -z "$OBJPATH" ]; then
+  S3PATH="s3/${BUCKET}/"
+fi
+
+case "$SUBCMD" in
+  ls)
+    MC_FLAGS=""
+    if [ -z "$BUCKET" ]; then
+      S3PATH="s3/"
+    fi
+    MC_CMD="mc alias set s3 $S3_ENDPOINT $S3_ACCESS $S3_SECRET --api S3v4 >/dev/null 2>&1 && mc ls $S3PATH"
+    ;;
+  cat)
+    if [ -z "$BUCKET" ] || [ -z "$OBJPATH" ]; then
+      echo "ERROR: cat requires a full object path, e.g. local://bucket/key" >&2
+      exit 1
+    fi
+    MC_CMD="mc alias set s3 $S3_ENDPOINT $S3_ACCESS $S3_SECRET --api S3v4 >/dev/null 2>&1 && mc cat $S3PATH"
+    ;;
+esac
+
+kubectl $CTX run -n "$NAMESPACE" -i --rm --restart=Never --image="$MC_IMAGE" \
+  --override-type=strategic \
+  y-cluster-blobs-"$$" \
+  --command -- sh -c "$MC_CMD"
