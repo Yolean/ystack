@@ -73,13 +73,18 @@ k -n ystack get grpcroute buildkitd >/dev/null 2>&1 \
   && report "grpcroute buildkitd" "ok" \
   || report "grpcroute buildkitd" "not found"
 
-k -n monitoring get prometheus now >/dev/null 2>&1 \
-  && report "prometheus now" "ok" \
-  || report "prometheus now" "not found"
+if k get ns monitoring >/dev/null 2>&1; then
+  k -n monitoring get prometheus now >/dev/null 2>&1 \
+    && report "prometheus now" "ok" \
+    || report "prometheus now" "not found"
 
-k -n monitoring get httproute prometheus-now >/dev/null 2>&1 \
-  && report "httproute prometheus-now" "ok" \
-  || report "httproute prometheus-now" "not found"
+  k -n monitoring get httproute prometheus-now >/dev/null 2>&1 \
+    && report "httproute prometheus-now" "ok" \
+    || report "httproute prometheus-now" "not found"
+else
+  echo "[y-cluster-validate-ystack]   SKIP  prometheus - monitoring namespace not installed"
+  echo "[y-cluster-validate-ystack]   SKIP  httproute prometheus-now - monitoring namespace not installed"
+fi
 
 k -n ystack get statefulset buildkitd >/dev/null 2>&1 \
   && report "buildkitd statefulset" "ok" \
