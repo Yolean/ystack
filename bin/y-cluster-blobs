@@ -13,6 +13,7 @@ Subcommands:
 
 Options:
   -l          Long listing with size and timestamp (ls only)
+  -r          Recursive listing (ls only)
 
 URL format:
   local://                  List all buckets
@@ -22,22 +23,19 @@ URL format:
 
 The CONTEXT part maps to --context for kubectl (currently only local).
 Modeled after gcloud storage ls / gcloud storage cat.
-Uses the S3 API via minio/mc run as a one-shot pod.
+Reads VersityGW filesystem directly via kubectl exec for speed.
 
 Environment:
-  NAMESPACE    Override blob store namespace (default: ystack)
-
-Dependencies:
+  NAMESPACE    Override blob store namespace (default: blobs)
 
 Exit codes:
   0          Success
   1          Usage error
-  2          S3 endpoint or bucket not found
+  2          Bucket not found
 '
 
 case "${1:-}" in
-  help) echo "$YHELP"; exit 0 ;;
-  --help) echo "$YHELP"; exit 0 ;;
+  help|--help) echo "$YHELP"; exit 0 ;;
 esac
 
 SUBCMD="${1:-}"
@@ -51,16 +49,19 @@ esac
 
 # Parse flags
 LONG=false
+RECURSIVE=false
 while [ $# -gt 0 ]; do
   case "$1" in
     -l) LONG=true; shift ;;
+    -r) RECURSIVE=true; shift ;;
+    -lr|-rl) LONG=true; RECURSIVE=true; shift ;;
     -*) echo "ERROR: unknown flag '$1'" >&2; exit 1 ;;
     *) break ;;
   esac
 done
 
 URL="${1:-}"
-[ -z "$NAMESPACE" ] && NAMESPACE=ystack
+[ -z "$NAMESPACE" ] && NAMESPACE=blobs
 
 # Parse URL: context://bucket/path
 CTX=""
@@ -70,7 +71,8 @@ OBJPATH=""
 if [ -n "$URL" ]; then
   case "$URL" in
     *://*)
-      CTX="--context=${URL%%://*}"
+      CTX_NAME="${URL%%://*}"
+      CTX="--context=$CTX_NAME"
       rest="${URL#*://}"
       BUCKET="${rest%%/*}"
       if [ "$rest" = "$BUCKET" ]; then
@@ -91,45 +93,70 @@ if [ -z "$CTX" ]; then
   exit 1
 fi
 
-# Read S3 credentials from the same secret the registry uses
-S3_ENDPOINT=$(kubectl $CTX -n "$NAMESPACE" get secret builds-registry-bucket -o jsonpath='{.data.endpoint}' 2>/dev/null | base64 -d)
-S3_ACCESS=$(kubectl $CTX -n "$NAMESPACE" get secret builds-registry-bucket -o jsonpath='{.data.accesskey}' 2>/dev/null | base64 -d)
-S3_SECRET=$(kubectl $CTX -n "$NAMESPACE" get secret builds-registry-bucket -o jsonpath='{.data.secretkey}' 2>/dev/null | base64 -d)
+vgw() {
+  kubectl $CTX -n "$NAMESPACE" exec deploy/versitygw -- "$@"
+}
 
-if [ -z "$S3_ENDPOINT" ] || [ -z "$S3_ACCESS" ]; then
-  echo "ERROR: could not read S3 credentials from secret builds-registry-bucket in namespace $NAMESPACE" >&2
-  exit 2
-fi
-
-# Get the mc image from the bucket-setup job
-MC_IMAGE=$(kubectl $CTX -n "$NAMESPACE" get job -o jsonpath='{.items[?(@.metadata.name=="builds-registry-setup-bucket")].spec.template.spec.containers[0].image}' 2>/dev/null)
-[ -z "$MC_IMAGE" ] && MC_IMAGE="minio/mc:latest"
-
-# Build the mc command: configure alias then run the operation
-S3PATH="s3/${BUCKET}${OBJPATH:+/$OBJPATH}"
-# Ensure trailing slash for bucket listing (mc needs it to list contents vs. match prefix)
-if [ -n "$BUCKET" ] && [ -z "$OBJPATH" ]; then
-  S3PATH="s3/${BUCKET}/"
-fi
+DATA_ROOT="/data"
 
 case "$SUBCMD" in
   ls)
-    MC_FLAGS=""
+    PREFIX="$CTX_NAME://"
     if [ -z "$BUCKET" ]; then
-      S3PATH="s3/"
+      # List buckets
+      if [ "$LONG" = "true" ]; then
+        vgw find "$DATA_ROOT" -mindepth 1 -maxdepth 1 -type d -exec stat -c '%Y %n' {} \; 2>/dev/null \
+          | while read -r epoch name; do
+              ts=$(date -d "@$epoch" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "$epoch")
+              echo "[$ts]     0B ${PREFIX}$(basename "$name")/"
+            done
+      else
+        vgw ls "$DATA_ROOT" 2>/dev/null | while read -r name; do
+          echo "${PREFIX}$name/"
+        done
+      fi
+    else
+      PREFIX="$CTX_NAME://$BUCKET/"
+      BUCKET_PATH="$DATA_ROOT/$BUCKET"
+      if ! vgw test -d "$BUCKET_PATH" 2>/dev/null; then
+        echo "ERROR: bucket '$BUCKET' not found" >&2
+        exit 2
+      fi
+      TARGET="$BUCKET_PATH${OBJPATH:+/$OBJPATH}"
+      DEPTH_ARGS=""
+      if [ "$RECURSIVE" = "false" ]; then
+        DEPTH_ARGS="-mindepth 1 -maxdepth 1"
+      fi
+      if [ "$LONG" = "true" ]; then
+        vgw sh -c "find '$TARGET' $DEPTH_ARGS -type d ! -path '$TARGET' -exec stat -c 'd %s %Y %n' {} \\; -o -type f -exec stat -c 'f %s %Y %n' {} \\;" 2>/dev/null \
+          | while read -r type size epoch name; do
+              ts=$(date -d "@$epoch" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "$epoch")
+              rel="${name#$BUCKET_PATH/}"
+              if [ "$type" = "d" ]; then
+                echo "[$ts]     0B ${PREFIX}$rel/"
+              else
+                echo "[$ts] ${size}B ${PREFIX}$rel"
+              fi
+            done
+      else
+        vgw sh -c "find '$TARGET' $DEPTH_ARGS -type d ! -path '$TARGET' -exec echo d {} \\; -o -type f -exec echo f {} \\;" 2>/dev/null \
+          | while read -r type name; do
+              rel="${name#$BUCKET_PATH/}"
+              if [ "$type" = "d" ]; then
+                echo "${PREFIX}$rel/"
+              else
+                echo "${PREFIX}$rel"
+              fi
+            done
+      fi
     fi
-    MC_CMD="mc alias set s3 $S3_ENDPOINT $S3_ACCESS $S3_SECRET --api S3v4 >/dev/null 2>&1 && mc ls $S3PATH"
     ;;
   cat)
     if [ -z "$BUCKET" ] || [ -z "$OBJPATH" ]; then
       echo "ERROR: cat requires a full object path, e.g. local://bucket/key" >&2
       exit 1
     fi
-    MC_CMD="mc alias set s3 $S3_ENDPOINT $S3_ACCESS $S3_SECRET --api S3v4 >/dev/null 2>&1 && mc cat $S3PATH"
+    OBJ_FILE="$DATA_ROOT/$BUCKET/$OBJPATH"
+    vgw cat "$OBJ_FILE"
     ;;
 esac
-
-kubectl $CTX run -n "$NAMESPACE" -i --rm --restart=Never --image="$MC_IMAGE" \
-  --override-type=strategic \
-  y-cluster-blobs-"$$" \
-  --command -- sh -c "$MC_CMD"
