@@ -21,9 +21,9 @@ Options:
   --fail=degrade       Exit non-zero only if a script degraded vs baseline
   --dependencies-add   Detect y-* invocations and add to Dependencies section in YHELP
 
-Degradation baselines (in ~/.cache/):
-  ystack-script-lint.main.json      Saved on main branch builds
-  ystack-script-lint.branch.json    Saved on branch builds
+Degradation baselines (in ~/.cache/ystack/):
+  y-script-lint.main.json      Saved on main branch builds
+  y-script-lint.branch.json    Saved on branch builds
   Branch baseline preferred, falls back to main.
   First build with no baseline skips comparison.
   On main: result always saves as main baseline.
@@ -481,9 +481,9 @@ NOTES=""
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
 
 # Write index
-CACHE_DIR="${HOME}/.cache"
+CACHE_DIR="${HOME}/.cache/ystack"
 mkdir -p "$CACHE_DIR"
-INDEX_FILE="${CACHE_DIR}/ystack-script-lint.json"
+INDEX_FILE="${CACHE_DIR}/y-script-lint.json"
 
 build_index() {
   echo "[${ALL_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
@@ -508,8 +508,8 @@ fi
 
 if [ "$FAIL_MODE" = "degrade" ] && [ -f "$INDEX_FILE" ]; then
   BRANCH="${Y_SCRIPT_LINT_BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")}"
-  MAIN_BASELINE="${CACHE_DIR}/ystack-script-lint.main.json"
-  BRANCH_BASELINE="${CACHE_DIR}/ystack-script-lint.branch.json"
+  MAIN_BASELINE="${CACHE_DIR}/y-script-lint.main.json"
+  BRANCH_BASELINE="${CACHE_DIR}/y-script-lint.branch.json"
 
   # Select best baseline: branch cache > main cache > none
   BASELINE=""

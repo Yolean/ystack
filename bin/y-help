@@ -9,7 +9,7 @@ Usage: y-help [help] [FILTER]
 Arguments:
   FILTER    Only show scripts matching this substring
 
-Reads ~/.cache/ystack-script-lint.json index.
+Reads ~/.cache/ystack/y-script-lint.json index.
 Run y-script-lint first to generate or update the index.
 
 Dependencies:
@@ -24,7 +24,7 @@ FILTER="${1:-}"
 
 command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required" >&2; exit 1; }
 
-INDEX="${HOME}/.cache/ystack-script-lint.json"
+INDEX="${HOME}/.cache/ystack/y-script-lint.json"
 
 if [ ! -f "$INDEX" ]; then
   echo "No index found at $INDEX. Run y-script-lint first." >&2

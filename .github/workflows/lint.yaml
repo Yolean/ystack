@@ -17,9 +17,7 @@ jobs:
         key: script-lint-${{ github.ref_name }}-
         restore-keys: |
           script-lint-main-
-        path: |
-          ~/.cache/ystack-script-lint.main.json
-          ~/.cache/ystack-script-lint.branch.json
+        path: ~/.cache/ystack
     - name: Script lint
       run: bin/y-script-lint --fail=degrade bin/
       env:
@@ -27,6 +25,4 @@ jobs:
     - uses: actions/cache/save@v4
       with:
         key: script-lint-${{ github.ref_name }}-${{ github.run_id }}
-        path: |
-          ~/.cache/ystack-script-lint.main.json
-          ~/.cache/ystack-script-lint.branch.json
+        path: ~/.cache/ystack
