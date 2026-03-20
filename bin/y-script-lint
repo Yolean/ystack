@@ -1,0 +1,528 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+trap 'trap - INT; kill -INT -$$' INT
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AUTHORING_GUIDE="$(cd "$SCRIPT_DIR/.." && pwd)/Y_SCRIPT_AUTHORING.md"
+AUTHORING_GUIDE_DISPLAY="~/${AUTHORING_GUIDE#"$HOME/"}"
+
+YHELP='y-script-lint - Static analysis and convention checks for y-* scripts
+
+Usage: y-script-lint [help] [options] [DIR...]
+
+Arguments:
+  DIR                  Directory to scan (default: all PATH dirs containing y-* scripts)
+
+Options:
+  --check              Alias for --fail=all
+  --fail=all           Exit non-zero if any script fails
+  --fail=degrade       Exit non-zero only if a script degraded vs baseline
+  --dependencies-add   Detect y-* invocations and add to Dependencies section in YHELP
+
+Degradation baselines (in ~/.cache/ystack/):
+  y-script-lint.main.json      Saved on main branch builds
+  y-script-lint.branch.json    Saved on branch builds
+  Branch baseline preferred, falls back to main.
+  First build with no baseline skips comparison.
+  On main: result always saves as main baseline.
+  On branch: result saves as branch baseline on success.
+
+All checks are static (source parsing only, no script execution).
+
+Environment:
+  Y_SCRIPT_LINT_BRANCH     Branch name (default: git current branch, "main" = main baseline)
+
+Dependencies:
+  y-bin-download
+  y-shellcheck
+
+Exit codes:
+  0                    All scripts passed (or no degradation in degrade mode)
+  1                    Usage error
+  2                    Lint failures detected
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
+
+FAIL_MODE=""
+DEPS_ADD=false
+JSON_OUTPUT=true
+SINGLE_FILE=""
+TARGET_DIRS=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --check) FAIL_MODE=all; shift ;;
+    --fail=all) FAIL_MODE=all; shift ;;
+    --fail=degrade) FAIL_MODE=degrade; shift ;;
+    --fail=*) echo "ERROR: unknown fail mode: ${1#*=} (use: all, degrade)" >&2; exit 1 ;;
+    --dependencies-add) DEPS_ADD=true; shift ;;
+    --) shift; break ;;
+    -*) echo "Unknown flag: $1" >&2; exit 1 ;;
+    *) TARGET_DIRS+=("$1"); shift ;;
+  esac
+done
+
+# Detect single-script mode: one arg that is a file or a bare script name
+if [ ${#TARGET_DIRS[@]} -eq 1 ]; then
+  arg="${TARGET_DIRS[0]}"
+  if [ -f "$arg" ]; then
+    # Explicit path to a file
+    SINGLE_FILE="$(cd "$(dirname "$arg")" && pwd)/$(basename "$arg")"
+  elif [ -d "$arg" ]; then
+    : # directory, handled below
+  elif [[ "$arg" != */* ]]; then
+    # Bare name like "y-turbo" — search PATH
+    found=""
+    IFS=: read -ra path_entries <<< "$PATH"
+    for dir in "${path_entries[@]}"; do
+      if [ -x "$dir/$arg" ] && [ -f "$dir/$arg" ]; then
+        found="$dir/$arg"
+        break
+      fi
+    done
+    [ -z "$found" ] && { echo "ERROR: $arg not found in PATH" >&2; exit 1; }
+    SINGLE_FILE="$found"
+  else
+    # Path with / but not a file
+    echo "ERROR: file not found: $arg" >&2; exit 1
+  fi
+fi
+
+if [ -n "$SINGLE_FILE" ]; then
+  JSON_OUTPUT=false
+  RESOLVED_DIRS=()
+else
+  if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
+    IFS=: read -ra path_entries <<< "$PATH"
+    for dir in "${path_entries[@]}"; do
+      [ -d "$dir" ] || continue
+      for f in "$dir"/y-*; do
+        if [ -x "$f" ] && [ -f "$f" ]; then
+          TARGET_DIRS+=("$dir")
+          break
+        fi
+      done
+    done
+    [ ${#TARGET_DIRS[@]} -eq 0 ] && { echo "ERROR: no y-* scripts found in PATH" >&2; exit 1; }
+  fi
+
+  RESOLVED_DIRS=()
+  for dir in "${TARGET_DIRS[@]}"; do
+    [ -d "$dir" ] || { echo "ERROR: directory not found: $dir" >&2; exit 1; }
+    RESOLVED_DIRS+=("$(cd "$dir" && pwd)")
+  done
+fi
+
+# --- Language detection ---
+
+detect_language() {
+  local shebang
+  shebang=$(head -1 "$1" 2>/dev/null) || true
+  case "$shebang" in
+    '#!/usr/bin/env bash'|'#!/bin/bash')  echo "bash" ;;
+    '#!/bin/sh')                          echo "sh" ;;
+    *node*experimental-strip-types*)      echo "typescript" ;;
+    *node*)                               echo "node" ;;
+    *python*)                             echo "python" ;;
+    *y-bin-download*)                     echo "config" ;;
+    *) case "$1" in *.js|*.ts) echo "library" ;; *) echo "unknown" ;; esac ;;
+  esac
+}
+
+is_shell() { [ "$1" = "bash" ] || [ "$1" = "sh" ]; }
+is_node() { [ "$1" = "node" ] || [ "$1" = "typescript" ]; }
+
+# --- Static checks ---
+
+check_header_pipefail() { grep -qE '^set -e(o pipefail)?$' "$1" 2>/dev/null; }
+check_header_debug() { grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$1" 2>/dev/null; }
+
+check_help_handler() {
+  local file="$1" lang="$2"
+  if is_shell "$lang"; then
+    grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help|^\s*help\))' "$file" 2>/dev/null
+  elif is_node "$lang"; then
+    grep -qE "process\.argv\.includes\(['\"](-h|--help)['\"]" "$file" 2>/dev/null ||
+      grep -qE "process\.argv\[2\] === ['\"]help['\"]" "$file" 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+check_no_npx() {
+  local file="$1" lang="$2"
+  if is_node "$lang"; then
+    ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\bnpx\b'
+  else
+    ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
+  fi
+}
+
+check_no_eval() {
+  local file="$1" lang="$2"
+  if is_node "$lang"; then
+    ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\beval\s*\('
+  else
+    ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_eval|"uses eval"|No.*eval)' | grep -qE '\beval\b'
+  fi
+}
+
+# Detect trivial binary wrapper: header + YBIN + y-bin-download + versioned exec, nothing else
+is_bin_wrapper() {
+  local file="$1"
+  # Must be sh, exactly 8 lines, contain y-bin-download and "$@"
+  [ "$(wc -l < "$file")" -le 8 ] || return 1
+  grep -qE '^version=\$\(y-bin-download ' "$file" 2>/dev/null || return 1
+  grep -qE '"\$@"' "$file" 2>/dev/null || return 1
+  # Must not have anything beyond the wrapper pattern (no conditionals, loops, functions)
+  ! grep -qE '^(if |for |while |case |function |\w+\(\))' "$file" 2>/dev/null
+}
+
+HAS_SHELLCHECK=false
+command -v y-shellcheck >/dev/null 2>&1 && HAS_SHELLCHECK=true
+
+run_shellcheck() {
+  [ "$HAS_SHELLCHECK" = "true" ] && y-shellcheck --severity=error "$1" >/dev/null 2>&1
+}
+
+# --- YHELP source parsing ---
+
+parse_yhelp_from_source() {
+  local file="$1" lang="$2"
+  if is_shell "$lang"; then
+    awk "
+      /^YHELP='/ {
+        sub(/^YHELP='/, \"\")
+        if (/'$/) { sub(/'$/, \"\"); print; next }
+        print
+        while (getline > 0) {
+          if (/'$/) { sub(/'$/, \"\"); print; exit }
+          print
+        }
+      }
+    " "$file"
+  elif is_node "$lang"; then
+    awk '
+      /const YHELP = `/ {
+        sub(/.*const YHELP = `/, "")
+        if (/`;/) { sub(/`;.*/, ""); print; next }
+        if (/`/) { sub(/`.*/, ""); print; exit }
+        print
+        while (getline > 0) {
+          if (/`;/) { sub(/`;.*/, ""); print; exit }
+          if (/`/) { sub(/`.*/, ""); print; exit }
+          print
+        }
+      }
+    ' "$file"
+  fi
+}
+
+parse_summary_from_yhelp() { echo "$1" | grep -m1 -vE '^\s*$'; }
+parse_deps_from_yhelp() { echo "$1" | awk '/^Dependencies:/{f=1;next} f&&/^$/{exit} f&&/^[A-Z]/{exit} f{print}' | awk 'NF{print $1}' || true; }
+yhelp_has_deps_section() { echo "$1" | grep -q '^Dependencies:' 2>/dev/null; }
+
+# --- Static dependency detection ---
+
+detect_y_invocations() {
+  local file="$1" lang="$2" self
+  self=$(basename "$file")
+  local content
+  if is_shell "$lang"; then
+    content=$(grep -vE '^\s*#' "$file" 2>/dev/null || true)
+  elif is_node "$lang"; then
+    content=$(grep -vE '^\s*//' "$file" 2>/dev/null || true)
+  else
+    content=$(cat "$file" 2>/dev/null || true)
+  fi
+  echo "$content" | grep -oE '\by-[a-z][a-z0-9_-]*' | grep -v "^${self}$" | sort -u || true
+}
+
+# --- --dependencies-add ---
+
+add_deps_to_file() {
+  local file="$1" lang="$2" detected_deps="$3"
+  [ -z "$detected_deps" ] && return
+
+  local yhelp
+  yhelp=$(parse_yhelp_from_source "$file" "$lang")
+  [ -z "$yhelp" ] && return
+  yhelp_has_deps_section "$yhelp" || return
+
+  local existing_deps
+  existing_deps=$(parse_deps_from_yhelp "$yhelp")
+
+  local new_deps=()
+  while IFS= read -r dep; do
+    [ -z "$dep" ] && continue
+    echo "$existing_deps" | grep -qxF "$dep" || new_deps+=("$dep")
+  done <<< "$detected_deps"
+  [ ${#new_deps[@]} -eq 0 ] && return
+
+  # Find the line number of Dependencies: in the file, insert after it
+  local deps_line
+  deps_line=$(grep -n '^Dependencies:' "$file" | head -1 | cut -d: -f1)
+  [ -z "$deps_line" ] && return
+
+  local tmpfile insert_file
+  tmpfile=$(mktemp)
+  insert_file=$(mktemp)
+  for dep in "${new_deps[@]}"; do echo "  ${dep}" >> "$insert_file"; done
+
+  head -n "$deps_line" "$file" > "$tmpfile"
+  cat "$insert_file" >> "$tmpfile"
+  tail -n +"$((deps_line + 1))" "$file" >> "$tmpfile"
+
+  if ! cmp -s "$file" "$tmpfile"; then
+    cp "$tmpfile" "$file"
+    for dep in "${new_deps[@]}"; do echo "    + $dep"; done
+  fi
+  rm -f "$tmpfile" "$insert_file"
+}
+
+# --- Per-file lint ---
+
+lint_file() {
+  local file="$1" name
+  name=$(basename "$file")
+  lang=$(detect_language "$file")
+
+  if [ "$lang" = "config" ] || [ "$lang" = "library" ]; then
+    SKIPPED=$((SKIPPED + 1))
+    [ "$JSON_OUTPUT" = "true" ] && DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
+      --arg name "$name" --arg lang "$lang" --arg parent "$CURRENT_PARENT" \
+      --arg reporoot "$CURRENT_REPOROOT" \
+      '{($name): {parent: $parent, reporoot: (if $reporoot == "" then null else $reporoot end), language: $lang, skipped: true}}'),"
+    return
+  fi
+
+  local loc errors=()
+  loc=$(wc -l < "$file")
+  local checks_shebang=true checks_header=true checks_debug=true
+  local checks_help_handler=false checks_shellcheck=null
+  local checks_no_npx=true checks_no_eval=true
+  local checks_help_format=null checks_deps_declared=null
+  local summary=null help_line=null deps_json="[]" detected_deps=""
+
+  [ "$lang" = "unknown" ] && { checks_shebang=false; errors+=("unrecognized or missing shebang"); }
+
+  if is_shell "$lang"; then
+    check_header_pipefail "$file" || { checks_header=false; errors+=("missing set -eo pipefail or set -e"); }
+    check_header_debug "$file" || { checks_debug=false; errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x"); }
+  else
+    checks_header=null; checks_debug=null
+  fi
+
+  local bin_wrapper=false
+  is_shell "$lang" && is_bin_wrapper "$file" && bin_wrapper=true
+
+  if [ "$bin_wrapper" = "true" ]; then
+    checks_help_handler=true
+    # Extract wrapped binary name for help_line
+    local wrapped_bin
+    wrapped_bin=$(grep 'y-bin-download' "$file" 2>/dev/null | sed 's/.*y-bin-download [^ ]* //;s/[)].*//')
+    [ -n "$wrapped_bin" ] && help_line="$wrapped_bin binary wrapper"
+  elif check_help_handler "$file" "$lang"; then
+    checks_help_handler=true
+  else
+    errors+=("no help handler found in source")
+  fi
+  check_no_npx "$file" "$lang" || { checks_no_npx=false; errors+=("uses npx"); }
+  check_no_eval "$file" "$lang" || { checks_no_eval=false; errors+=("uses eval"); }
+
+  if is_shell "$lang" && [ "$HAS_SHELLCHECK" = "true" ]; then
+    run_shellcheck "$file" && checks_shellcheck=true || { checks_shellcheck=false; errors+=("shellcheck --severity=error failed"); }
+  fi
+
+  # Parse YHELP from source
+  local yhelp
+  yhelp=$(parse_yhelp_from_source "$file" "$lang")
+  if [ -n "$yhelp" ]; then
+    local first_line
+    first_line=$(parse_summary_from_yhelp "$yhelp")
+    if echo "$first_line" | grep -qE "^${name} - .+"; then
+      checks_help_format=true; summary="$first_line"
+      help_line="${first_line#"${name} - "}"
+    else
+      checks_help_format=false; errors+=("YHELP first line does not match: $name - description")
+    fi
+    if yhelp_has_deps_section "$yhelp"; then
+      checks_deps_declared=true
+      local declared_deps
+      declared_deps=$(parse_deps_from_yhelp "$yhelp")
+      [ -n "$declared_deps" ] && deps_json=$(echo "$declared_deps" | jq -R . | jq -s .)
+    else
+      checks_deps_declared=false; errors+=("YHELP missing Dependencies: section")
+    fi
+  fi
+
+  detected_deps=$(detect_y_invocations "$file" "$lang")
+  [ "$DEPS_ADD" = "true" ] && [ -n "$detected_deps" ] && add_deps_to_file "$file" "$lang" "$detected_deps"
+
+  local detected_deps_json="[]"
+  [ -n "$detected_deps" ] && detected_deps_json=$(echo "$detected_deps" | jq -R . | jq -s .)
+
+  # Pass/fail
+  local has_static_failure=false has_help_failure=false
+  { [ "$checks_shebang" = "false" ] || [ "$checks_header" = "false" ] \
+    || [ "$checks_no_npx" = "false" ] || [ "$checks_no_eval" = "false" ] \
+    || [ "$checks_shellcheck" = "false" ]; } && has_static_failure=true
+  { [ "$checks_help_handler" = "false" ] || [ "$checks_help_format" = "false" ]; } && has_help_failure=true
+
+  if [ "$has_static_failure" = "true" ]; then
+    FAILED_STATIC=$((FAILED_STATIC + 1)); FAIL_LIST="$FAIL_LIST $name"
+  elif [ "$has_help_failure" = "true" ]; then
+    FAILED_HELP=$((FAILED_HELP + 1))
+  else
+    PASSED=$((PASSED + 1))
+  fi
+
+  local type_label="$lang"
+  [ "$bin_wrapper" = "true" ] && type_label="$lang wrapper"
+  echo "  $name  $type_label ${loc}L"
+  for err in "${errors[@]}"; do
+    local level="WARN"
+    case "$err" in
+      "unrecognized or missing shebang"|"missing set -eo pipefail"*|"uses npx"|"uses eval"|"shellcheck "*) level="FAIL" ;;
+    esac
+    echo "    $level $err"
+  done
+
+  if [ "$JSON_OUTPUT" = "true" ]; then
+    local errors_json="[]" summary_json="null" help_line_json="null"
+    [ ${#errors[@]} -gt 0 ] && errors_json=$(printf '%s\n' "${errors[@]}" | jq -R . | jq -s .)
+    [ "$summary" != "null" ] && [ -n "$summary" ] && summary_json=$(echo "$summary" | jq -R .)
+    [ "$help_line" != "null" ] && [ -n "$help_line" ] && help_line_json=$(echo "$help_line" | jq -R .)
+    local checks_json
+    checks_json=$(jq -n \
+      --argjson shebang "$checks_shebang" --argjson header "$checks_header" \
+      --argjson debug "$checks_debug" --argjson help_handler "$checks_help_handler" \
+      --argjson shellcheck "$checks_shellcheck" --argjson no_npx "$checks_no_npx" \
+      --argjson no_eval "$checks_no_eval" --argjson help_format "$checks_help_format" \
+      --argjson deps_declared "$checks_deps_declared" \
+      '{shebang:$shebang,header:$header,debug:$debug,help_handler:$help_handler,
+        shellcheck:$shellcheck,no_npx:$no_npx,no_eval:$no_eval,
+        help_format:$help_format,deps_declared:$deps_declared}')
+    DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
+      --arg name "$name" --arg lang "$lang" --arg parent "$CURRENT_PARENT" \
+      --arg reporoot "$CURRENT_REPOROOT" \
+      --argjson summary "$summary_json" --argjson help_line "$help_line_json" \
+      --argjson deps "$deps_json" --argjson detected "$detected_deps_json" \
+      --argjson checks "$checks_json" --argjson errors "$errors_json" \
+      --argjson lint_ok "$([ "$has_static_failure" = "false" ] && [ "$has_help_failure" = "false" ] && echo true || echo false)" \
+      '{($name):{parent:$parent,reporoot:(if $reporoot == "" then null else $reporoot end),
+        language:$lang,summary:$summary,help_line:$help_line,lint_ok:$lint_ok,
+        dependencies:$deps,detected_dependencies:$detected,checks:$checks,errors:$errors}}'),"
+  fi
+}
+
+# --- Main ---
+
+TOTAL=0 PASSED=0 FAILED_STATIC=0 FAILED_HELP=0 SKIPPED=0
+FAIL_LIST=""
+
+# Single-file mode: lint one script, exit with its result
+if [ -n "$SINGLE_FILE" ]; then
+  TOTAL=1
+  lint_file "$SINGLE_FILE"
+  if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
+    echo "See $AUTHORING_GUIDE_DISPLAY"
+    [ "$FAILED_STATIC" -gt 0 ] && exit 2
+    exit 1
+  fi
+  exit 0
+fi
+
+SEEN_SCRIPTS=""
+ALL_JSON_SCRIPTS=""
+
+for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
+  dir_scripts=()
+  for file in "$TARGET_DIR"/y-*; do
+    [ -f "$file" ] && [ -x "$file" ] || continue
+    name=$(basename "$file")
+    case "$name" in *.yaml|*.yml|*.md|*.spec.js|*.spec.ts|*.test.js|*.test.ts|*-bin|*-dist) continue ;; esac
+    case "$SEEN_SCRIPTS" in *"|$name|"*) continue ;; esac
+    SEEN_SCRIPTS="${SEEN_SCRIPTS}|${name}|"
+    dir_scripts+=("$file")
+  done
+  [ ${#dir_scripts[@]} -eq 0 ] && continue
+
+  echo "[y-script-lint] $TARGET_DIR (${#dir_scripts[@]} scripts)"
+  DIR_JSON_SCRIPTS=""
+  CURRENT_PARENT="$TARGET_DIR"
+  CURRENT_REPOROOT=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")
+  for file in "${dir_scripts[@]}"; do
+    TOTAL=$((TOTAL + 1))
+    lint_file "$file"
+  done
+
+  ALL_JSON_SCRIPTS="${ALL_JSON_SCRIPTS}${DIR_JSON_SCRIPTS}"
+done
+
+NOTES=""
+[ "$HAS_SHELLCHECK" = "false" ] && NOTES="${NOTES}, no shellcheck"
+echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
+
+# Write index
+CACHE_DIR="${HOME}/.cache/ystack"
+mkdir -p "$CACHE_DIR"
+INDEX_FILE="${CACHE_DIR}/y-script-lint.json"
+
+build_index() {
+  echo "[${ALL_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
+    jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "3" \
+      --argjson scripts "$(cat)" \
+      '{generated:$generated,tool_version:$tool_version,scripts:$scripts}'
+}
+
+if [ -n "$ALL_JSON_SCRIPTS" ] && command -v jq >/dev/null 2>&1; then
+  build_index > "$INDEX_FILE"
+  echo "[y-script-lint] Wrote $INDEX_FILE"
+fi
+
+if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
+  echo "See $AUTHORING_GUIDE_DISPLAY"
+fi
+
+if [ "$FAIL_MODE" = "all" ] && [ "$FAILED_STATIC" -gt 0 ]; then
+  echo "FAILED:$FAIL_LIST"
+  exit 2
+fi
+
+if [ "$FAIL_MODE" = "degrade" ] && [ -f "$INDEX_FILE" ]; then
+  BRANCH="${Y_SCRIPT_LINT_BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")}"
+  MAIN_BASELINE="${CACHE_DIR}/y-script-lint.main.json"
+  BRANCH_BASELINE="${CACHE_DIR}/y-script-lint.branch.json"
+
+  # Select best baseline: branch cache > main cache > none
+  BASELINE=""
+  [ -f "$BRANCH_BASELINE" ] && BASELINE="$BRANCH_BASELINE"
+  [ -z "$BASELINE" ] && [ -f "$MAIN_BASELINE" ] && BASELINE="$MAIN_BASELINE"
+
+  if [ -z "$BASELINE" ]; then
+    echo "[y-script-lint] No baseline found, skipping degradation check"
+  else
+    echo "[y-script-lint] Comparing against $(basename "$BASELINE")"
+    "$SCRIPT_DIR/y-script-lint-compare" "$BASELINE" "$INDEX_FILE"
+    compare_exit=$?
+    if [ $compare_exit -ne 0 ]; then
+      exit $compare_exit
+    fi
+  fi
+
+  # Save baseline for future runs
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    cp "$INDEX_FILE" "$MAIN_BASELINE"
+    echo "[y-script-lint] Saved main baseline"
+  else
+    cp "$INDEX_FILE" "$BRANCH_BASELINE"
+    echo "[y-script-lint] Saved branch baseline"
+  fi
+fi

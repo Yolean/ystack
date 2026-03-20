@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YHELP='y-help - List y-* scripts with their help summaries
+
+Usage: y-help [help] [FILTER]
+
+Arguments:
+  FILTER    Only show scripts matching this substring
+
+Reads ~/.cache/ystack/y-script-lint.json index.
+Run y-script-lint first to generate or update the index.
+
+Dependencies:
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
+
+FILTER="${1:-}"
+
+command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required" >&2; exit 1; }
+
+INDEX="${HOME}/.cache/ystack/y-script-lint.json"
+
+if [ ! -f "$INDEX" ]; then
+  echo "No index found at $INDEX. Run y-script-lint first." >&2
+  exit 1
+fi
+
+jq -r --arg filter "$FILTER" '
+  .scripts | to_entries[]
+  | select(.key | contains($filter))
+  | select(.value.skipped != true)
+  | .key as $name
+  | .value.help_line as $help
+  | .value.lint_ok as $ok
+  | [$name, ($help // "no help section"), (if $ok then "" else "NOLINT" end)]
+  | @tsv
+' "$INDEX" | while IFS=$'\t' read -r name help nolint; do
+  if [ -n "$nolint" ]; then
+    printf "  %-40s %s  %s\n" "$name" "$help" "$nolint"
+  else
+    printf "  %-40s %s\n" "$name" "$help"
+  fi
+done

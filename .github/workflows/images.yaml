@@ -6,7 +6,10 @@ on:
     - main
 
 jobs:
+  lint:
+    uses: ./.github/workflows/lint.yaml
   docker:
+    needs: lint
     runs-on: ubuntu-latest
     permissions:
       packages: write

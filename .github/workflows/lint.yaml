@@ -1,0 +1,28 @@
+name: lint
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  workflow_call:
+
+jobs:
+  script-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache/restore@v4
+      with:
+        key: script-lint-${{ github.ref_name }}-
+        restore-keys: |
+          script-lint-main-
+        path: ~/.cache/ystack
+    - name: Script lint
+      run: bin/y-script-lint --fail=degrade bin/
+      env:
+        Y_SCRIPT_LINT_BRANCH: ${{ github.ref_name }}
+    - uses: actions/cache/save@v4
+      with:
+        key: script-lint-${{ github.ref_name }}-${{ github.run_id }}
+        path: ~/.cache/ystack
