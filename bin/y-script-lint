@@ -285,7 +285,8 @@ lint_file() {
     SKIPPED=$((SKIPPED + 1))
     [ "$JSON_OUTPUT" = "true" ] && DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
       --arg name "$name" --arg lang "$lang" --arg parent "$CURRENT_PARENT" \
-      '{($name): {parent: $parent, language: $lang, skipped: true}}'),"
+      --arg reporoot "$CURRENT_REPOROOT" \
+      '{($name): {parent: $parent, reporoot: (if $reporoot == "" then null else $reporoot end), language: $lang, skipped: true}}'),"
     return
   fi
 
@@ -398,11 +399,13 @@ lint_file() {
         help_format:$help_format,deps_declared:$deps_declared}')
     DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
       --arg name "$name" --arg lang "$lang" --arg parent "$CURRENT_PARENT" \
+      --arg reporoot "$CURRENT_REPOROOT" \
       --argjson summary "$summary_json" --argjson help_line "$help_line_json" \
       --argjson deps "$deps_json" --argjson detected "$detected_deps_json" \
       --argjson checks "$checks_json" --argjson errors "$errors_json" \
       --argjson lint_ok "$([ "$has_static_failure" = "false" ] && [ "$has_help_failure" = "false" ] && echo true || echo false)" \
-      '{($name):{parent:$parent,language:$lang,summary:$summary,help_line:$help_line,lint_ok:$lint_ok,
+      '{($name):{parent:$parent,reporoot:(if $reporoot == "" then null else $reporoot end),
+        language:$lang,summary:$summary,help_line:$help_line,lint_ok:$lint_ok,
         dependencies:$deps,detected_dependencies:$detected,checks:$checks,errors:$errors}}'),"
   fi
 }
@@ -441,7 +444,8 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
 
   echo "[y-script-lint] $TARGET_DIR (${#dir_scripts[@]} scripts)"
   DIR_JSON_SCRIPTS=""
-  CURRENT_PARENT="$(dirname "$TARGET_DIR")"
+  CURRENT_PARENT="$TARGET_DIR"
+  CURRENT_REPOROOT=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")
   for file in "${dir_scripts[@]}"; do
     TOTAL=$((TOTAL + 1))
     lint_file "$file"
