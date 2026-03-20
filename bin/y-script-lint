@@ -16,7 +16,9 @@ Arguments:
   DIR                  Directory to scan (default: all PATH dirs containing y-* scripts)
 
 Options:
-  --check              Exit non-zero if any script fails static checks (for CI)
+  --check              Alias for --fail=all
+  --fail=all           Exit non-zero if any script fails
+  --fail=degrade       Exit non-zero only if a script degraded or a new script fails
   --dependencies-add   Detect y-* invocations and add to Dependencies section in YHELP
 
 All checks are static (source parsing only, no script execution).
@@ -29,9 +31,9 @@ Dependencies:
   y-shellcheck
 
 Exit codes:
-  0                    All scripts passed (or --check not set)
+  0                    All scripts passed (or no degradation in degrade mode)
   1                    Usage error
-  2                    One or more scripts failed checks (--check mode)
+  2                    Lint failures detected
 '
 
 case "${1:-}" in
@@ -39,7 +41,7 @@ case "${1:-}" in
   --help) echo "$YHELP"; exit 0 ;;
 esac
 
-CHECK_MODE=false
+FAIL_MODE=""
 DEPS_ADD=false
 JSON_OUTPUT=true
 SINGLE_FILE=""
@@ -47,7 +49,10 @@ TARGET_DIRS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --check) CHECK_MODE=true; shift ;;
+    --check) FAIL_MODE=all; shift ;;
+    --fail=all) FAIL_MODE=all; shift ;;
+    --fail=degrade) FAIL_MODE=degrade; shift ;;
+    --fail=*) echo "ERROR: unknown fail mode: ${1#*=} (use all or degrade)" >&2; exit 1 ;;
     --dependencies-add) DEPS_ADD=true; shift ;;
     --) shift; break ;;
     -*) echo "Unknown flag: $1" >&2; exit 1 ;;
@@ -458,21 +463,45 @@ NOTES=""
 [ "$HAS_SHELLCHECK" = "false" ] && NOTES="${NOTES}, no shellcheck"
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
 
-# Write single index file
+# Write index
 INDEX_FILE="${HOME}/.cache/ystack-script-lint.json"
 if [ -n "$ALL_JSON_SCRIPTS" ] && command -v jq >/dev/null 2>&1; then
-  echo "[${ALL_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
-    jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "3" \
-      --argjson scripts "$(cat)" \
-      '{generated:$generated,tool_version:$tool_version,scripts:$scripts}' > "$INDEX_FILE"
-  echo "[y-script-lint] Wrote $INDEX_FILE"
+  build_index() {
+    echo "[${ALL_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
+      jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "3" \
+        --argjson scripts "$(cat)" \
+        '{generated:$generated,tool_version:$tool_version,scripts:$scripts}'
+  }
+
+  if [ "$FAIL_MODE" = "degrade" ] && [ -f "$INDEX_FILE" ]; then
+    NEW_INDEX="${INDEX_FILE%.json}.new.json"
+    build_index > "$NEW_INDEX"
+    echo "[y-script-lint] Wrote $NEW_INDEX"
+
+    if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
+      echo "See $AUTHORING_GUIDE_DISPLAY"
+    fi
+
+    "$SCRIPT_DIR/y-script-lint-compare" "$INDEX_FILE" "$NEW_INDEX"
+    compare_exit=$?
+    # On success, promote new index
+    if [ $compare_exit -eq 0 ]; then
+      mv "$NEW_INDEX" "$INDEX_FILE"
+    else
+      rm -f "$NEW_INDEX"
+    fi
+    exit $compare_exit
+  else
+    build_index > "$INDEX_FILE"
+    echo "[y-script-lint] Wrote $INDEX_FILE"
+  fi
 fi
 
 if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
   echo "See $AUTHORING_GUIDE_DISPLAY"
 fi
 
-if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
+if [ "$FAIL_MODE" = "all" ] && [ "$FAILED_STATIC" -gt 0 ]; then
   echo "FAILED:$FAIL_LIST"
   exit 2
 fi

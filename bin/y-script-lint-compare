@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YHELP='y-script-lint-compare - Compare two lint index files for degradation
+
+Usage: y-script-lint-compare [help] OLD_INDEX NEW_INDEX
+
+A check is degraded if it passed (true) in OLD and fails (false) in NEW.
+A new script (present in NEW but not OLD) must pass all its checks.
+Checks that were null (not applicable) or already false are ignored.
+
+Exit codes:
+  0    No degradation
+  2    Degradation or new script failure detected
+
+Dependencies:
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
+
+[ -z "$1" ] || [ -z "$2" ] && { echo "Usage: y-script-lint-compare OLD_INDEX NEW_INDEX" >&2; exit 1; }
+[ -f "$1" ] || { echo "ERROR: old index not found: $1" >&2; exit 1; }
+[ -f "$2" ] || { echo "ERROR: new index not found: $2" >&2; exit 1; }
+
+OLD="$1"
+NEW="$2"
+
+# jq does all the work: compare checks between old and new
+RESULT=$(jq -n \
+  --slurpfile old "$OLD" \
+  --slurpfile new "$NEW" '
+
+  def check_names: ["shebang","header","debug","help_handler","shellcheck","no_npx","no_eval","help_format","deps_declared"];
+
+  ($old[0].scripts // {}) as $old_scripts |
+  ($new[0].scripts // {}) as $new_scripts |
+
+  # Find degraded checks in existing scripts
+  [
+    $new_scripts | to_entries[] |
+    .key as $name | .value as $new_val |
+    select($new_val.skipped != true) |
+    if ($old_scripts[$name] // null) != null and ($old_scripts[$name].skipped != true) then
+      ($old_scripts[$name].checks // {}) as $old_checks |
+      ($new_val.checks // {}) as $new_checks |
+      check_names[] |
+      select($old_checks[.] == true and $new_checks[.] == false) |
+      {script: $name, check: ., type: "degraded"}
+    else
+      # New script: any false check is a failure
+      ($new_val.checks // {}) as $new_checks |
+      check_names[] |
+      select($new_checks[.] == false) |
+      {script: $name, check: ., type: "new_failure"}
+    end
+  ]
+')
+
+COUNT=$(echo "$RESULT" | jq 'length')
+
+if [ "$COUNT" -eq 0 ]; then
+  echo "[y-script-lint-compare] No degradation detected"
+  exit 0
+fi
+
+echo "[y-script-lint-compare] $COUNT issue(s) found:"
+echo "$RESULT" | jq -r '.[] | "  \(.type): \(.script) check \(.check)"'
+exit 2
