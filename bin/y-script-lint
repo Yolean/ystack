@@ -189,8 +189,16 @@ SHELLCHECK_TIMEOUT_S="${Y_SCRIPT_LINT_TIMEOUT_S:-5}"
 HAS_SHELLCHECK=false
 command -v y-shellcheck >/dev/null 2>&1 && HAS_SHELLCHECK=true
 
+HAS_TIMEOUT=false
+command -v timeout >/dev/null 2>&1 && HAS_TIMEOUT=true
+
 run_shellcheck() {
-  [ "$HAS_SHELLCHECK" = "true" ] && timeout --kill-after=2 "$SHELLCHECK_TIMEOUT_S" y-shellcheck --severity=error "$1" >/dev/null 2>&1
+  [ "$HAS_SHELLCHECK" = "true" ] || return 0
+  if [ "$HAS_TIMEOUT" = "true" ]; then
+    timeout --kill-after=2 "$SHELLCHECK_TIMEOUT_S" y-shellcheck --severity=error "$1" >/dev/null 2>&1
+  else
+    y-shellcheck --severity=error "$1" >/dev/null 2>&1
+  fi
 }
 
 # --- YHELP source parsing ---
