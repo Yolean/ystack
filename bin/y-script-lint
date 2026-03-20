@@ -441,7 +441,7 @@ if [ -n "$SINGLE_FILE" ]; then
   exit 0
 fi
 
-declare -A SEEN_SCRIPTS
+SEEN_SCRIPTS=""
 ALL_JSON_SCRIPTS=""
 
 for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
@@ -450,8 +450,8 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
     [ -f "$file" ] && [ -x "$file" ] || continue
     name=$(basename "$file")
     case "$name" in *.yaml|*.yml|*.md|*.spec.js|*.spec.ts|*.test.js|*.test.ts|*-bin|*-dist) continue ;; esac
-    [ -n "${SEEN_SCRIPTS[$name]:-}" ] && continue
-    SEEN_SCRIPTS[$name]=1
+    case "$SEEN_SCRIPTS" in *"|$name|"*) continue ;; esac
+    SEEN_SCRIPTS="${SEEN_SCRIPTS}|${name}|"
     dir_scripts+=("$file")
   done
   [ ${#dir_scripts[@]} -eq 0 ] && continue
