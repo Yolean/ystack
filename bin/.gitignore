@@ -1,6 +1,5 @@
 *-bin
 *-dist
-.y-script-lint.json
 
 # our executables are symlinked to real names
 buildctl

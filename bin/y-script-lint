@@ -284,7 +284,8 @@ lint_file() {
   if [ "$lang" = "config" ] || [ "$lang" = "library" ]; then
     SKIPPED=$((SKIPPED + 1))
     [ "$JSON_OUTPUT" = "true" ] && DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
-      --arg name "$name" --arg lang "$lang" '{($name): {language: $lang, skipped: true}}'),"
+      --arg name "$name" --arg lang "$lang" --arg parent "$CURRENT_PARENT" \
+      '{($name): {parent: $parent, language: $lang, skipped: true}}'),"
     return
   fi
 
@@ -396,12 +397,12 @@ lint_file() {
         shellcheck:$shellcheck,no_npx:$no_npx,no_eval:$no_eval,
         help_format:$help_format,deps_declared:$deps_declared}')
     DIR_JSON_SCRIPTS="${DIR_JSON_SCRIPTS}$(jq -n \
-      --arg name "$name" --arg lang "$lang" --argjson summary "$summary_json" \
-      --argjson help_line "$help_line_json" \
+      --arg name "$name" --arg lang "$lang" --arg parent "$CURRENT_PARENT" \
+      --argjson summary "$summary_json" --argjson help_line "$help_line_json" \
       --argjson deps "$deps_json" --argjson detected "$detected_deps_json" \
       --argjson checks "$checks_json" --argjson errors "$errors_json" \
       --argjson lint_ok "$([ "$has_static_failure" = "false" ] && [ "$has_help_failure" = "false" ] && echo true || echo false)" \
-      '{($name):{language:$lang,summary:$summary,help_line:$help_line,lint_ok:$lint_ok,
+      '{($name):{parent:$parent,language:$lang,summary:$summary,help_line:$help_line,lint_ok:$lint_ok,
         dependencies:$deps,detected_dependencies:$detected,checks:$checks,errors:$errors}}'),"
   fi
 }
@@ -424,7 +425,7 @@ if [ -n "$SINGLE_FILE" ]; then
 fi
 
 declare -A SEEN_SCRIPTS
-JSON_FILES=()
+ALL_JSON_SCRIPTS=""
 
 for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
   dir_scripts=()
@@ -440,25 +441,28 @@ for TARGET_DIR in "${RESOLVED_DIRS[@]}"; do
 
   echo "[y-script-lint] $TARGET_DIR (${#dir_scripts[@]} scripts)"
   DIR_JSON_SCRIPTS=""
+  CURRENT_PARENT="$(dirname "$TARGET_DIR")"
   for file in "${dir_scripts[@]}"; do
     TOTAL=$((TOTAL + 1))
     lint_file "$file"
   done
 
-  if [ -n "$DIR_JSON_SCRIPTS" ] && command -v jq >/dev/null 2>&1; then
-    JSON_FILE="$TARGET_DIR/.y-script-lint.json"
-    echo "[${DIR_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
-      jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "2" \
-        --arg directory "$TARGET_DIR" --argjson scripts "$(cat)" \
-        '{generated:$generated,tool_version:$tool_version,directory:$directory,scripts:$scripts}' > "$JSON_FILE"
-    JSON_FILES+=("$JSON_FILE")
-  fi
+  ALL_JSON_SCRIPTS="${ALL_JSON_SCRIPTS}${DIR_JSON_SCRIPTS}"
 done
 
 NOTES=""
 [ "$HAS_SHELLCHECK" = "false" ] && NOTES="${NOTES}, no shellcheck"
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
-for jf in "${JSON_FILES[@]}"; do echo "[y-script-lint] Wrote $jf"; done
+
+# Write single index file
+INDEX_FILE="${HOME}/.cache/ystack-script-lint.json"
+if [ -n "$ALL_JSON_SCRIPTS" ] && command -v jq >/dev/null 2>&1; then
+  echo "[${ALL_JSON_SCRIPTS%,}]" | jq 'reduce .[] as $item ({}; . + $item)' | \
+    jq -n --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool_version "3" \
+      --argjson scripts "$(cat)" \
+      '{generated:$generated,tool_version:$tool_version,scripts:$scripts}' > "$INDEX_FILE"
+  echo "[y-script-lint] Wrote $INDEX_FILE"
+fi
 
 if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
   echo "See $AUTHORING_GUIDE_DISPLAY"
