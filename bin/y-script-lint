@@ -4,6 +4,10 @@ set -eo pipefail
 
 trap 'trap - INT; kill -INT -$$' INT
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AUTHORING_GUIDE="$(cd "$SCRIPT_DIR/.." && pwd)/Y_SCRIPT_AUTHORING.md"
+AUTHORING_GUIDE_DISPLAY="~/${AUTHORING_GUIDE#"$HOME/"}"
+
 YHELP='y-script-lint - Static analysis and convention checks for y-* scripts
 
 Usage: y-script-lint [help] [options] [DIR...]
@@ -411,9 +415,9 @@ FAIL_LIST=""
 if [ -n "$SINGLE_FILE" ]; then
   TOTAL=1
   lint_file "$SINGLE_FILE"
-  if [ "$FAILED_STATIC" -gt 0 ]; then
-    exit 2
-  elif [ "$FAILED_HELP" -gt 0 ]; then
+  if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
+    echo "See $AUTHORING_GUIDE_DISPLAY"
+    [ "$FAILED_STATIC" -gt 0 ] && exit 2
     exit 1
   fi
   exit 0
@@ -455,6 +459,10 @@ NOTES=""
 [ "$HAS_SHELLCHECK" = "false" ] && NOTES="${NOTES}, no shellcheck"
 echo "Total: $TOTAL  Passed: $PASSED  Failed: $FAILED_STATIC  Warnings: $FAILED_HELP  Skipped: $SKIPPED${NOTES}"
 for jf in "${JSON_FILES[@]}"; do echo "[y-script-lint] Wrote $jf"; done
+
+if [ "$FAILED_STATIC" -gt 0 ] || [ "$FAILED_HELP" -gt 0 ]; then
+  echo "See $AUTHORING_GUIDE_DISPLAY"
+fi
 
 if [ "$CHECK_MODE" = "true" ] && [ "$FAILED_STATIC" -gt 0 ]; then
   echo "FAILED:$FAIL_LIST"
