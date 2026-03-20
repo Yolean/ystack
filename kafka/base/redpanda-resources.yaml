@@ -8,8 +8,9 @@ spec:
       containers:
       - name: redpanda
         resources:
-          # Note that limits are set through unhelm (kafka-v3/redpanda.kafka-v3.values.yaml)
-          # and enforced at runtime through redpanda config
+          # Memory limit set through unhelm; no CPU limit (slows everything down)
+          limits:
+            memory: 600Mi
           requests:
             cpu: 10m
-            memory: 330Mi
+            memory: 200Mi

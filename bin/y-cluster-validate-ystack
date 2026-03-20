@@ -142,6 +142,36 @@ fi
 # Run 2: confirm state survived restarts
 run_pre_build_checks "run-2"
 
+echo "[y-cluster-validate-ystack] Kafka topic create + produce + consume"
+if k get ns kafka >/dev/null 2>&1; then
+  TOPIC_NAME="y-cluster-validate-ystack"
+
+  # Create topic via y-kustomize setup job
+  k -n kafka delete job setup-topic 2>/dev/null || true
+  k apply -k "$YSTACK_HOME/kafka/validate-topic/" 2>&1 | head -5
+  k -n kafka wait --for=condition=complete job/setup-topic --timeout=60s 2>&1 \
+    && report "kafka topic create" "ok" \
+    || report "kafka topic create" "job did not complete"
+
+  # Verify topic exists
+  y-cluster-kafka --context="$CONTEXT" topic list 2>&1 | grep -q "$TOPIC_NAME" \
+    && report "kafka topic list" "ok" \
+    || report "kafka topic list" "topic $TOPIC_NAME not found"
+
+  # Produce a test message
+  echo '{"validate":"ystack"}' | y-cluster-kafka --context="$CONTEXT" topic produce "$TOPIC_NAME" 2>&1 \
+    && report "kafka topic produce" "ok" \
+    || report "kafka topic produce" "failed"
+
+  # Consume and verify
+  CONSUMED=$(y-cluster-kafka --context="$CONTEXT" topic consume "$TOPIC_NAME" -n 1 -f '%v' 2>&1)
+  echo "$CONSUMED" | grep -q '"validate"' \
+    && report "kafka topic consume" "ok" \
+    || report "kafka topic consume" "unexpected output: $CONSUMED"
+else
+  echo "[y-cluster-validate-ystack]   SKIP  kafka - namespace not installed"
+fi
+
 echo "[y-cluster-validate-ystack] Build + deploy (y-build)"
 EXAMPLE_DIR="$YSTACK_HOME/examples/y-build"
 REGISTRY_HOST="builds-registry.ystack.svc.cluster.local"

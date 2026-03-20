@@ -14,10 +14,10 @@ resources:
     overprovisioned: true
   memory:
     container:
-      max: 1171Mi
+      max: 600Mi
     redpanda:
-      memory: 1024Mi
-      reserveMemory: 100Mi
+      memory: 512Mi
+      reserveMemory: 0Mi
 config:
   cluster:
     # Note: apply might not affect actual cluster config, check with
@@ -25,7 +25,8 @@ config:
     auto_create_topics_enabled: false
     default_topic_replications: 1
     default_topic_partitions: 1
-    storage_min_free_bytes: 104857600
+    storage_min_free_bytes: 10485760
+    group_topic_partitions: 1
 tuning:
   tune_aio_events: false
 tls:

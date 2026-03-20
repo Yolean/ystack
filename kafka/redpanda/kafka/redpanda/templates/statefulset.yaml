@@ -179,7 +179,7 @@ spec:
               mountPath: /var/lib/redpanda/data
           resources:
             limits:
-              memory: 1171Mi
+              memory: 600Mi
       volumes: 
         
         - name: lifecycle-scripts
