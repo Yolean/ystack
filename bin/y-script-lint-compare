@@ -7,8 +7,10 @@ YHELP='y-script-lint-compare - Compare two lint index files for degradation
 Usage: y-script-lint-compare [help] OLD_INDEX NEW_INDEX
 
 A check is degraded if it passed (true) in OLD and fails (false) in NEW.
-A new script (present in NEW but not OLD) must pass all its checks.
-Checks that were null (not applicable) or already false are ignored.
+A new script (present in NEW but not OLD) must pass static checks
+(shebang, header, shellcheck, no_npx, no_eval). Warn-level checks
+(help_handler, help_format, etc.) are not enforced for new scripts.
+Scripts deleted between OLD and NEW are ignored.
 
 Exit codes:
   0    No degradation
@@ -34,26 +36,29 @@ RESULT=$(jq -n \
   --slurpfile old "$OLD" \
   --slurpfile new "$NEW" '
 
-  def check_names: ["shebang","header","debug","help_handler","shellcheck","no_npx","no_eval","help_format","deps_declared"];
+  # Checks where false is a static failure (FAIL level)
+  def fail_checks: ["shebang","header","shellcheck","no_npx","no_eval"];
+  # All checks including warn-level
+  def all_checks: ["shebang","header","debug","help_handler","shellcheck","no_npx","no_eval","help_format","deps_declared"];
 
   ($old[0].scripts // {}) as $old_scripts |
   ($new[0].scripts // {}) as $new_scripts |
 
-  # Find degraded checks in existing scripts
   [
     $new_scripts | to_entries[] |
     .key as $name | .value as $new_val |
     select($new_val.skipped != true) |
     if ($old_scripts[$name] // null) != null and ($old_scripts[$name].skipped != true) then
+      # Existing script: any check that passed before must still pass
       ($old_scripts[$name].checks // {}) as $old_checks |
       ($new_val.checks // {}) as $new_checks |
-      check_names[] |
+      all_checks[] |
       select($old_checks[.] == true and $new_checks[.] == false) |
       {script: $name, check: ., type: "degraded"}
     else
-      # New script: any false check is a failure
+      # New script: only static failures count (not warn-level checks)
       ($new_val.checks // {}) as $new_checks |
-      check_names[] |
+      fail_checks[] |
       select($new_checks[.] == false) |
       {script: $name, check: ., type: "new_failure"}
     end
