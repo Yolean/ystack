@@ -140,7 +140,7 @@ is_node() { [ "$1" = "node" ] || [ "$1" = "typescript" ]; }
 
 # --- Static checks ---
 
-check_header_pipefail() { grep -qE '^set -e(o pipefail)?$' "$1" 2>/dev/null; }
+check_header_pipefail() { grep -qE '^set -e(u?o pipefail)?$' "$1" 2>/dev/null; }
 check_header_debug() { grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$1" 2>/dev/null; }
 
 check_help_handler() {
@@ -313,7 +313,7 @@ lint_file() {
   [ "$lang" = "unknown" ] && { checks_shebang=false; errors+=("unrecognized or missing shebang"); }
 
   if is_shell "$lang"; then
-    check_header_pipefail "$file" || { checks_header=false; errors+=("missing set -eo pipefail or set -e"); }
+    check_header_pipefail "$file" || { checks_header=false; errors+=("missing set -eo pipefail (or -euo pipefail) or set -e"); }
     check_header_debug "$file" || { checks_debug=false; errors+=("missing DEBUG pattern: [ -z \"\\\$DEBUG\" ] || set -x"); }
   else
     checks_header=null; checks_debug=null
