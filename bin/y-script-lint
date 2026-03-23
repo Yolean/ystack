@@ -173,6 +173,28 @@ check_no_eval() {
   fi
 }
 
+# y-script-lint or-true: Flag || true unless suppressed via ylint disable comment.
+# Suppress with: # y-script-lint:disable=or-true # reason
+# on the line before, or as an inline comment on the same line.
+check_no_or_true() {
+  local file="$1" lang="$2"
+  is_shell "$lang" || return 0
+  local prev=""
+  while IFS= read -r line; do
+    # Skip comment-only lines
+    [[ "$line" =~ ^[[:space:]]*# ]] && { prev="$line"; continue; }
+    if echo "$line" | grep -qE '\|\|\s*true'; then
+      # Allow if same line has inline disable comment
+      echo "$line" | grep -qE '#.*y-script-lint:disable=or-true' && { prev="$line"; continue; }
+      # Allow if previous line has disable directive
+      echo "$prev" | grep -qE '#.*y-script-lint:disable=or-true' && { prev="$line"; continue; }
+      return 1
+    fi
+    prev="$line"
+  done < "$file"
+  return 0
+}
+
 # Detect trivial binary wrapper: header + YBIN + y-bin-download + versioned exec, nothing else
 is_bin_wrapper() {
   local file="$1"
@@ -335,6 +357,7 @@ lint_file() {
   fi
   check_no_npx "$file" "$lang" || { checks_no_npx=false; errors+=("uses npx"); }
   check_no_eval "$file" "$lang" || { checks_no_eval=false; errors+=("uses eval"); }
+  check_no_or_true "$file" "$lang" || { errors+=("y-script-lint or-true: || true without justification (add: # y-script-lint:disable=or-true # reason)"); }
 
   if is_shell "$lang" && [ "$HAS_SHELLCHECK" = "true" ]; then
     run_shellcheck "$file" && checks_shellcheck=true || { checks_shellcheck=false; errors+=("shellcheck --severity=error failed"); }
@@ -389,7 +412,7 @@ lint_file() {
   for err in "${errors[@]}"; do
     local level="WARN"
     case "$err" in
-      "unrecognized or missing shebang"|"missing set -eo pipefail"*|"uses npx"|"uses eval"|"shellcheck "*) level="FAIL" ;;
+      "unrecognized or missing shebang"|"missing set -eo pipefail"*|"uses npx"|"uses eval"|"y-script-lint or-true"*|"shellcheck "*) level="FAIL" ;;
     esac
     echo "    $level $err"
   done
