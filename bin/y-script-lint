@@ -146,7 +146,7 @@ check_header_debug() { grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$1" 2>/dev/nu
 check_help_handler() {
   local file="$1" lang="$2"
   if is_shell "$lang"; then
-    grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help|^\s*help\))' "$file" 2>/dev/null
+    grep -qE '(\-h\|--help|"\$1" = "help"|"\$1" = "--help"|\$1 =~ help|^\s*help\)|[|]help\))' "$file" 2>/dev/null
   elif is_node "$lang"; then
     grep -qE "process\.argv\.includes\(['\"](-h|--help)['\"]" "$file" 2>/dev/null ||
       grep -qE "process\.argv\[2\] === ['\"]help['\"]" "$file" 2>/dev/null
