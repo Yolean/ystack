@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+
+- ./kafka/redpanda/templates/configmap.yaml
+- ./kafka/redpanda/templates/poddisruptionbudget.yaml
+- ./kafka/redpanda/templates/rbac.yaml
+- ./kafka/redpanda/templates/secrets.yaml
+- ./kafka/redpanda/templates/service.internal.yaml
+- ./kafka/redpanda/templates/statefulset.yaml
+# - ./kafka/redpanda/templates/tests/test-api-status.yaml
+# - ./kafka/redpanda/templates/tests/test-kafka-nodelete.yaml
+# - ./kafka/redpanda/templates/tests/test-kafka-produce-consume.yaml
+# - ./kafka/redpanda/templates/tests/test-lifecycle-scripts.yaml
+# - ./kafka/redpanda/templates/tests/test-pandaproxy-status.yaml
+# - ./kafka/redpanda/templates/tests/test-rack-awareness.yaml
+# - ./kafka/redpanda/templates/tests/test-schemaregistry-status.yaml

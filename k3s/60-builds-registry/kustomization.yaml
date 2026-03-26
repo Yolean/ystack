@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# namespace override: blobs-versitygw/defaultsecret targets blobs,
+# but builds-registry needs the secret in ystack
+namespace: ystack
+
+resources:
+- ../../registry/builds-service
+- ../../registry/generic
+- ../../registry/gateway
+- ../../blobs-versitygw/defaultsecret
+- ../../registry/builds-bucket
+- ../../registry/builds-topic
+
+patches:
+- path: builds-registry-magic-numbers.yaml
+- path: builds-registry-replicas-1.yaml
+- path: deployment-s3.yaml

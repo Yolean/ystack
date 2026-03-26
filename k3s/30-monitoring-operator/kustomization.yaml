@@ -1,3 +1,0 @@
-resources:
-- ../../monitoring/namespace
-- ../../monitoring/prometheus-operator

@@ -10,6 +10,8 @@ CTX=local
 VM_NAME="ystack-master"
 VM_RESOURCES="-m 8G -d 40G -c 4"
 SKIP_CONVERGE=false
+SKIP_IMAGE_LOAD=false
+EXCLUDE=monitoring
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)
@@ -20,7 +22,9 @@ Flags:
   --context=NAME          kubeconfig context name (default: local)
   --vm-name=NAME          multipass VM name (default: ystack-master)
   --vm-resources=ARGS     multipass launch resource flags (default: -m 8G -d 40G -c 4)
+  --exclude=SUBSTRING     exclude k3s bases matching substring (default: monitoring)
   --skip-converge         skip converge, validate, and post-provision steps
+  --skip-image-load       skip image cache and load into containerd
   --teardown              delete existing VM and exit
   -h, --help              show this help
 EOF
@@ -28,7 +32,9 @@ EOF
     --context=*) CTX="${1#*=}"; shift ;;
     --vm-name=*) VM_NAME="${1#*=}"; shift ;;
     --vm-resources=*) VM_RESOURCES="${1#*=}"; shift ;;
+    --exclude=*) EXCLUDE="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
+    --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -102,22 +108,22 @@ if [ "$SKIP_CONVERGE" = "true" ]; then
   exit 0
 fi
 
-echo "# Saving ystack images to local cache ..."
-y-image-cache-ystack </dev/null
+if [ "$SKIP_IMAGE_LOAD" = "true" ]; then
+  echo "# --skip-image-load: skipping image cache and load"
+else
+  echo "# Saving ystack images to local cache ..."
+  y-image-cache-ystack </dev/null
 
-echo "# Loading cached images into containerd ..."
-y-image-cache-load-all </dev/null || true
+  echo "# Loading cached images into containerd ..."
+  y-image-cache-load-all </dev/null || true
+fi
 
-CONVERGE_FLAGS="--context=$CTX --server-side"
-y-cluster-converge-ystack $CONVERGE_FLAGS
+y-cluster-converge-ystack --context=$CTX --exclude=$EXCLUDE
 
 # multipass-specific: update VM /etc/hosts so containerd can resolve registry services
 BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
 PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
 multipass exec "$VM_NAME" -- sudo sh -c "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
 multipass exec "$VM_NAME" -- sudo sh -c "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
-
-echo "# Updating /etc/hosts (requires sudo) ..."
-y-k8s-ingress-hosts --context=$CTX -write
 
 echo "# Done. Master IP: $K3S_NODEIP_MASTER"

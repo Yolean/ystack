@@ -1,7 +1,0 @@
-generatorOptions:
-  disableNameSuffixHash: true
-secretGenerator:
-- name: minio
-  literals:
-  - accesskey=YstackEXAMPLEKEY
-  - secretkey=github.com/Yolean/ystack-EXAMPLE

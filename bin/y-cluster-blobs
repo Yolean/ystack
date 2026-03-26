@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YHELP='y-cluster-blobs - List and read objects in cluster blob storage
+
+Usage: y-cluster-blobs SUBCOMMAND [options] [CONTEXT://BUCKET/PATH]
+
+Subcommands:
+  ls [CONTEXT://BUCKET[/PREFIX]]    List buckets or objects
+  cat CONTEXT://BUCKET/OBJECT       Print object contents to stdout
+  help                              Show this help
+
+Options:
+  -l          Long listing with size and timestamp (ls only)
+  -r          Recursive listing (ls only)
+
+URL format:
+  local://                  List all buckets
+  local://BUCKET            List objects in bucket
+  local://BUCKET/PREFIX     List objects matching prefix
+  local://BUCKET/KEY        Read object (cat)
+
+The CONTEXT part maps to --context for kubectl (currently only local).
+Modeled after gcloud storage ls / gcloud storage cat.
+Reads VersityGW filesystem directly via kubectl exec for speed.
+
+Environment:
+  NAMESPACE    Override blob store namespace (default: blobs)
+
+Exit codes:
+  0          Success
+  1          Usage error
+  2          Bucket not found
+'
+
+case "${1:-}" in
+  help|--help) echo "$YHELP"; exit 0 ;;
+esac
+
+SUBCMD="${1:-}"
+shift || true
+
+case "$SUBCMD" in
+  ls|cat) ;;
+  "") echo "ERROR: subcommand required (ls, cat, help)" >&2; exit 1 ;;
+  *) echo "ERROR: unknown subcommand '$SUBCMD'" >&2; exit 1 ;;
+esac
+
+# Parse flags
+LONG=false
+RECURSIVE=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l) LONG=true; shift ;;
+    -r) RECURSIVE=true; shift ;;
+    -lr|-rl) LONG=true; RECURSIVE=true; shift ;;
+    -*) echo "ERROR: unknown flag '$1'" >&2; exit 1 ;;
+    *) break ;;
+  esac
+done
+
+URL="${1:-}"
+[ -z "$NAMESPACE" ] && NAMESPACE=blobs
+
+# Parse URL: context://bucket/path
+CTX=""
+BUCKET=""
+OBJPATH=""
+
+if [ -n "$URL" ]; then
+  case "$URL" in
+    *://*)
+      CTX_NAME="${URL%%://*}"
+      CTX="--context=$CTX_NAME"
+      rest="${URL#*://}"
+      BUCKET="${rest%%/*}"
+      if [ "$rest" = "$BUCKET" ]; then
+        OBJPATH=""
+      else
+        OBJPATH="${rest#*/}"
+      fi
+      ;;
+    *)
+      echo "ERROR: URL must use context:// format, got '$URL'" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [ -z "$CTX" ]; then
+  echo "ERROR: URL required, e.g. local://" >&2
+  exit 1
+fi
+
+vgw() {
+  kubectl $CTX -n "$NAMESPACE" exec deploy/versitygw -- "$@"
+}
+
+DATA_ROOT="/data"
+
+case "$SUBCMD" in
+  ls)
+    PREFIX="$CTX_NAME://"
+    if [ -z "$BUCKET" ]; then
+      # List buckets
+      if [ "$LONG" = "true" ]; then
+        vgw find "$DATA_ROOT" -mindepth 1 -maxdepth 1 -type d -exec stat -c '%Y %n' {} \; 2>/dev/null \
+          | while read -r epoch name; do
+              ts=$(date -d "@$epoch" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "$epoch")
+              echo "[$ts]     0B ${PREFIX}$(basename "$name")/"
+            done
+      else
+        vgw ls "$DATA_ROOT" 2>/dev/null | while read -r name; do
+          echo "${PREFIX}$name/"
+        done
+      fi
+    else
+      PREFIX="$CTX_NAME://$BUCKET/"
+      BUCKET_PATH="$DATA_ROOT/$BUCKET"
+      if ! vgw test -d "$BUCKET_PATH" 2>/dev/null; then
+        echo "ERROR: bucket '$BUCKET' not found" >&2
+        exit 2
+      fi
+      TARGET="$BUCKET_PATH${OBJPATH:+/$OBJPATH}"
+      DEPTH_ARGS=""
+      if [ "$RECURSIVE" = "false" ]; then
+        DEPTH_ARGS="-mindepth 1 -maxdepth 1"
+      fi
+      if [ "$LONG" = "true" ]; then
+        vgw sh -c "find '$TARGET' $DEPTH_ARGS -type d ! -path '$TARGET' -exec stat -c 'd %s %Y %n' {} \\; -o -type f -exec stat -c 'f %s %Y %n' {} \\;" 2>/dev/null \
+          | while read -r type size epoch name; do
+              ts=$(date -d "@$epoch" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "$epoch")
+              rel="${name#$BUCKET_PATH/}"
+              if [ "$type" = "d" ]; then
+                echo "[$ts]     0B ${PREFIX}$rel/"
+              else
+                echo "[$ts] ${size}B ${PREFIX}$rel"
+              fi
+            done
+      else
+        vgw sh -c "find '$TARGET' $DEPTH_ARGS -type d ! -path '$TARGET' -exec echo d {} \\; -o -type f -exec echo f {} \\;" 2>/dev/null \
+          | while read -r type name; do
+              rel="${name#$BUCKET_PATH/}"
+              if [ "$type" = "d" ]; then
+                echo "${PREFIX}$rel/"
+              else
+                echo "${PREFIX}$rel"
+              fi
+            done
+      fi
+    fi
+    ;;
+  cat)
+    if [ -z "$BUCKET" ] || [ -z "$OBJPATH" ]; then
+      echo "ERROR: cat requires a full object path, e.g. local://bucket/key" >&2
+      exit 1
+    fi
+    OBJ_FILE="$DATA_ROOT/$BUCKET/$OBJPATH"
+    vgw cat "$OBJ_FILE"
+    ;;
+esac

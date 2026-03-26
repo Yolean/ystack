@@ -1,3 +1,0 @@
-namespace: ystack
-bases:
-- ../../versitygw/standalone,defaultsecret

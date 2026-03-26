@@ -1,0 +1,84 @@
+openapi: 3.1.0
+info:
+  title: y-kustomize
+  version: v1
+  description: |
+    In-cluster HTTP server providing kustomize base resources for
+    infrastructure setup jobs. Consumers reference these URLs in their
+    kustomization.yaml `resources` field.
+
+    Each base-for-annotations.yaml is a multi-document YAML file containing:
+    1. A Secret with consumer credentials and endpoint URL
+    2. A Job that creates/configures the resource and is idempotent
+
+    Consumers customize via kustomize namePrefix (which prefixes the
+    Secret name) and JSON patches (to set resource-specific values
+    like bucket name or topic name via annotations).
+
+    The Secret uses stable names (no hash suffix) so workloads in the
+    namespace can reference it after the setup job completes.
+
+    Implementations may serve different content — for example a
+    production implementation might return a CRD-based resource that
+    provisions per-namespace credentials, while a dev implementation
+    returns a Job with shared credentials.
+
+servers:
+- url: http://y-kustomize.ystack.svc.cluster.local
+
+paths:
+  /v1/blobs/setup-bucket-job/base-for-annotations.yaml:
+    get:
+      operationId: getBlobsSetupBucketJob
+      summary: Kustomize base for S3 bucket setup
+      description: |
+        Returns a multi-document YAML containing:
+        - A Secret named `bucket` with keys `endpoint`, `accesskey`, `secretkey`
+        - A Job named `setup-bucket` that creates a bucket at the S3 endpoint
+
+        The Job expects these values to be patched by the consumer:
+        - `BUCKET_NAME` env var (default: `default`)
+
+        The Secret provides consumer-facing credentials for accessing the
+        bucket after setup. These may differ from the admin credentials
+        the Job uses to create the bucket.
+      responses:
+        "200":
+          description: Multi-document YAML (Secret + Job)
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  /v1/kafka/setup-topic-job/base-for-annotations.yaml:
+    get:
+      operationId: getKafkaSetupTopicJob
+      summary: Kustomize base for Kafka topic setup
+      description: |
+        Returns a multi-document YAML containing:
+        - A Secret named `topic` with keys `bootstrap` and any credentials
+        - A Job named `setup-topic` that creates and configures a topic
+
+        The Job is configured via annotations:
+        - `yolean.se/kafka-topic-name` (required)
+        - `yolean.se/kafka-topic-config` (key=value pairs)
+        - `yolean.se/kafka-topic-partitions` (default: "1")
+        - `yolean.se/kafka-topic-replicas` (default: "-1")
+
+        The Secret provides consumer-facing connection details for
+        producing to or consuming from the topic after setup.
+      responses:
+        "200":
+          description: Multi-document YAML (Secret + Job)
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      responses:
+        "200":
+          description: Server is healthy

@@ -5,98 +5,159 @@ set -eo pipefail
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
 CONTEXT=""
-SERVER_SIDE=""
+EXCLUDE=""
+OVERRIDE_IP=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --context=*) CONTEXT="${1#*=}"; shift ;;
-    --server-side) SERVER_SIDE="--server-side=true --force-conflicts"; shift ;;
+    --exclude=*) EXCLUDE="${1#*=}"; shift ;;
+    --override-ip=*) OVERRIDE_IP="${1#*=}"; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
-[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--server-side]" && exit 1
+[ -z "$CONTEXT" ] && echo "Usage: y-cluster-converge-ystack --context=<name> [--exclude=SUBSTRING] [--override-ip=IP]" && exit 1
+
+# Validate --exclude value matches a known namespace directory
+if [ -n "$EXCLUDE" ]; then
+  EXCLUDE_VALID=false
+  for ns_dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-namespace-*/; do
+    ns_name=$(basename "$ns_dir")
+    ns_name="${ns_name#[0-9][0-9]-namespace-}"
+    if [ "$EXCLUDE" = "$ns_name" ]; then
+      EXCLUDE_VALID=true
+      break
+    fi
+  done
+  if [ "$EXCLUDE_VALID" = "false" ]; then
+    echo "ERROR: --exclude=$EXCLUDE does not match any namespace in k3s/" >&2
+    echo "Valid values:" >&2
+    for ns_dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-namespace-*/; do
+      ns_name=$(basename "$ns_dir")
+      echo "  ${ns_name#[0-9][0-9]-namespace-}" >&2
+    done
+    exit 1
+  fi
+fi
 
 k() {
   kubectl --context="$CONTEXT" "$@"
 }
 
-apply_base() {
-  local base="$1"
-  local basepath="$YSTACK_HOME/k3s/$base/"
-  echo "# Applying $basepath ..."
-  k apply $SERVER_SIDE -k "$basepath"
+# HTTP requests to cluster services via the K8s API proxy (works regardless of provisioner)
+# Usage: kurl <namespace> <service> <path>
+kurl() {
+  local ns="$1" svc="$2" path="$3"
+  k get --raw "/api/v1/namespaces/$ns/services/$svc:80/proxy/$path"
 }
 
-# 1. Namespace
-apply_base 00-ystack-namespace
-k get ns ystack
-echo "# Validated: namespace ystack exists"
+apply_base() {
+  local base="$1"
+  local output
+  output=$(k apply -k "$YSTACK_HOME/k3s/$base/" 2>&1) || {
+    echo "$output" >&2
+    return 1
+  }
+  [ -n "$output" ] && echo "$output"
+}
 
-# 2. Gateway API CRDs (managed by k3s traefik-crd HelmChart) + traefik Gateway provider config
-echo "# Waiting for Gateway API CRDs (from k3s traefik-crd) ..."
-until k get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; do sleep 2; done
-apply_base 05-gateway-api
-echo "# Validated: Gateway API CRDs installed"
+# List bases in order, filter out -disabled suffix
+echo "[y-cluster-converge-ystack] Listing bases"
+BASES=()
+for dir in "$YSTACK_HOME"/k3s/[0-9][0-9]-*/; do
+  base=$(basename "$dir")
+  if [[ "$base" == *-disabled ]]; then
+    echo "[y-cluster-converge-ystack] Skipping disabled: $base"
+    continue
+  fi
+  if [ -n "$EXCLUDE" ] && [[ "$base" == *"$EXCLUDE"* ]]; then
+    echo "[y-cluster-converge-ystack] Skipping excluded (--exclude=$EXCLUDE): $base"
+    continue
+  fi
+  BASES+=("$base")
+done
+echo "[y-cluster-converge-ystack] Bases: ${BASES[*]}"
 
-# 3. Gateway (wait for CRD to be served before applying)
-echo "# Waiting for Gateway resource type to be served ..."
-until k api-resources --api-group=gateway.networking.k8s.io 2>/dev/null | grep -q gateways; do sleep 2; done
-apply_base 06-gateway
-k -n ystack get gateway ystack
-echo "# Validated: gateway ystack exists"
+prev_digit=""
+for base in "${BASES[@]}"; do
+  digit="${base:0:1}"
 
-# 4. VersityGW (S3-compatible blob store)
-apply_base 10-versitygw
-k -n ystack rollout status deploy/versitygw --timeout=120s
-echo "# Validated: versitygw rollout complete"
+  # Between digit groups, wait for readiness
+  if [ -n "$prev_digit" ] && [ "$digit" != "$prev_digit" ]; then
+    echo "[y-cluster-converge-ystack] Waiting for rollouts after ${prev_digit}* bases"
 
-# 5. Builds registry
-apply_base 20-builds-registry-versitygw
-k -n ystack get svc builds-registry
-CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}')
-if [ "$CLUSTER_IP" != "10.43.0.50" ]; then
-  echo "ERROR: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
-  exit 1
+    # After CRDs (1*), wait for all of them to be established
+    if [ "$prev_digit" = "1" ]; then
+      echo "[y-cluster-converge-ystack] Waiting for all CRDs to be established"
+      k wait --for=condition=Established crd --all --timeout=60s
+    fi
+
+    # Wait for all deployments that exist in any namespace
+    for ns in $(k get deploy --all-namespaces --no-headers -o custom-columns=NS:.metadata.namespace 2>/dev/null | sort -u); do
+      echo "[y-cluster-converge-ystack] Waiting for deployments in $ns"
+      k -n "$ns" rollout status deploy --timeout=120s
+    done
+
+    # After 2* (gateway + y-kustomize), update /etc/hosts so curl can reach services
+    if [ "$prev_digit" = "2" ]; then
+      if [ -n "$OVERRIDE_IP" ]; then
+        echo "[y-cluster-converge-ystack] Annotating gateway with yolean.se/override-ip=$OVERRIDE_IP"
+        k -n ystack annotate gateway ystack yolean.se/override-ip="$OVERRIDE_IP" --overwrite
+      fi
+      if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
+        echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
+      fi
+    fi
+
+    # After 4* (kafka secrets updated), restart y-kustomize so volume mounts refresh
+    # without waiting for kubelet sync (can take 60-120s)
+    if [ "$prev_digit" = "4" ]; then
+      echo "[y-cluster-converge-ystack] Restarting y-kustomize to pick up updated secrets"
+      k -n ystack rollout restart deploy/y-kustomize
+      k -n ystack rollout status deploy/y-kustomize --timeout=60s
+    fi
+
+    # Before 6* bases, verify y-kustomize serves real content
+    # Check via API proxy first, then via Traefik (port 80) which is the path kustomize uses
+    if [ "$digit" = "6" ]; then
+      echo "[y-cluster-converge-ystack] Verifying y-kustomize API"
+      kurl ystack y-kustomize health >/dev/null
+      echo "[y-cluster-converge-ystack] y-kustomize health ok (via API proxy)"
+      # Verify the Traefik route works (this is the path kustomize uses for HTTP resources)
+      curl -sSf --retry 5 --retry-delay 2 --retry-all-errors --connect-timeout 2 --max-time 5 \
+        http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null
+      echo "[y-cluster-converge-ystack] y-kustomize serving blobs bases (via Traefik)"
+      curl -sSf --retry 5 --retry-delay 2 --retry-all-errors --connect-timeout 2 --max-time 5 \
+        http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null
+      echo "[y-cluster-converge-ystack] y-kustomize serving kafka bases (via Traefik)"
+    fi
+  fi
+
+  echo "[y-cluster-converge-ystack] Applying $base"
+  if [[ "$base" == 1* ]]; then
+    k apply -k "$YSTACK_HOME/k3s/$base/" --server-side=true --force-conflicts
+  else
+    apply_base "$base"
+  fi
+
+  prev_digit="$digit"
+done
+
+# Update /etc/hosts now that all routes exist
+if ! "$YSTACK_HOME/bin/y-k8s-ingress-hosts" --context="$CONTEXT" --ensure; then
+  echo "[y-cluster-converge-ystack] WARNING: /etc/hosts update failed (may need manual sudo)" >&2
 fi
-echo "# Validated: builds-registry clusterIP=10.43.0.50"
 
-# 6. Builds registry HTTPRoute
-apply_base 07-builds-registry-httproute
-k -n ystack get httproute builds-registry
-echo "# Validated: httproute builds-registry exists"
+# Validation
+echo "[y-cluster-converge-ystack] Validation"
+k -n ystack get gateway ystack
+k -n ystack get deploy y-kustomize
+k -n blobs get svc y-s3-api
+k -n kafka get statefulset redpanda
+CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+if [ -n "$CLUSTER_IP" ] && [ "$CLUSTER_IP" != "10.43.0.50" ]; then
+  echo "[y-cluster-converge-ystack] WARNING: builds-registry clusterIP is $CLUSTER_IP, expected 10.43.0.50" >&2
+fi
 
-# 6.5 Buildkitd GRPCRoute
-apply_base 08-buildkitd-grpcroute
-k -n ystack get grpcroute buildkitd
-echo "# Validated: grpcroute buildkitd exists"
-
-# 7. Monitoring operator + CRDs
-apply_base 30-monitoring-operator
-echo "# Waiting for prometheus-operator CRDs to register ..."
-until k get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-until k get crd alertmanagers.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-until k get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 2; done
-echo "# Validated: prometheus-operator CRDs registered"
-
-# 8. Monitoring CRs (Prometheus, Alertmanager, exporters)
-apply_base 31-monitoring
-k -n monitoring get prometheus now
-echo "# Validated: monitoring stack exists"
-
-# 6.8 Prometheus HTTPRoute
-apply_base 09-prometheus-httproute
-k -n monitoring get httproute prometheus-now
-echo "# Validated: httproute prometheus-now exists"
-
-# 7. Prod registry
-apply_base 21-prod-registry
-k -n ystack get svc prod-registry
-echo "# Validated: prod-registry service exists"
-
-# 8. Buildkit
-apply_base 40-buildkit
-k -n ystack get statefulset buildkitd
-echo "# Validated: buildkitd statefulset exists"
-
-echo "# y-cluster-converge-ystack: all steps completed successfully"
+echo "[y-cluster-converge-ystack] Completed. To verify use: y-cluster-validate-ystack --context=$CONTEXT"

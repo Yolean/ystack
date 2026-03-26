@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: y-kustomize
+  labels:
+    app: y-kustomize
+    yolean.se/module-part: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: y-kustomize
+  template:
+    metadata:
+      labels:
+        app: y-kustomize
+    spec:
+      containers:
+      - name: sws
+        image: ghcr.io/yolean/static-web-server:2.41.0
+        args:
+        - --port=8787
+        - --root=/srv
+        - --directory-listing=false
+        - --health
+        - --log-level=info
+        - --log-remote-address
+        - --ignore-hidden-files=false
+        - --disable-symlinks=false
+        ports:
+        - containerPort: 8787
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8787
+        resources:
+          requests:
+            cpu: 5m
+            memory: 8Mi
+          limits:
+            memory: 32Mi
+        volumeMounts:
+        - name: base-blobs-setup-bucket-job
+          mountPath: /srv/v1/blobs/setup-bucket-job
+        - name: base-kafka-setup-topic-job
+          mountPath: /srv/v1/kafka/setup-topic-job
+      volumes:
+      - name: base-blobs-setup-bucket-job
+        secret:
+          secretName: y-kustomize.blobs.setup-bucket-job
+      - name: base-kafka-setup-topic-job
+        secret:
+          secretName: y-kustomize.kafka.setup-topic-job

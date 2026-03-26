@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bucket
+stringData:
+  endpoint: http://y-s3-api.blobs.svc.cluster.local
+  accesskey: YstackEXAMPLEKEY
+  secretkey: github.com/Yolean/ystack-EXAMPLE
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-bucket
+  labels:
+    yolean.se/converge-mode: replace
+spec:
+  template:
+    metadata:
+      annotations:
+        yolean.se/bucket-name: ""
+    spec:
+      containers:
+      - name: mc
+        image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: versitygw-server
+              key: root-accesskey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: versitygw-server
+              key: root-secretkey
+        - name: BUCKET_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/bucket-name']
+        - name: S3_ENDPOINT
+          value: http://y-s3-api.blobs.svc.cluster.local
+        command:
+        - sh
+        - -ce
+        - |
+          until mc alias set s3 $S3_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY 2>/dev/null; do
+            sleep 2
+          done
+          mc mb --ignore-existing s3/$BUCKET_NAME
+      restartPolicy: Never
+  backoffLimit: 10

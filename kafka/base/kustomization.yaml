@@ -6,7 +6,8 @@ kind: Kustomization
 namespace: kafka
 
 resources:
-- ../redpanda/kafka
+- ../redpanda
+- y-bootstrap-service.yaml
 
 patches:
 - path: ./redpanda-resources.yaml

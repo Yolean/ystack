@@ -1,9 +1,0 @@
-namespace: ystack
-bases:
-- ../../buildkit
-- ../../buildkit/gateway-proxy
-- ../../versitygw/standalone,defaultsecret
-resources:
-- buildkitd-nodeport-service.yaml
-patchesStrategicMerge:
-- buildkitd-replicas-0.yaml

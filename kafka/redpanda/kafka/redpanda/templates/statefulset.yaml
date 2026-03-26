@@ -40,7 +40,7 @@ spec:
         - name: redpanda-configurator
           image: docker.redpanda.com/redpandadata/redpanda:v23.3.7
           command:
-            - /bin/bash
+            - /bin/sh
             - -c
             - 'trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!'
           env:
@@ -91,18 +91,18 @@ spec:
             postStart:
               exec:
                 command:
-                  - /bin/bash
+                  - /bin/sh
                   - -c
                   - |
-                    timeout -v 45 bash -x /var/lifecycle/postStart.sh
+                    timeout -v 45 sh -x /var/lifecycle/postStart.sh
                     true
             preStop:
               exec:
                 command:
-                  - /bin/bash
+                  - /bin/sh
                   - -c
                   - |
-                    timeout -v 45 bash -x /var/lifecycle/preStop.sh
+                    timeout -v 45 sh -x /var/lifecycle/preStop.sh
                     true # do not fail and cause the pod to terminate
           # the startupProbe checks to see that the admin api is listening and that the broker has a node_id assigned. This
           # check is only used to delay the start of the liveness and readiness probes until it passes.
@@ -179,8 +179,7 @@ spec:
               mountPath: /var/lib/redpanda/data
           resources:
             limits:
-              cpu: 250m
-              memory: 1171Mi
+              memory: 600Mi
       volumes: 
         
         - name: lifecycle-scripts

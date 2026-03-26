@@ -26,7 +26,6 @@ spec:
             cpu: 10m
             memory: 16Mi
           limits:
-            cpu: 500m
             memory: 800Mi
         ports:
         - containerPort: 80
@@ -49,7 +48,7 @@ spec:
             scheme: HTTP
         volumeMounts:
         - name: etc-registry
-          mountPath: /etc/docker/registry
+          mountPath: /etc/distribution
         - name: storage-temporary
           mountPath: /var/lib/registry
       volumes:

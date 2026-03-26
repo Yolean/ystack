@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YHELP='y-cluster-kafka - Interact with the cluster Kafka broker
+
+Usage: y-cluster-kafka --context=<name> SUBCOMMAND [args...]
+
+Subcommands:
+  topic list                          List topics
+  topic produce TOPIC                 Produce to topic (reads stdin)
+  topic consume TOPIC [rpk flags]     Consume from topic
+  rpk [args...]                       Run arbitrary rpk command
+
+The --context flag is required.
+'
+
+CONTEXT=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CONTEXT="${1#*=}"; shift ;;
+    help|--help) echo "$YHELP"; exit 0 ;;
+    *) break ;;
+  esac
+done
+
+[ -z "$CONTEXT" ] && echo "ERROR: --context is required" >&2 && echo "$YHELP" >&2 && exit 1
+
+rpk() {
+  kubectl --context="$CONTEXT" -n kafka exec -i redpanda-0 -c redpanda -- rpk "$@"
+}
+
+SUBCMD="${1:-}"
+shift || true
+
+case "$SUBCMD" in
+  topic)
+    ACTION="${1:-}"
+    shift || true
+    case "$ACTION" in
+      list)
+        rpk topic list "$@"
+        ;;
+      produce)
+        TOPIC="${1:-}"
+        [ -z "$TOPIC" ] && echo "ERROR: topic name required" >&2 && exit 1
+        shift
+        rpk topic produce "$TOPIC" "$@"
+        ;;
+      consume)
+        TOPIC="${1:-}"
+        [ -z "$TOPIC" ] && echo "ERROR: topic name required" >&2 && exit 1
+        shift
+        rpk topic consume "$TOPIC" "$@"
+        ;;
+      *)
+        echo "ERROR: unknown topic action '$ACTION' (list, produce, consume)" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  rpk)
+    rpk "$@"
+    ;;
+  "")
+    echo "ERROR: subcommand required" >&2
+    echo "$YHELP" >&2
+    exit 1
+    ;;
+  *)
+    echo "ERROR: unknown subcommand '$SUBCMD'" >&2
+    exit 1
+    ;;
+esac

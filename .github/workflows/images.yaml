@@ -59,7 +59,7 @@ jobs:
       id: imageRegistryTag
       uses: mikefarah/yq@v4.44.1
       with:
-        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' registry/generic/kustomization.yaml
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' registry/images/kustomization.yaml
     -
       name: Mirror registry image from hub
       run: |

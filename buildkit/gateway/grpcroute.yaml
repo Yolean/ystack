@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: buildkitd
+  labels:
+    yolean.se/module-part: gateway
+spec:
+  parentRefs:
+  - name: ystack
+  hostnames:
+  - buildkitd.ystack.svc.cluster.local
+  rules:
+  - backendRefs:
+    - name: buildkitd
+      port: 8547
