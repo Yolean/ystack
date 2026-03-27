@@ -136,11 +136,21 @@ turbo:
     path: turbo-${os}-${xarm}64/bin/turbo
 
 yarn:
-  version: 0.1.0
+  version: 0.2.0
   templates:
     download: https://github.com/Yolean/y1/releases/download/v${version}/y1-${os}-${arch}
   sha256:
-    darwin_amd64: bd0310a0578a53d8639b1f480dc6258920a2b063f9270943ffb9eb3d2fa97416
-    darwin_arm64: 8cb3f050fe85b4bc70a3ed88329ae203b6156ff420dc2e53638c50f6e22143cf
-    linux_amd64: 6cfe37280da7def39e661a2e48a708007b2ae1b2db206e287a808e38a0b4d2db
-    linux_arm64: 02a7071e09096992f8bb67b49b16bff43fbfde7af0bdee90a90d54a540d089ae
+    darwin_amd64: 4dbeaa1f7ab844fe82b18b810daed91b8e883a00f834ae114be4628ed5d884be
+    darwin_arm64: 513180cfe827e8d800d98503c74b0f05ffb9d6c1d3feddfd253f9587eb28e848
+    linux_amd64: 53715555004fd739de7ac0e1340deb1e6aed7ac5daba43eedec83b2dc9628c6b
+    linux_arm64: 905f0cc96c84fa66bd3c1b887f7a4cb84a2f96b5b186a66828b76abcbe389e9b
+
+npx:
+  version: 0.2.0
+  templates:
+    download: https://github.com/Yolean/y1/releases/download/v${version}/y1-${os}-${arch}
+  sha256:
+    darwin_amd64: 4dbeaa1f7ab844fe82b18b810daed91b8e883a00f834ae114be4628ed5d884be
+    darwin_arm64: 513180cfe827e8d800d98503c74b0f05ffb9d6c1d3feddfd253f9587eb28e848
+    linux_amd64: 53715555004fd739de7ac0e1340deb1e6aed7ac5daba43eedec83b2dc9628c6b
+    linux_arm64: 905f0cc96c84fa66bd3c1b887f7a4cb84a2f96b5b186a66828b76abcbe389e9b

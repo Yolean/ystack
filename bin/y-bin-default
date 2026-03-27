@@ -15,7 +15,7 @@ Subcommands:
 Arguments:
   BIN                  Binary name (e.g. yarn). If omitted, iterates all known defaults.
 
-Known defaults: yarn
+Known defaults: yarn, npx
 
 The convention is to symlink ~/.local/bin/BIN -> $YSTACK_HOME/bin/BIN so that
 the ystack-managed version takes precedence without requiring PATH changes to
@@ -35,7 +35,7 @@ case "${1:-}" in
 esac
 
 USER_BIN="$HOME/.local/bin"
-KNOWN_DEFAULTS="yarn"
+KNOWN_DEFAULTS="yarn npx" # no_npx: manages the npx default symlink
 
 subcmd="${1:-}"
 # y-script-lint:disable=or-true # shift fails when no args after subcmd
