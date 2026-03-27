@@ -47,6 +47,12 @@ COPY bin/y-bin.runner.yaml \
   bin/y-bin-dependency-download \
   /usr/local/src/ystack/bin/
 
+COPY bin/y-yarn /usr/local/src/ystack/bin/
+RUN y-yarn help
+
+COPY bin/y-npx /usr/local/src/ystack/bin/
+RUN y-npx help || Y_NPX_ALLOWED_CMDS=--version y-npx --version
+
 COPY bin/y-kubectl /usr/local/src/ystack/bin/
 RUN y-kubectl version --client=true --output=json
 
