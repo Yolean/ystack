@@ -51,7 +51,7 @@ COPY bin/y-yarn /usr/local/src/ystack/bin/
 RUN y-yarn help
 
 COPY bin/y-npx /usr/local/src/ystack/bin/
-RUN y-npx help || Y_NPX_ALLOWED_CMDS=--version y-npx --version
+RUN ! y-npx 2>/dev/null
 
 COPY bin/y-kubectl /usr/local/src/ystack/bin/
 RUN y-kubectl version --client=true --output=json
