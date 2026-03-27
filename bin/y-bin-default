@@ -120,12 +120,9 @@ for bin in "${bins[@]}"; do
     continue
   fi
 
-  # Resolve the which result through symlinks to compare
-  resolved_real="$(readlink -f "$resolved" 2>/dev/null || echo "$resolved")"
-  source_real="$(readlink -f "$source_bin" 2>/dev/null || echo "$source_bin")"
-
-  if [ "$resolved_real" != "$source_real" ]; then
-    echo "NO_PRECEDENCE $bin resolves to $resolved (expected $target_link -> $source_bin)"
+  # Check that the resolved path is our symlink in USER_BIN, not some other npx earlier in PATH
+  if [ "$resolved" != "$target_link" ]; then
+    echo "NO_PRECEDENCE $bin resolves to $resolved (expected $target_link)"
     echo "  Recommendation: ensure ~/.local/bin appears before $(dirname "$resolved") in PATH" >&2
     if [ "$subcmd" = "ensure" ]; then
       failed=1
