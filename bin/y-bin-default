@@ -120,10 +120,10 @@ for bin in "${bins[@]}"; do
     continue
   fi
 
-  # Check that the resolved path is our symlink in USER_BIN, not some other npx earlier in PATH
-  if [ "$resolved" != "$target_link" ]; then
-    echo "NO_PRECEDENCE $bin resolves to $resolved (expected $target_link)"
-    echo "  Recommendation: ensure ~/.local/bin appears before $(dirname "$resolved") in PATH" >&2
+  # Check that the resolved path is our symlink in USER_BIN or our bin, not some other bin earlier in PATH
+  if [ "$resolved" != "$target_link" ] && [ "$resolved" != "$source_bin" ]; then
+    echo "NO_PRECEDENCE $bin resolves to $resolved via $(dirname "$resolved")"
+    echo "  Recommendation: ensure $USER_BIN appears before $(dirname "$resolved") in PATH" >&2
     if [ "$subcmd" = "ensure" ]; then
       failed=1
     fi
