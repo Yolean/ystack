@@ -77,7 +77,7 @@ if [ ${#TARGET_DIRS[@]} -eq 1 ]; then
   elif [ -d "$arg" ]; then
     : # directory, handled below
   elif [[ "$arg" != */* ]]; then
-    # Bare name like "y-turbo" — search PATH
+    # Bare name like "y-turbo" -search PATH
     found=""
     IFS=: read -ra path_entries <<< "$PATH"
     for dir in "${path_entries[@]}"; do
@@ -158,9 +158,9 @@ check_help_handler() {
 check_no_npx() {
   local file="$1" lang="$2"
   if is_node "$lang"; then
-    ! grep -vE '^\s*//' "$file" 2>/dev/null | grep -qE '\bnpx\b'
+    ! sed '/^const YHELP = `/,/^`;/d' "$file" 2>/dev/null | grep -vE '^\s*//' | grep -qE '\bnpx\b'
   else
-    ! grep -vE '^\s*#' "$file" 2>/dev/null | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
+    ! sed "/^YHELP='/,/^'/d" "$file" 2>/dev/null | grep -vE '^\s*#' | grep -vE '(no_npx|"uses npx"|No npx)' | grep -qE '\bnpx\b'
   fi
 }
 
