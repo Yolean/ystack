@@ -58,6 +58,12 @@ for bin in "${bins[@]}"; do
   source_bin="$YBIN/$bin"
   target_link="$USER_BIN/$bin"
 
+  if [[ "$bin" == y-* ]]; then
+    echo "ERROR: refusing to install y- prefixed binary $bin (y-* binaries belong in ystack PATH, not ~/.local/bin)" >&2
+    failed=1
+    continue
+  fi
+
   if [ ! -e "$source_bin" ] && [ ! -L "$source_bin" ]; then
     echo "ERROR: $source_bin does not exist" >&2
     failed=1
