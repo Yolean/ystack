@@ -19,7 +19,16 @@ export YSTACK_HOME=/Users/me/Yolean/ystack
 export PATH=$PATH:$YSTACK_HOME/bin
 ```
 
-Note that ystach should be after system path entries because it contains fallback impls for MacOS such as `basepath` and `sha256sum`.
+Note that ystack should be after system path entries because it contains fallback impls for MacOS such as `basepath` and `sha256sum`.
+
+However you're recommended to override default binaries for some commands. Run:
+
+```
+y-yarn help
+y-npx help
+hash -r
+y-bin-default ensure
+```
 
 ## Why
 

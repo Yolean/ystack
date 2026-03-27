@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+YBIN="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+
+version=$(y-bin-download $YBIN/y-bin.runner.yaml npx) # no_npx
+
+exec -a y-npx "y-npx-v${version}-bin" "$@" # no_npx

@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YBIN="$(cd "$(dirname "$0")" && pwd)"
+
+YHELP='y-bin-default - Ensure ystack-managed binaries take precedence via ~/.local/bin symlinks
+
+Usage: y-bin-default [help] SUBCOMMAND [BIN...]
+
+Subcommands:
+  check               Verify symlinks exist and take precedence in PATH
+  ensure              Create symlinks and verify precedence (fails if link exists but loses to PATH)
+
+Arguments:
+  BIN                  Binary name (e.g. yarn). If omitted, iterates all known defaults.
+
+Known defaults: yarn, npx
+
+The convention is to symlink ~/.local/bin/BIN -> $YSTACK_HOME/bin/BIN so that
+the ystack-managed version takes precedence without requiring PATH changes to
+$YSTACK_HOME/bin itself. Users must ensure ~/.local/bin is early in their PATH.
+
+Dependencies:
+
+Exit codes:
+  0          Success
+  1          Usage error
+  2          Check or ensure failed
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
+
+USER_BIN="$HOME/.local/bin"
+KNOWN_DEFAULTS="yarn npx" # no_npx: manages the npx default symlink
+
+subcmd="${1:-}"
+# y-script-lint:disable=or-true # shift fails when no args after subcmd
+shift || true
+
+case "$subcmd" in
+  check|ensure) ;;
+  "") echo "ERROR: subcommand required (check or ensure)" >&2; exit 1 ;;
+  *) echo "ERROR: unknown subcommand: $subcmd (use: check, ensure)" >&2; exit 1 ;;
+esac
+
+bins=("$@")
+if [ ${#bins[@]} -eq 0 ]; then
+  IFS=' ' read -ra bins <<< "$KNOWN_DEFAULTS"
+fi
+
+failed=0
+
+for bin in "${bins[@]}"; do
+  source_bin="$YBIN/$bin"
+  target_link="$USER_BIN/$bin"
+
+  if [[ "$bin" == y-* ]]; then
+    echo "ERROR: refusing to install y- prefixed binary $bin (y-* binaries belong in ystack PATH, not ~/.local/bin)" >&2
+    failed=1
+    continue
+  fi
+
+  if [ ! -e "$source_bin" ] && [ ! -L "$source_bin" ]; then
+    echo "ERROR: $source_bin does not exist" >&2
+    failed=1
+    continue
+  fi
+
+  link_exists=false
+  link_correct=false
+  if [ -L "$target_link" ]; then
+    link_exists=true
+    existing_target="$(readlink "$target_link")"
+    if [ "$existing_target" = "$source_bin" ] || [ "$existing_target" = "$(cd "$YBIN" && pwd)/$bin" ]; then
+      link_correct=true
+    fi
+  elif [ -e "$target_link" ]; then
+    echo "ERROR: $target_link exists but is not a symlink" >&2
+    failed=1
+    continue
+  fi
+
+  case "$subcmd" in
+    check)
+      if [ "$link_exists" = "false" ]; then
+        echo "MISSING $target_link -> $source_bin"
+        failed=1
+        continue
+      fi
+      if [ "$link_correct" = "false" ]; then
+        echo "WRONG $target_link -> $existing_target (expected $source_bin)"
+        failed=1
+        continue
+      fi
+      ;;
+    ensure)
+      if [ "$link_exists" = "true" ] && [ "$link_correct" = "false" ]; then
+        echo "ERROR: $target_link -> $existing_target (not managed by ystack, remove manually)" >&2
+        failed=1
+        continue
+      fi
+      if [ "$link_correct" = "false" ]; then
+        mkdir -p "$USER_BIN"
+        ln -s "$source_bin" "$target_link"
+        echo "CREATED $target_link -> $source_bin"
+      fi
+      ;;
+  esac
+
+  # Check PATH precedence
+  # y-script-lint:disable=or-true # command -v returns 1 when bin not in PATH
+  resolved="$(command -v "$bin" 2>/dev/null || true)"
+  if [ -z "$resolved" ]; then
+    echo "WARN $bin not found in PATH after linking" >&2
+    failed=1
+    continue
+  fi
+
+  # Check that the resolved path is our symlink in USER_BIN or our bin, not some other bin earlier in PATH
+  if [ "$resolved" != "$target_link" ] && [ "$resolved" != "$source_bin" ]; then
+    echo "NO_PRECEDENCE $bin resolves to $resolved via $(dirname "$resolved")"
+    echo "  Recommendation: ensure $USER_BIN appears before $(dirname "$resolved") in PATH" >&2
+    if [ "$subcmd" = "ensure" ]; then
+      failed=1
+    fi
+  else
+    echo "OK $bin -> $resolved"
+  fi
+done
+
+[ "$failed" -ne 0 ] && exit 2
+exit 0
