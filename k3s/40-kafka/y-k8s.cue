@@ -10,10 +10,18 @@ _deps: kafka_ystack.step
 step: converge.#Step & {
 	kustomization: "k3s/40-kafka"
 	namespace:     "kafka"
-	checks: [{
-		kind:        "exec"
-		command:     "kubectl --context=$CONTEXT exec -n kafka redpanda-0 -c redpanda -- rpk cluster info"
-		timeout:     "120s"
-		description: "redpanda cluster healthy"
-	}]
+	checks: [
+		{
+			kind:      "rollout"
+			resource:  "statefulset/redpanda"
+			namespace: "kafka"
+			timeout:   "120s"
+		},
+		{
+			kind:        "exec"
+			command:     "kubectl --context=$CONTEXT exec -n kafka redpanda-0 -c redpanda -- rpk cluster info"
+			timeout:     "30s"
+			description: "redpanda cluster healthy"
+		},
+	]
 }

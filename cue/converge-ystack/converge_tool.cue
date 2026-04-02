@@ -7,15 +7,15 @@ import (
 	"tool/exec"
 )
 
-_context: string @tag(context)
-_dryRun:  *"false" | "true" @tag(dryRun)
-_diff:    *"false" | "true" @tag(diff)
+_context:    string @tag(context)
 _path:       string @tag(path)
 _kubeconfig: *"" | string @tag(kubeconfig)
+_overrideIP: *"" | string @tag(overrideIP)
 
 _env: {
-	CONTEXT:    _context
-	PATH:       _path
+	CONTEXT:     _context
+	PATH:        _path
+	OVERRIDE_IP: _overrideIP
 	if _kubeconfig != "" {
 		KUBECONFIG: _kubeconfig
 	}
@@ -40,64 +40,59 @@ _planLines: [for s in _activeSteps {
 }]
 
 _plan: strings.Join(list.Concat([
-	["=== Converge plan (context=\(_context), dry-run=\(_dryRun), diff=\(_diff)) ==="],
+	["=== Converge plan (context=\(_context)) ==="],
 	["Steps (\(len(_activeSteps))):"],
 	_planLines,
 	["==="],
 ]), "\n")
 
+// Generate shell commands per step, wrapped in error handler
+_stepCmds: [for s in _activeSteps {
+	let _apply = "kubectl-yconverge --context=\(_context) -k \(s.kustomization)/"
+	let _actionCmds = [for a in s.actions {"echo '  action: \(a.description)' && " + a.command}]
+	let _checkCmds = [for c in s.checks {
+		if c.kind == "wait" {
+			let _ns = {
+				if c.namespace != _|_ {"-n \(c.namespace) "}
+				if c.namespace == _|_ {""}
+			}
+			"echo '  check: wait \(c.resource)' && kubectl --context=\(_context) wait --for=\(c.for) --timeout=\(c.timeout) \(_ns)\(c.resource)"
+		}
+		if c.kind == "rollout" {
+			let _ns = {
+				if c.namespace != _|_ {"-n \(c.namespace) "}
+				if c.namespace == _|_ {""}
+			}
+			"echo '  check: rollout \(c.resource)' && kubectl --context=\(_context) rollout status --timeout=\(c.timeout) \(_ns)\(c.resource)"
+		}
+		if c.kind == "exec" {"echo '  check: \(c.description)' && { for _retry_i in $(seq 1 15); do " + c.command + " && break || sleep 2; done; }"}
+	}]
+	let _body = strings.Join(list.Concat([[_apply], _actionCmds, _checkCmds]), "\n")
+	"echo '>>> \(s.kustomization)'\nif ! (\n\(_body)\n); then\n  echo ''\n  echo \"FAILED: \(s.kustomization)\"\n  echo 'The step above failed. Re-run to retry from this point.'\n  exit 1\nfi"
+}]
+
+_script: strings.Join(list.Concat([
+	["set -eo pipefail"],
+	_stepCmds,
+	["echo '=== Converge complete ==='"],
+]), "\n")
+
+// Write script to temp file so CUE error messages don't dump the entire script
 command: converge: {
 	printPlan: cli.Print & {
 		text: _plan
 	}
 
-	for i, s in _activeSteps {
-		let _name = strings.Replace(strings.Replace(s.kustomization, "k3s/", "", 1), "/", "_", -1)
+	writeScript: exec.Run & {
+		$after: printPlan
+		cmd: ["sh", "-c", "SCRIPT=$(mktemp /tmp/ystack-converge.XXXXXX.sh) && cat > $SCRIPT && echo $SCRIPT"]
+		stdin: _script
+		stdout: string
+	}
 
-		// Apply via kubectl-yconverge
-		"apply_\(_name)": exec.Run & {
-			$after: printPlan
-			cmd: ["kubectl-yconverge", "--context=\(_context)", "-k", "\(s.kustomization)/"]
-			env: _env
-			stdout: string
-		}
-
-		// Actions (run after apply)
-		for j, a in s.actions {
-			"action_\(_name)_\(j)": exec.Run & {
-				$after: "apply_\(_name)"
-				cmd: ["sh", "-c", a.command]
-				env: _env
-			}
-		}
-
-		// Checks (run after actions or apply)
-		for j, c in s.checks {
-			let _afterTarget = {
-				if len(s.actions) > 0 {"action_\(_name)_\(len(s.actions) - 1)"}
-				if len(s.actions) == 0 {"apply_\(_name)"}
-			}
-			"check_\(_name)_\(j)": exec.Run & {
-				$after: _afterTarget
-				if c.kind == "wait" {
-					let _nsFlag = {
-						if c.namespace != _|_ {"-n \(c.namespace) "}
-						if c.namespace == _|_ {""}
-					}
-					cmd: ["sh", "-c", "kubectl --context=\(_context) wait --for=\(c.for) --timeout=\(c.timeout) \(_nsFlag)\(c.resource)"]
-				}
-				if c.kind == "rollout" {
-					let _nsFlag = {
-						if c.namespace != _|_ {"-n \(c.namespace) "}
-						if c.namespace == _|_ {""}
-					}
-					cmd: ["sh", "-c", "kubectl --context=\(_context) rollout status --timeout=\(c.timeout) \(_nsFlag)\(c.resource)"]
-				}
-				if c.kind == "exec" {
-					cmd: ["sh", "-c", c.command]
-				}
-				env: _env
-			}
-		}
+	run: exec.Run & {
+		$after: writeScript
+		cmd: ["sh", "-c", "sh " + strings.TrimSpace(writeScript.stdout) + "; EXIT=$?; rm -f " + strings.TrimSpace(writeScript.stdout) + "; exit $EXIT"]
+		env: _env
 	}
 }

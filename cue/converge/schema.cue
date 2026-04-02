@@ -14,6 +14,10 @@ package converge
 	// this package use these as preconditions.
 	// Empty list means the step is ready immediately after apply.
 	checks: [...#Check]
+	// True after apply + actions + checks complete successfully.
+	// Downstream steps reference this to express dependencies.
+	// Default false; set by the engine at runtime.
+	up: *false | bool
 }
 
 // Check is a discriminated union. Each variant maps to a kubectl

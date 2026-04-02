@@ -63,6 +63,7 @@ _apply_if_any() {
   output=$(kubectl "$@" 2>&1) || {
     case "$output" in
       *"no objects passed to apply"*) return 0 ;;
+      *"not found"*) return 0 ;; # y-script-lint:disable=or-true # selector matched no server-side resources
       *) printf '%s\n' "$output" >&2; return 1 ;;
     esac
   }
