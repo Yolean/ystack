@@ -16,12 +16,12 @@ Flags (must come before kustomize args):
   --context=NAME     required
   --diff=true        run kubectl diff instead of apply
   --dry-run=true     pass --dry-run=server to kubectl apply
-  --skip-checks      skip yconverge.cue check invocation after apply
+  --skip-checks      skip yconverge.cue check invocation
 
-After a successful apply, if the kustomization directory contains
-a yconverge.cue file, checks declared in it are executed.
-If no yconverge.cue exists in the directory but it has exactly one
-local resources: entry, checks are looked up there instead.
+If the kustomization directory contains a yconverge.cue file (or one is
+found one level of resources: indirection away), precondition checks from
+dependencies run before apply, and this steps checks run after apply.
+Steps with enabled: false are skipped entirely.
 
 Honors KUBECONFIG if set.
 ' && exit 0
@@ -46,7 +46,7 @@ while true; do
   esac
 done
 
-# Extract -k directory from args for yconverge.cue lookup
+# Extract -k directory from args
 for arg in "$@"; do
   case "$arg" in
     -l|--selector) echo "Error: yconverge can not be combined with other selectors" >&2 && exit 1 ;;
@@ -64,6 +64,101 @@ for arg in "$@"; do
   esac
 done
 
+# --- yconverge.cue lookup ---
+
+KUSTOMIZE_DIR="${KUSTOMIZE_DIR%/}"
+YCONVERGE_DIR=""
+
+_find_yconverge_dir() {
+  dir="$1"
+  if [ -f "$dir/yconverge.cue" ]; then
+    echo "$dir"
+    return 0
+  fi
+  # One level indirection: single local resources entry
+  if [ -f "$dir/kustomization.yaml" ]; then
+    resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$dir/kustomization.yaml" 2>/dev/null)
+    count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null)
+    if [ "$count" = "1" ] && [ -d "$dir/$resources" ] && [ -f "$dir/$resources/yconverge.cue" ]; then
+      echo "$dir/$resources"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+if [ -n "$KUSTOMIZE_DIR" ] && [ "$SKIP_CHECKS" = "false" ] && [ "$DRY_RUN" = "false" ] && [ "$DIFF" = "false" ]; then
+  YCONVERGE_DIR=$(_find_yconverge_dir "$KUSTOMIZE_DIR") || true # y-script-lint:disable=or-true # no yconverge.cue is ok
+fi
+
+CONTEXT="${ctx#--context=}"
+export CONTEXT
+
+# --- yconverge.cue: check enabled, run preconditions ---
+
+_run_checks() {
+  checks_json="$1"
+  label="$2"
+  [ -z "$checks_json" ] || [ "$checks_json" = "[]" ] && return 0
+  count=$(echo "$checks_json" | y-yq '. | length' - 2>/dev/null)
+  [ "$count" = "0" ] && return 0
+  i=0
+  while [ "$i" -lt "$count" ]; do
+    kind=$(echo "$checks_json" | y-yq ".[$i].kind" -)
+    desc=$(echo "$checks_json" | y-yq ".[$i].description // \"\"" -)
+    resource=$(echo "$checks_json" | y-yq ".[$i].resource // \"\"" -)
+    forcond=$(echo "$checks_json" | y-yq ".[$i].for // \"\"" -)
+    ns=$(echo "$checks_json" | y-yq ".[$i].namespace // \"\"" -)
+    timeout=$(echo "$checks_json" | y-yq ".[$i].timeout // \"60s\"" -)
+    command=$(echo "$checks_json" | y-yq ".[$i].command // \"\"" -)
+    ns_flag=""
+    [ -n "$ns" ] && ns_flag="-n $ns"
+    case "$kind" in
+      wait)
+        echo "  [yconverge] $label wait $resource $forcond"
+        kubectl --context="$CONTEXT" wait --for="$forcond" --timeout="$timeout" $ns_flag "$resource"
+        ;;
+      rollout)
+        echo "  [yconverge] $label rollout $resource"
+        kubectl --context="$CONTEXT" rollout status --timeout="$timeout" $ns_flag "$resource"
+        ;;
+      exec)
+        echo "  [yconverge] $label $desc"
+        for _retry_i in $(seq 1 15); do
+          sh -c "$command" && break || sleep 2 # y-script-lint:disable=or-true # retry loop
+        done
+        ;;
+    esac
+    i=$((i + 1))
+  done
+}
+
+if [ -n "$YCONVERGE_DIR" ]; then
+  echo "  [yconverge] found $YCONVERGE_DIR/yconverge.cue"
+
+  # Ensure path starts with ./ for CUE eval
+  case "$YCONVERGE_DIR" in
+    ./*|/*) ;; # already prefixed
+    *) YCONVERGE_DIR="./$YCONVERGE_DIR" ;;
+  esac
+
+  # Check if step is disabled
+  ENABLED=$(y-cue eval "$YCONVERGE_DIR" -e 'step.enabled' 2>/dev/null) || ENABLED="true"
+  if [ "$ENABLED" = "false" ]; then
+    echo "  [yconverge] step disabled, skipping"
+    exit 0
+  fi
+
+  # Run dependency precondition checks
+  PRECHECKS=$(y-cue eval "$YCONVERGE_DIR" -e 'step.prechecks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no prechecks is ok
+  if [ -n "$PRECHECKS" ] && [ "$PRECHECKS" != "[]" ]; then
+    echo "  [yconverge] running precondition checks"
+    _run_checks "$PRECHECKS" "precheck:"
+  fi
+fi
+
+# --- apply ---
+
 if [ "$DIFF" = "true" ]; then
   kubectl $ctx diff "$@"
   exit $?
@@ -72,14 +167,11 @@ fi
 DRY_RUN_FLAG=""
 [ "$DRY_RUN" = "true" ] && DRY_RUN_FLAG="--dry-run=server"
 
-# Each mode applies only to resources with the matching label.
-# create and delete may find no matching resources — that's expected.
 kubectl $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create "$@" 2>/dev/null || true # y-script-lint:disable=or-true # idempotent, ignore already-exists
 if [ "$DRY_RUN" = "false" ]; then
   kubectl $ctx delete --selector=yolean.se/converge-mode=replace "$@" 2>/dev/null || true # y-script-lint:disable=or-true # ignore not-found
 fi
 
-# "no objects passed to apply" means nothing matched the selector — not an error.
 _apply_if_any() {
   output=$(kubectl "$@" 2>&1) || {
     case "$output" in
@@ -95,75 +187,9 @@ _apply_if_any $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selecto
 _apply_if_any $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside "$@"
 _apply_if_any $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' "$@"
 
-# --- yconverge.cue check invocation ---
+# --- yconverge.cue: post-apply checks ---
 
-if [ "$SKIP_CHECKS" = "true" ] || [ "$DRY_RUN" = "true" ] || [ "$DIFF" = "true" ]; then
-  exit 0
+if [ -n "$YCONVERGE_DIR" ]; then
+  CHECKS=$(y-cue eval "$YCONVERGE_DIR" -e 'step.checks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no checks is ok
+  _run_checks "$CHECKS" "check:"
 fi
-
-# Strip trailing slash for consistent lookup
-KUSTOMIZE_DIR="${KUSTOMIZE_DIR%/}"
-
-if [ -z "$KUSTOMIZE_DIR" ]; then
-  exit 0
-fi
-
-# Find yconverge.cue: direct or one level of resources indirection
-_find_yconverge() {
-  dir="$1"
-  if [ -f "$dir/yconverge.cue" ]; then
-    echo "$dir/yconverge.cue"
-    return 0
-  fi
-  # One level indirection: if kustomization has exactly one local resources entry
-  if [ -f "$dir/kustomization.yaml" ]; then
-    resources=$(y-yq eval '.resources // [] | .[] | select(test("^[^h]") and test("^[^.]"))' "$dir/kustomization.yaml" 2>/dev/null)
-    count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null)
-    if [ "$count" = "1" ] && [ -d "$dir/$resources" ]; then
-      if [ -f "$dir/$resources/yconverge.cue" ]; then
-        echo "$dir/$resources/yconverge.cue"
-        return 0
-      fi
-    fi
-  fi
-  return 1
-}
-
-YCONVERGE_FILE=$(_find_yconverge "$KUSTOMIZE_DIR") || exit 0
-
-CONTEXT="${ctx#--context=}"
-export CONTEXT
-
-echo "  [yconverge] found $YCONVERGE_FILE"
-
-# Read checks from the CUE file and execute them
-# Extract check commands using y-cue eval
-YCONVERGE_DIR=$(dirname "$YCONVERGE_FILE")
-CHECKS=$(y-cue eval "$YCONVERGE_DIR" -e 'step.checks' --out json 2>/dev/null) || exit 0
-
-if [ "$CHECKS" = "[]" ] || [ -z "$CHECKS" ]; then
-  exit 0
-fi
-
-echo "$CHECKS" | y-yq -oj eval '.[] | .kind + "|||" + (.description // "") + "|||" + (.resource // "") + "|||" + (.for // "") + "|||" + (.namespace // "") + "|||" + (.timeout // "60s") + "|||" + (.command // "")' - 2>/dev/null | while IFS='|||' read -r kind desc resource forcond ns timeout command; do
-  case "$kind" in
-    wait)
-      ns_flag=""
-      [ -n "$ns" ] && ns_flag="-n $ns"
-      echo "  [yconverge] check: wait $resource $forcond"
-      kubectl --context="$CONTEXT" wait --for="$forcond" --timeout="$timeout" $ns_flag "$resource"
-      ;;
-    rollout)
-      ns_flag=""
-      [ -n "$ns" ] && ns_flag="-n $ns"
-      echo "  [yconverge] check: rollout $resource"
-      kubectl --context="$CONTEXT" rollout status --timeout="$timeout" $ns_flag "$resource"
-      ;;
-    exec)
-      echo "  [yconverge] check: $desc"
-      for _retry_i in $(seq 1 15); do
-        sh -c "$command" && break || sleep 2 # y-script-lint:disable=or-true # retry loop
-      done
-      ;;
-  esac
-done

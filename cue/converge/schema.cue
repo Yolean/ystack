@@ -10,6 +10,9 @@ package converge
 	enabled: *true | bool
 	// One-shot mutations that run after apply (not retried).
 	actions: [...#Action]
+	// Precondition checks from dependencies. Modules populate this
+	// from their imported dependencies' checks.
+	prechecks: [...#Check]
 	// Checks that must pass after apply. Downstream steps that import
 	// this package use these as preconditions.
 	// Empty list means the step is ready immediately after apply.
