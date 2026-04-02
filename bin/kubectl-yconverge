@@ -1,0 +1,74 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+[ "$1" = "help" ] && echo '
+Idempotent apply with support for converge-mode annotations.
+
+Supported values for the yolean.se/converge-mode label:
+  (none)             standard kubectl apply
+  create             kubectl create --save-config (skip if exists)
+  replace            kubectl delete + apply (for immutable resources like Jobs)
+  serverside         kubectl apply --server-side
+  serverside-force   kubectl apply --server-side --force-conflicts
+
+Flags (must come before kustomize args):
+  --context=NAME     required
+  --diff=true        run kubectl diff instead of apply
+  --dry-run=true     pass --dry-run=server to kubectl apply
+
+Honors KUBECONFIG if set.
+' && exit 0
+
+DIFF=false
+DRY_RUN=false
+
+ctx=$1
+case $ctx in
+  "--context="*) shift 1 ;;
+  *) echo "Error: first arg must be --context=" >&2 && exit 1 ;;
+esac
+
+while true; do
+  case "${1:-}" in
+    --diff=true)    DIFF=true; shift ;;
+    --dry-run=true) DRY_RUN=true; shift ;;
+    *) break ;;
+  esac
+done
+
+for arg in "$@"; do
+  case "$arg" in
+    -l|--selector) echo "Error: yconverge can not be combined with other selectors" >&2 && exit 1 ;;
+  esac
+done
+
+if [ "$DIFF" = "true" ]; then
+  kubectl $ctx diff "$@"
+  exit $?
+fi
+
+DRY_RUN_FLAG=""
+[ "$DRY_RUN" = "true" ] && DRY_RUN_FLAG="--dry-run=server"
+
+# Each mode applies only to resources with the matching label.
+# create and delete may find no matching resources — that's expected.
+kubectl $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create "$@" 2>/dev/null || true # y-script-lint:disable=or-true # idempotent, ignore already-exists
+if [ "$DRY_RUN" = "false" ]; then
+  kubectl $ctx delete --selector=yolean.se/converge-mode=replace "$@" 2>/dev/null || true # y-script-lint:disable=or-true # ignore not-found
+fi
+
+# "no objects passed to apply" means nothing matched the selector — not an error.
+_apply_if_any() {
+  output=$(kubectl "$@" 2>&1) || {
+    case "$output" in
+      *"no objects passed to apply"*) return 0 ;;
+      *) printf '%s\n' "$output" >&2; return 1 ;;
+    esac
+  }
+  [ -n "$output" ] && printf '%s\n' "$output"
+}
+
+_apply_if_any $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside-force "$@"
+_apply_if_any $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside "$@"
+_apply_if_any $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' "$@"
