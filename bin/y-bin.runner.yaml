@@ -145,6 +145,19 @@ yarn:
     linux_amd64: 16252fe8ac0b3500bd697bc47213cc438209e2d5f8a812def075a0cdec891301
     linux_arm64: 05ca3451a6f78a68b08c13b4b0b582cb22220b90ccd00160bffff80224d8c50d
 
+cue:
+  version: 0.16.0
+  templates:
+    download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
+  sha256:
+    darwin_amd64: 451495b46684fd78120741e1d325f9b21e6843f05ec455d3fb5073ba2a9311db
+    darwin_arm64: 83ba7485cbad5f031ffc3e0142bc4f3ab26b53fd4491548939bfa9d5b00f6b66
+    linux_amd64: bbe0c5e85bc101cd1f95e68242f5ad48c3db73bad72be94fe2dc79d3f1ef0d4c
+    linux_arm64: 5c5a59bcb31d53c81feee58774752df14baef5c412138f49c208ab15608ac981
+  archive:
+    tool: tar
+    path: cue
+
 npx:
   version: 0.2.1
   templates:
