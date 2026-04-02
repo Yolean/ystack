@@ -26,3 +26,22 @@ jobs:
       with:
         key: script-lint-${{ github.ref_name }}-${{ github.run_id }}
         path: ~/.cache/ystack
+
+  itest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache/restore@v4
+      with:
+        key: itest-${{ github.ref_name }}-
+        restore-keys: |
+          itest-main-
+        path: ~/.cache/ystack
+    - name: Integration tests (yconverge framework)
+      run: cue/itest/test.sh
+      env:
+        PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin
+    - uses: actions/cache/save@v4
+      with:
+        key: itest-${{ github.ref_name }}-${{ github.run_id }}
+        path: ~/.cache/ystack
