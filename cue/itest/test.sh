@@ -170,6 +170,24 @@ echo "$OUTPUT" | grep -q "configmap" \
   && pass "error output mentions the resource" \
   || fail "error output unhelpful"
 
+# --- test: multiple -k args ---
+
+echo ""
+echo "# Test: multiple -k args in one invocation"
+kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1 || true # y-script-lint:disable=or-true # clean slate
+OUTPUT=$(kubectl-yconverge --context="$CTX" \
+  -k cue/itest/example-namespace/ \
+  -k cue/itest/example-configmap/ \
+  -k cue/itest/example-with-dependency/ 2>&1) || true # y-script-lint:disable=or-true # capture output
+echo "$OUTPUT"
+echo "$OUTPUT" | grep -c "\[yconverge\] found" | grep -q "3" \
+  && pass "three yconverge.cue files found" \
+  || fail "expected 3 yconverge.cue files"
+
+kubectl --context="$CTX" -n itest get configmap itest-config itest-dependent >/dev/null 2>&1 \
+  && pass "both configmaps created via multi -k" \
+  || fail "configmaps missing after multi -k"
+
 # --- test: --skip-checks flag ---
 
 echo ""

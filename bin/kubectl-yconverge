@@ -18,9 +18,12 @@ Flags (must come before kustomize args):
   --dry-run=true     pass --dry-run=server to kubectl apply
   --skip-checks      skip yconverge.cue check invocation
 
-If the kustomization directory contains a yconverge.cue file (or one is
-found one level of resources: indirection away), precondition checks from
-dependencies run before apply, and this steps checks run after apply.
+Multiple -k args are supported. Each runs the full cycle
+(prechecks -> apply -> checks) sequentially in order.
+
+If a kustomization directory contains a yconverge.cue file (or one is
+found one level of resources: indirection away), precondition checks
+run before apply, and this steps checks run after apply.
 Steps with enabled: false are skipped entirely.
 
 Honors KUBECONFIG if set.
@@ -29,7 +32,6 @@ Honors KUBECONFIG if set.
 DIFF=false
 DRY_RUN=false
 SKIP_CHECKS=false
-KUSTOMIZE_DIR=""
 
 ctx=$1
 case $ctx in
@@ -46,28 +48,30 @@ while true; do
   esac
 done
 
-# Extract -k directory from args
+# Separate -k dirs from other args
+KUSTOMIZE_DIRS=""
+OTHER_ARGS=""
+_prev=""
 for arg in "$@"; do
   case "$arg" in
     -l|--selector) echo "Error: yconverge can not be combined with other selectors" >&2 && exit 1 ;;
   esac
-done
-_prev=""
-for arg in "$@"; do
   if [ "$_prev" = "-k" ]; then
-    KUSTOMIZE_DIR="$arg"
-    break
+    KUSTOMIZE_DIRS="$KUSTOMIZE_DIRS ${arg%/}"
+    _prev=""
+    continue
   fi
   case "$arg" in
     -k) _prev="-k" ;;
-    -k*) KUSTOMIZE_DIR="${arg#-k}"; break ;;
+    -k*) KUSTOMIZE_DIRS="$KUSTOMIZE_DIRS ${arg#-k}" ;;
+    *) OTHER_ARGS="$OTHER_ARGS $arg"; _prev="" ;;
   esac
 done
 
-# --- yconverge.cue lookup ---
+CONTEXT="${ctx#--context=}"
+export CONTEXT
 
-KUSTOMIZE_DIR="${KUSTOMIZE_DIR%/}"
-YCONVERGE_DIR=""
+# --- shared functions ---
 
 _find_yconverge_dir() {
   dir="$1"
@@ -75,7 +79,6 @@ _find_yconverge_dir() {
     echo "$dir"
     return 0
   fi
-  # One level indirection: single local resources entry
   if [ -f "$dir/kustomization.yaml" ]; then
     resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$dir/kustomization.yaml" 2>/dev/null)
     count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null)
@@ -86,15 +89,6 @@ _find_yconverge_dir() {
   fi
   return 1
 }
-
-if [ -n "$KUSTOMIZE_DIR" ] && [ "$SKIP_CHECKS" = "false" ] && [ "$DRY_RUN" = "false" ] && [ "$DIFF" = "false" ]; then
-  YCONVERGE_DIR=$(_find_yconverge_dir "$KUSTOMIZE_DIR") || true # y-script-lint:disable=or-true # no yconverge.cue is ok
-fi
-
-CONTEXT="${ctx#--context=}"
-export CONTEXT
-
-# --- yconverge.cue: check enabled, run preconditions ---
 
 _run_checks() {
   checks_json="$1"
@@ -133,45 +127,6 @@ _run_checks() {
   done
 }
 
-if [ -n "$YCONVERGE_DIR" ]; then
-  echo "  [yconverge] found $YCONVERGE_DIR/yconverge.cue"
-
-  # Ensure path starts with ./ for CUE eval
-  case "$YCONVERGE_DIR" in
-    ./*|/*) ;; # already prefixed
-    *) YCONVERGE_DIR="./$YCONVERGE_DIR" ;;
-  esac
-
-  # Check if step is disabled
-  ENABLED=$(y-cue eval "$YCONVERGE_DIR" -e 'step.enabled' 2>/dev/null) || ENABLED="true"
-  if [ "$ENABLED" = "false" ]; then
-    echo "  [yconverge] step disabled, skipping"
-    exit 0
-  fi
-
-  # Run dependency precondition checks
-  PRECHECKS=$(y-cue eval "$YCONVERGE_DIR" -e 'step.prechecks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no prechecks is ok
-  if [ -n "$PRECHECKS" ] && [ "$PRECHECKS" != "[]" ]; then
-    echo "  [yconverge] running precondition checks"
-    _run_checks "$PRECHECKS" "precheck:"
-  fi
-fi
-
-# --- apply ---
-
-if [ "$DIFF" = "true" ]; then
-  kubectl $ctx diff "$@"
-  exit $?
-fi
-
-DRY_RUN_FLAG=""
-[ "$DRY_RUN" = "true" ] && DRY_RUN_FLAG="--dry-run=server"
-
-kubectl $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create "$@" 2>/dev/null || true # y-script-lint:disable=or-true # idempotent, ignore already-exists
-if [ "$DRY_RUN" = "false" ]; then
-  kubectl $ctx delete --selector=yolean.se/converge-mode=replace "$@" 2>/dev/null || true # y-script-lint:disable=or-true # ignore not-found
-fi
-
 _apply_if_any() {
   output=$(kubectl "$@" 2>&1) || {
     case "$output" in
@@ -183,13 +138,66 @@ _apply_if_any() {
   [ -n "$output" ] && printf '%s\n' "$output"
 }
 
-_apply_if_any $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside-force "$@"
-_apply_if_any $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside "$@"
-_apply_if_any $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' "$@"
+_converge_one() {
+  kdir="$1"
+  yconverge_dir=""
 
-# --- yconverge.cue: post-apply checks ---
+  if [ "$SKIP_CHECKS" = "false" ] && [ "$DRY_RUN" = "false" ] && [ "$DIFF" = "false" ]; then
+    yconverge_dir=$(_find_yconverge_dir "$kdir") || true # y-script-lint:disable=or-true # no yconverge.cue is ok
+  fi
 
-if [ -n "$YCONVERGE_DIR" ]; then
-  CHECKS=$(y-cue eval "$YCONVERGE_DIR" -e 'step.checks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no checks is ok
-  _run_checks "$CHECKS" "check:"
-fi
+  # --- yconverge.cue: enabled check + preconditions ---
+
+  if [ -n "$yconverge_dir" ]; then
+    echo "  [yconverge] found $yconverge_dir/yconverge.cue"
+
+    case "$yconverge_dir" in
+      ./*|/*) ;;
+      *) yconverge_dir="./$yconverge_dir" ;;
+    esac
+
+    ENABLED=$(y-cue eval "$yconverge_dir" -e 'step.enabled' 2>/dev/null) || ENABLED="true"
+    if [ "$ENABLED" = "false" ]; then
+      echo "  [yconverge] step disabled, skipping"
+      return 0
+    fi
+
+    PRECHECKS=$(y-cue eval "$yconverge_dir" -e 'step.prechecks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no prechecks is ok
+    if [ -n "$PRECHECKS" ] && [ "$PRECHECKS" != "[]" ]; then
+      echo "  [yconverge] running precondition checks"
+      _run_checks "$PRECHECKS" "precheck:"
+    fi
+  fi
+
+  # --- apply ---
+
+  if [ "$DIFF" = "true" ]; then
+    kubectl $ctx diff -k "$kdir" $OTHER_ARGS
+    return $?
+  fi
+
+  DRY_RUN_FLAG=""
+  [ "$DRY_RUN" = "true" ] && DRY_RUN_FLAG="--dry-run=server"
+
+  kubectl $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create -k "$kdir" $OTHER_ARGS 2>/dev/null || true # y-script-lint:disable=or-true # idempotent
+  if [ "$DRY_RUN" = "false" ]; then
+    kubectl $ctx delete --selector=yolean.se/converge-mode=replace -k "$kdir" $OTHER_ARGS 2>/dev/null || true # y-script-lint:disable=or-true # ignore not-found
+  fi
+
+  _apply_if_any $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside-force -k "$kdir" $OTHER_ARGS
+  _apply_if_any $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside -k "$kdir" $OTHER_ARGS
+  _apply_if_any $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' -k "$kdir" $OTHER_ARGS
+
+  # --- yconverge.cue: post-apply checks ---
+
+  if [ -n "$yconverge_dir" ]; then
+    CHECKS=$(y-cue eval "$yconverge_dir" -e 'step.checks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no checks is ok
+    _run_checks "$CHECKS" "check:"
+  fi
+}
+
+# --- main ---
+
+for kdir in $KUSTOMIZE_DIRS; do
+  _converge_one "$kdir"
+done
