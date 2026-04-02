@@ -199,6 +199,53 @@ y-cue cmd check --context=local dev                  # checks only, no apply
 y-cue vet ./...                                      # validate all y-k8s.cue
 ```
 
+## Proposed: yconverge.cue integration with kubectl-yconverge
+
+Rename `y-k8s.cue` to `yconverge.cue`. The only valid location is
+next to a `kustomization.yaml` file.
+
+When `kubectl yconverge -k <dir>` completes with exit 0, it looks for
+`yconverge.cue` in `<dir>/`. If found, it invokes the framework to
+run that step's checks. This means any script that uses `kubectl yconverge`
+automatically gets check verification — no separate orchestration needed.
+
+One level of `resources:` indirection: if the kustomization has exactly
+one `resources:` item pointing to a local directory, and the current
+directory has no `yconverge.cue`, look for `yconverge.cue` in that
+resource directory. This handles the common pattern where
+`cluster-local/kafka-v3/kustomization.yaml` has `resources: [../../kafka-v3/cluster-backend]`
+— the checks can live in `kafka-v3/cluster-backend/yconverge.cue`.
+
+### Trade-off
+
+Pro: Breaks up monolithic provision scripts. Any `kubectl yconverge -k`
+call becomes self-validating. No separate engine invocation needed.
+
+Con: Adds checking overhead to every `kubectl yconverge` call. In
+`y-site-upgrade` which converges many modules in sequence, each apply
+would trigger CUE evaluation + checks. Mitigation: checks should be
+fast (rollout status and kubectl wait already return quickly when
+resources are already ready). Could add `--skip-checks` flag for
+batch operations that do their own validation.
+
+## y-kustomize refresh tracking
+
+When y-kustomize serves content from secrets mounted as volumes,
+it needs a restart when those secrets change. Currently handled by
+an explicit action in `40-kafka-ystack`.
+
+Proposed: y-kustomize stores a hash of its secret contents as an
+annotation on its own deployment:
+
+```
+yolean.se/y-kustomize-secrets-hash: sha256:<hash>
+```
+
+After any step applies secrets in the ystack namespace matching
+`y-kustomize.*`, the engine computes the current hash and compares
+to the annotation. Restart only on mismatch. This makes re-converge
+of a fully converged cluster skip the restart entirely.
+
 ## Migration path
 
 1. Add schema to ystack `cue/converge/`
