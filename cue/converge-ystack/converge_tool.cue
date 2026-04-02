@@ -48,7 +48,7 @@ _plan: strings.Join(list.Concat([
 
 // Generate shell commands per step, wrapped in error handler
 _stepCmds: [for s in _activeSteps {
-	let _apply = "kubectl-yconverge --context=\(_context) -k \(s.kustomization)/"
+	let _apply = "kubectl-yconverge --context=\(_context) --skip-checks -k \(s.kustomization)/"
 	let _actionCmds = [for a in s.actions {"echo '  action: \(a.description)' && " + a.command}]
 	let _checkCmds = [for c in s.checks {
 		if c.kind == "wait" {
