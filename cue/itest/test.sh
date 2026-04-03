@@ -188,6 +188,20 @@ kubectl --context="$CTX" -n itest get configmap itest-config itest-dependent >/d
   && pass "both configmaps created via multi -k" \
   || fail "configmaps missing after multi -k"
 
+# --- test: converge-mode labels (empty selector results) ---
+
+echo ""
+echo "# Test: serverside-force label (other selectors match nothing)"
+kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/ 2>&1
+kubectl --context="$CTX" -n itest get configmap itest-serverside >/dev/null 2>&1 \
+  && pass "serverside-force configmap created" \
+  || fail "serverside-force configmap missing"
+
+# Re-apply should be idempotent (all empty selectors handled gracefully)
+kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/ >/dev/null 2>&1 \
+  && pass "serverside-force re-apply idempotent" \
+  || fail "serverside-force re-apply failed"
+
 # --- test: --skip-checks flag ---
 
 echo ""
