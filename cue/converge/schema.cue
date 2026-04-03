@@ -13,8 +13,9 @@ package converge
 	up: *false | bool
 	// Namespace derived by the engine from:
 	//   1. -n CLI arg to kubectl-yconverge
-	//   2. kustomization.yaml namespace: field
-	//   3. kubectl context default namespace
+	//   2. referenced base's kustomization.yaml namespace: (when indirection is in effect)
+	//   3. kustomization.yaml namespace: field
+	//   4. kubectl context default namespace
 	// Used as default for #Wait/#Rollout checks that omit namespace.
 	// Set by the engine, not by user CUE files.
 	namespaceGuess: *"" | string

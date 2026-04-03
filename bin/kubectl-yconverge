@@ -157,7 +157,10 @@ _converge_one() {
   fi
 
   # --- resolve namespace guess ---
-  # Priority: 1. -n from OTHER_ARGS, 2. kustomization namespace:, 3. context default
+  # Priority: 1. -n from OTHER_ARGS
+  #           2. referenced base namespace (when indirection found yconverge.cue)
+  #           3. kustomization namespace:
+  #           4. context default
   NS_GUESS=""
   _prev_arg=""
   for _arg in $OTHER_ARGS; do
@@ -167,6 +170,15 @@ _converge_one() {
     fi
     _prev_arg="$_arg"
   done
+  # When indirection is in effect, the yconverge_dir differs from kdir —
+  # check the referenced base's kustomization for namespace
+  if [ -z "$NS_GUESS" ] && [ -n "$yconverge_dir" ] && [ "$yconverge_dir" != "$kdir" ] && [ "$yconverge_dir" != "./$kdir" ]; then
+    _ref_kust="$yconverge_dir/kustomization.yaml"
+    [ ! -f "$_ref_kust" ] && _ref_kust="$yconverge_dir/kustomization.yml"
+    if [ -f "$_ref_kust" ]; then
+      NS_GUESS=$(y-yq '.namespace // ""' "$_ref_kust" 2>/dev/null)
+    fi
+  fi
   if [ -z "$NS_GUESS" ] && [ -f "$kdir/kustomization.yaml" ]; then
     NS_GUESS=$(y-yq '.namespace // ""' "$kdir/kustomization.yaml" 2>/dev/null)
   fi

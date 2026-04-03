@@ -135,16 +135,22 @@ kubectl --context="$CTX" -n itest get configmap itest-dependent >/dev/null 2>&1 
   && pass "dependent configmap exists" \
   || fail "dependent configmap missing"
 
-# --- test: one-level indirection ---
+# --- test: one-level indirection with namespace from referenced base ---
 
 echo ""
-echo "# Test: yconverge.cue found via resources indirection"
-kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1 || true # y-script-lint:disable=or-true # clean slate
+echo "# Test: indirection finds yconverge.cue and namespace from referenced base"
+# example-indirect has no namespace: field but references example-configmap which has namespace: itest
+# The check in example-configmap/yconverge.cue uses #Exec with explicit -n itest
+# But the namespaceGuess should resolve to "itest" from the referenced base
 OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-indirect/ 2>&1) || true # y-script-lint:disable=or-true # capture output
 echo "$OUTPUT"
 echo "$OUTPUT" | grep -q "\[yconverge\]" \
   && pass "indirection: yconverge.cue found in referenced dir" \
   || fail "indirection: yconverge.cue not found"
+
+kubectl --context="$CTX" -n itest get configmap itest-config >/dev/null 2>&1 \
+  && pass "indirection: configmap created in itest namespace" \
+  || fail "indirection: configmap not in itest namespace"
 
 # --- test: idempotent re-converge ---
 
