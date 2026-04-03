@@ -72,7 +72,7 @@ y-cue vet ./cue/itest/example-with-dependency/ \
   || fail "example-with-dependency validation"
 
 y-cue vet ./cue/itest/example-disabled/ \
-  && pass "example-disabled validates" \
+  && pass "example-disabled validates (schema only, not enforced by kubectl-yconverge)" \
   || fail "example-disabled validation"
 
 # --- test: plain kubectl-yconverge (no yconverge.cue) ---
@@ -127,15 +127,6 @@ echo "$OUTPUT" | grep -q "\[yconverge\]" \
 kubectl --context="$CTX" -n itest get configmap itest-dependent >/dev/null 2>&1 \
   && pass "dependent configmap exists" \
   || fail "dependent configmap missing"
-
-# --- test: disabled step ---
-
-echo ""
-echo "# Test: disabled step should not apply"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-disabled/ >/dev/null 2>&1
-kubectl --context="$CTX" -n itest get configmap itest-should-not-exist >/dev/null 2>&1 \
-  && fail "disabled configmap should NOT exist" \
-  || pass "disabled step correctly skipped"
 
 # --- test: one-level indirection ---
 

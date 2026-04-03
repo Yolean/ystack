@@ -24,7 +24,6 @@ Multiple -k args are supported. Each runs the full cycle
 If a kustomization directory contains a yconverge.cue file (or one is
 found one level of resources: indirection away), precondition checks
 run before apply, and this steps checks run after apply.
-Steps with enabled: false are skipped entirely.
 
 Honors KUBECONFIG if set.
 ' && exit 0
@@ -155,12 +154,6 @@ _converge_one() {
       ./*|/*) ;;
       *) yconverge_dir="./$yconverge_dir" ;;
     esac
-
-    ENABLED=$(y-cue eval "$yconverge_dir" -e 'step.enabled' 2>/dev/null) || ENABLED="true"
-    if [ "$ENABLED" = "false" ]; then
-      echo "  [yconverge] step disabled, skipping"
-      return 0
-    fi
 
     PRECHECKS=$(y-cue eval "$yconverge_dir" -e 'step.prechecks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no prechecks is ok
     if [ -n "$PRECHECKS" ] && [ "$PRECHECKS" != "[]" ]; then
