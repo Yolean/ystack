@@ -40,6 +40,7 @@ jobs:
     - name: Integration tests (yconverge framework)
       run: cue/itest/test.sh
       env:
+        YSTACK_HOME: ${{ github.workspace }}
         PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin
     - uses: actions/cache/save@v4
       with:
