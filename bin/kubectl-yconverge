@@ -209,7 +209,10 @@ _converge_one() {
   # --- yconverge.cue: post-apply checks ---
 
   if [ -n "$yconverge_dir" ]; then
-    CHECKS=$(y-cue eval "$yconverge_dir" -e 'step.checks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no checks is ok
+    CHECKS=$(y-cue eval "$yconverge_dir" -e 'step.checks' --out json) || {
+      echo "  [yconverge] ERROR: failed to evaluate $yconverge_dir/yconverge.cue" >&2
+      return 1
+    }
     _run_checks "$CHECKS" "check:"
   fi
 }
