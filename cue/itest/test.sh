@@ -55,6 +55,13 @@ export CONTEXT="$CTX"
 
 cd "$YSTACK_HOME"
 
+# --- prerequisites ---
+
+echo "# Ensuring tool binaries are available ..."
+y-cue version >/dev/null
+y-yq --version >/dev/null
+kubectl version --client=true >/dev/null 2>&1
+
 # --- test: CUE schema validation ---
 
 echo ""
