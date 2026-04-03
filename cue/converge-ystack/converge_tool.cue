@@ -13,12 +13,10 @@ _kubeconfig: *"" | string @tag(kubeconfig)
 _overrideIP: *"" | string @tag(overrideIP)
 
 _env: {
-	CONTEXT:     _context
-	PATH:        _path
+	CONTEXT:    _context
+	PATH:       _path
 	OVERRIDE_IP: _overrideIP
-	if _kubeconfig != "" {
-		KUBECONFIG: _kubeconfig
-	}
+	KUBECONFIG: _kubeconfig
 }
 
 // Build human-readable plan
@@ -60,7 +58,7 @@ _stepCmds: [for s in steps {
 		if c.kind == "exec" {"echo '  check: \(c.description)' && { for _retry_i in $(seq 1 15); do " + c.command + " && break || sleep 2; done; }"}
 	}]
 	let _body = strings.Join(list.Concat([[_apply], _checkCmds]), "\n")
-	"echo '>>> \(s.path)'\nif ! (\n\(_body)\n); then\n  echo ''\n  echo \"FAILED: \(s.path)\"\n  echo 'The step above failed. Re-run to retry from this point.'\n  exit 1\nfi"
+	"echo '>>> \(s.path)'\n\(_body)"
 }]
 
 _script: strings.Join(list.Concat([
@@ -77,14 +75,20 @@ command: converge: {
 
 	writeScript: exec.Run & {
 		$after: printPlan
-		cmd: ["sh", "-c", "SCRIPT=$(mktemp /tmp/ystack-converge.XXXXXX.sh) && cat > $SCRIPT && echo $SCRIPT"]
-		stdin: _script
+		cmd: ["sh", "-c", "F=$(mktemp /tmp/ystack-converge.XXXXXX.sh) && cat > $F && echo $F"]
+		stdin:  _script
 		stdout: string
 	}
 
 	run: exec.Run & {
 		$after: writeScript
-		cmd: ["sh", "-c", "sh " + strings.TrimSpace(writeScript.stdout) + "; EXIT=$?; rm -f " + strings.TrimSpace(writeScript.stdout) + "; exit $EXIT"]
-		env: _env
+		cmd: [
+			"bash", "-c",
+			"export CONTEXT=" + _context + " OVERRIDE_IP=" + _overrideIP +
+			" PATH=" + _path +
+			" KUBECONFIG=" + _kubeconfig +
+			"; F=" + strings.TrimSpace(writeScript.stdout) +
+			"; bash $F; E=$?; rm -f $F; exit $E",
+		]
 	}
 }

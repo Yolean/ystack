@@ -120,7 +120,7 @@ if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ] && [ -f "$KUSTOMIZE_DIR/kustomi
   NS_GUESS=$(y-yq '.namespace // ""' "$KUSTOMIZE_DIR/kustomization.yaml" 2>/dev/null)
 fi
 if [ -z "$NS_GUESS" ]; then
-  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null)
+  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null) || true # y-script-lint:disable=or-true # context may not have default namespace
 fi
 [ -z "$NS_GUESS" ] && NS_GUESS="default"
 
