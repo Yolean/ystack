@@ -104,6 +104,8 @@ _run_checks() {
     ns=$(echo "$checks_json" | y-yq ".[$i].namespace // \"\"" -)
     timeout=$(echo "$checks_json" | y-yq ".[$i].timeout // \"60s\"" -)
     command=$(echo "$checks_json" | y-yq ".[$i].command // \"\"" -)
+    # Use NS_GUESS as fallback when check doesn't specify namespace
+    [ -z "$ns" ] && ns="$NS_GUESS"
     ns_flag=""
     [ -n "$ns" ] && ns_flag="-n $ns"
     case "$kind" in
@@ -153,6 +155,25 @@ _converge_one() {
       *) yconverge_dir="./$yconverge_dir" ;;
     esac
   fi
+
+  # --- resolve namespace guess ---
+  # Priority: 1. -n from OTHER_ARGS, 2. kustomization namespace:, 3. context default
+  NS_GUESS=""
+  _prev_arg=""
+  for _arg in $OTHER_ARGS; do
+    if [ "$_prev_arg" = "-n" ]; then
+      NS_GUESS="$_arg"
+      break
+    fi
+    _prev_arg="$_arg"
+  done
+  if [ -z "$NS_GUESS" ] && [ -f "$kdir/kustomization.yaml" ]; then
+    NS_GUESS=$(y-yq '.namespace // ""' "$kdir/kustomization.yaml" 2>/dev/null)
+  fi
+  if [ -z "$NS_GUESS" ]; then
+    NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null)
+  fi
+  [ -z "$NS_GUESS" ] && NS_GUESS="default"
 
   # --- apply ---
 

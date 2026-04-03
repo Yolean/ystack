@@ -9,7 +9,15 @@ package converge
 	checks: [...#Check]
 	// True after apply + checks complete successfully.
 	// Downstream steps that import this package gate on this value.
+	// Set by the engine, not by user CUE files.
 	up: *false | bool
+	// Namespace derived by the engine from:
+	//   1. -n CLI arg to kubectl-yconverge
+	//   2. kustomization.yaml namespace: field
+	//   3. kubectl context default namespace
+	// Used as default for #Wait/#Rollout checks that omit namespace.
+	// Set by the engine, not by user CUE files.
+	namespaceGuess: *"" | string
 }
 
 // Check is a discriminated union. Each variant maps to a kubectl
