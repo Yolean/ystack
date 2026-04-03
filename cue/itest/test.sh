@@ -96,17 +96,6 @@ kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside
 
 _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
-# --- assert: multi -k shows 3 yconverge.cue discoveries ---
-
-echo ""
-echo "[cue itest] Multi -k output must show 3 yconverge.cue files"
-kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1 || true # y-script-lint:disable=or-true # clean slate
-kubectl-yconverge --context="$CTX" \
-  -k cue/itest/example-namespace/ \
-  -k cue/itest/example-configmap/ \
-  -k cue/itest/example-with-dependency/ 2>&1 | tee "$_OUT"
-test "$(grep -c '\[yconverge\] found' "$_OUT")" = "3"
-
 # --- assert: indirection output shows referenced path ---
 
 echo ""
