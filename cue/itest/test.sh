@@ -87,16 +87,6 @@ echo "[cue itest] Idempotent re-apply"
 kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/
 kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/
 
-# --- multiple -k args ---
-
-echo ""
-echo "[cue itest] Multiple -k args"
-kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1 || true # y-script-lint:disable=or-true # clean slate
-kubectl-yconverge --context="$CTX" \
-  -k cue/itest/example-namespace/ \
-  -k cue/itest/example-configmap/ \
-  -k cue/itest/example-with-dependency/
-
 # --- converge-mode labels ---
 
 echo ""
@@ -104,16 +94,37 @@ echo "[cue itest] Serverside-force label (other selectors match nothing)"
 kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/
 kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/
 
+_OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
+
+# --- assert: multi -k shows 3 yconverge.cue discoveries ---
+
+echo ""
+echo "[cue itest] Multi -k output must show 3 yconverge.cue files"
+kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1 || true # y-script-lint:disable=or-true # clean slate
+kubectl-yconverge --context="$CTX" \
+  -k cue/itest/example-namespace/ \
+  -k cue/itest/example-configmap/ \
+  -k cue/itest/example-with-dependency/ 2>&1 | tee "$_OUT"
+test "$(grep -c '\[yconverge\] found' "$_OUT")" = "3"
+
+# --- assert: indirection output shows referenced path ---
+
+echo ""
+echo "[cue itest] Indirection output must reference the base directory"
+kubectl-yconverge --context="$CTX" -k cue/itest/example-indirect/ 2>&1 | tee "$_OUT"
+grep -q "example-configmap/yconverge.cue" "$_OUT"
+
 # --- negative: --skip-checks suppresses check invocation ---
 
 echo ""
 echo "[cue itest] --skip-checks must not produce [yconverge] output"
-! kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-namespace/ 2>&1 | grep -q "\[yconverge\]"
+kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-namespace/ 2>&1 | tee "$_OUT"
+! grep -q "\[yconverge\]" "$_OUT"
 
 # --- negative: broken yconverge.cue must fail ---
 
 echo ""
-echo "[cue itest] Broken yconverge.cue must fail"
+echo "[cue itest] Broken yconverge.cue must fail with error message"
 mkdir -p /tmp/yconverge-itest-broken
 cat > /tmp/yconverge-itest-broken/kustomization.yaml << 'YAML'
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -133,8 +144,11 @@ cat > /tmp/yconverge-itest-broken/yconverge.cue << 'CUE'
 package broken
 this_is_not_valid_cue: !!!
 CUE
-! kubectl-yconverge --context="$CTX" -k /tmp/yconverge-itest-broken/
+! kubectl-yconverge --context="$CTX" -k /tmp/yconverge-itest-broken/ 2>&1 | tee "$_OUT"
+grep -q "ERROR" "$_OUT"
 rm -rf /tmp/yconverge-itest-broken
+
+rm -f "$_OUT"
 
 echo ""
 echo "[cue itest] All tests passed"
