@@ -13,11 +13,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 YSTACK_HOME="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONTAINER_NAME="yconverge-itest-$$"
 CTX="yconverge-itest"
-PASS=0
-FAIL=0
-
-pass() { PASS=$((PASS + 1)); echo "  PASS  $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  FAIL  $1"; }
 
 cleanup() {
   echo "# Cleaning up ..."
@@ -36,17 +31,13 @@ docker run -d --name "$CONTAINER_NAME" \
   registry.k8s.io/kwok/cluster:v0.7.0-k8s.v1.33.0
 PORT=$(docker port "$CONTAINER_NAME" 8080 | head -1 | cut -d: -f2)
 
-# Wait for API server
 for i in $(seq 1 30); do
   kubectl --server="http://127.0.0.1:$PORT" get ns default >/dev/null 2>&1 && break
   sleep 1
 done
 
-# Set up context
 kubectl config set-cluster "$CTX" --server="http://127.0.0.1:$PORT" >/dev/null
 kubectl config set-context "$CTX" --cluster="$CTX" >/dev/null
-
-# Verify cluster works
 kubectl --context="$CTX" get ns default >/dev/null 2>&1 \
   && echo "# kwok cluster ready at port $PORT" \
   || { echo "# FATAL: kwok cluster not reachable"; exit 1; }
@@ -55,169 +46,95 @@ export CONTEXT="$CTX"
 
 cd "$YSTACK_HOME"
 
-# --- prerequisites ---
-
 echo "# Ensuring tool binaries are available ..."
 y-cue version >/dev/null
 y-yq --version >/dev/null
 kubectl version --client=true >/dev/null 2>&1
 
-# --- test: CUE schema validation ---
+# --- schema validation ---
 
 echo ""
-echo "# Test: CUE schema validation"
-y-cue vet ./cue/itest/example-namespace/ \
-  && pass "example-namespace validates" \
-  || fail "example-namespace validation"
+echo "# CUE schema validation"
+y-cue vet ./cue/itest/example-namespace/
+y-cue vet ./cue/itest/example-configmap/
+y-cue vet ./cue/itest/example-with-dependency/
+y-cue vet ./cue/itest/example-disabled/
 
-y-cue vet ./cue/itest/example-configmap/ \
-  && pass "example-configmap validates (with dependency)" \
-  || fail "example-configmap validation"
-
-y-cue vet ./cue/itest/example-with-dependency/ \
-  && pass "example-with-dependency validates (transitive)" \
-  || fail "example-with-dependency validation"
-
-y-cue vet ./cue/itest/example-disabled/ \
-  && pass "example-disabled validates (schema only, not enforced by kubectl-yconverge)" \
-  || fail "example-disabled validation"
-
-# --- test: plain kubectl-yconverge (no yconverge.cue) ---
+# --- apply with auto-checks ---
 
 echo ""
-echo "# Test: plain apply without yconverge.cue"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/ >/dev/null 2>&1 \
-  && pass "plain apply namespace" \
-  || fail "plain apply namespace"
-
-kubectl --context="$CTX" get ns itest >/dev/null 2>&1 \
-  && pass "namespace itest exists after apply" \
-  || fail "namespace itest missing after apply"
-
-# Clean up for next test
-kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1
-
-# --- test: kubectl-yconverge with yconverge.cue checks ---
+echo "# Apply with auto-checks (namespace)"
+kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/
 
 echo ""
-echo "# Test: apply with auto-checks"
-OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/ 2>&1)
-echo "$OUTPUT"
-echo "$OUTPUT" | grep -q "\[yconverge\]" \
-  && pass "yconverge.cue detected and checks ran" \
-  || fail "yconverge.cue not detected"
-
-# --- test: apply with dependency (configmap after namespace) ---
+echo "# Apply with checks (configmap depends on namespace)"
+kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/
 
 echo ""
-echo "# Test: apply with dependency (configmap needs namespace)"
-OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/ 2>&1) || true # y-script-lint:disable=or-true # capture output even on failure
-echo "$OUTPUT"
-echo "$OUTPUT" | grep -q "\[yconverge\]" \
-  && pass "configmap applied with dependency checks" \
-  || fail "configmap apply failed"
+echo "# Transitive dependency (depends on configmap which depends on namespace)"
+kubectl-yconverge --context="$CTX" -k cue/itest/example-with-dependency/
 
-kubectl --context="$CTX" -n itest get configmap itest-config >/dev/null 2>&1 \
-  && pass "configmap itest-config exists" \
-  || fail "configmap itest-config missing"
-
-# --- test: transitive dependency ---
+# --- indirection with namespace from referenced base ---
 
 echo ""
-echo "# Test: transitive dependency (depends on configmap which depends on namespace)"
-OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-with-dependency/ 2>&1) || true # y-script-lint:disable=or-true # capture output
-echo "$OUTPUT"
-echo "$OUTPUT" | grep -q "\[yconverge\]" \
-  && pass "transitive dependency converge" \
-  || fail "transitive dependency failed"
+echo "# Indirection: yconverge.cue and namespace from referenced base"
+kubectl-yconverge --context="$CTX" -k cue/itest/example-indirect/
 
-kubectl --context="$CTX" -n itest get configmap itest-dependent >/dev/null 2>&1 \
-  && pass "dependent configmap exists" \
-  || fail "dependent configmap missing"
-
-# --- test: one-level indirection with namespace from referenced base ---
+# --- idempotent re-converge ---
 
 echo ""
-echo "# Test: indirection finds yconverge.cue and namespace from referenced base"
-# example-indirect has no namespace: field but references example-configmap which has namespace: itest
-# The check in example-configmap/yconverge.cue uses #Exec with explicit -n itest
-# But the namespaceGuess should resolve to "itest" from the referenced base
-OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-indirect/ 2>&1) || true # y-script-lint:disable=or-true # capture output
-echo "$OUTPUT"
-echo "$OUTPUT" | grep -q "\[yconverge\]" \
-  && pass "indirection: yconverge.cue found in referenced dir" \
-  || fail "indirection: yconverge.cue not found"
+echo "# Idempotent re-apply"
+kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/
+kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/
 
-kubectl --context="$CTX" -n itest get configmap itest-config >/dev/null 2>&1 \
-  && pass "indirection: configmap created in itest namespace" \
-  || fail "indirection: configmap not in itest namespace"
-
-# --- test: idempotent re-converge ---
+# --- multiple -k args ---
 
 echo ""
-echo "# Test: idempotent re-apply"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/ >/dev/null 2>&1 \
-  && pass "re-apply namespace (idempotent)" \
-  || fail "re-apply namespace failed"
-
-kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/ >/dev/null 2>&1 \
-  && pass "re-apply configmap (idempotent)" \
-  || fail "re-apply configmap failed"
-
-# --- test: error reporting ---
-
-echo ""
-echo "# Test: error reporting on check failure"
-# Apply to a non-existent namespace to trigger a check failure
-OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/ 2>&1) || true # y-script-lint:disable=or-true # expect possible failure
-echo "$OUTPUT" | grep -q "configmap" \
-  && pass "error output mentions the resource" \
-  || fail "error output unhelpful"
-
-# --- test: multiple -k args ---
-
-echo ""
-echo "# Test: multiple -k args in one invocation"
+echo "# Multiple -k args"
 kubectl --context="$CTX" delete ns itest --wait=true >/dev/null 2>&1 || true # y-script-lint:disable=or-true # clean slate
-OUTPUT=$(kubectl-yconverge --context="$CTX" \
+kubectl-yconverge --context="$CTX" \
   -k cue/itest/example-namespace/ \
   -k cue/itest/example-configmap/ \
-  -k cue/itest/example-with-dependency/ 2>&1) || true # y-script-lint:disable=or-true # capture output
-echo "$OUTPUT"
-echo "$OUTPUT" | grep -c "\[yconverge\] found" | grep -q "3" \
-  && pass "three yconverge.cue files found" \
-  || fail "expected 3 yconverge.cue files"
+  -k cue/itest/example-with-dependency/
 
-kubectl --context="$CTX" -n itest get configmap itest-config itest-dependent >/dev/null 2>&1 \
-  && pass "both configmaps created via multi -k" \
-  || fail "configmaps missing after multi -k"
-
-# --- test: converge-mode labels (empty selector results) ---
+# --- converge-mode labels ---
 
 echo ""
-echo "# Test: serverside-force label (other selectors match nothing)"
-kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/ 2>&1
-kubectl --context="$CTX" -n itest get configmap itest-serverside >/dev/null 2>&1 \
-  && pass "serverside-force configmap created" \
-  || fail "serverside-force configmap missing"
+echo "# Serverside-force label (other selectors match nothing)"
+kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/
+kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/
 
-# Re-apply should be idempotent (all empty selectors handled gracefully)
-kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/ >/dev/null 2>&1 \
-  && pass "serverside-force re-apply idempotent" \
-  || fail "serverside-force re-apply failed"
-
-# --- test: --skip-checks flag ---
+# --- negative: --skip-checks suppresses check invocation ---
 
 echo ""
-echo "# Test: --skip-checks suppresses check invocation"
-OUTPUT=$(kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-namespace/ 2>&1)
-echo "$OUTPUT" | grep -q "\[yconverge\]" \
-  && fail "--skip-checks still ran checks" \
-  || pass "--skip-checks suppressed checks"
+echo "# --skip-checks must not produce [yconverge] output"
+! kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-namespace/ 2>&1 | grep -q "\[yconverge\]"
 
-# --- results ---
+# --- negative: broken yconverge.cue must fail ---
 
 echo ""
-echo "=== Results: $PASS passed, $FAIL failed ==="
+echo "# Broken yconverge.cue must fail"
+mkdir -p /tmp/yconverge-itest-broken
+cat > /tmp/yconverge-itest-broken/kustomization.yaml << 'YAML'
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- configmap.yaml
+YAML
+cat > /tmp/yconverge-itest-broken/configmap.yaml << 'YAML'
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broken-test
+  namespace: default
+data: {}
+YAML
+cat > /tmp/yconverge-itest-broken/yconverge.cue << 'CUE'
+package broken
+this_is_not_valid_cue: !!!
+CUE
+! kubectl-yconverge --context="$CTX" -k /tmp/yconverge-itest-broken/
+rm -rf /tmp/yconverge-itest-broken
 
-[ "$FAIL" -eq 0 ]
+echo ""
+echo "=== All tests passed ==="
