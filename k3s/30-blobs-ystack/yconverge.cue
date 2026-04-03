@@ -10,7 +10,10 @@ _dep_ns:        namespace_blobs.step
 _dep_kustomize: y_kustomize.step
 
 step: converge.#Step & {
-	kustomization: "k3s/30-blobs-ystack"
-	namespace:     "blobs"
-	checks: []
+	checks: [{
+		kind:        "exec"
+		command:     "kubectl --context=$CONTEXT -n ystack rollout restart deploy/y-kustomize && kubectl --context=$CONTEXT -n ystack rollout status deploy/y-kustomize --timeout=60s"
+		timeout:     "90s"
+		description: "restart y-kustomize to pick up blobs secrets"
+	}]
 }

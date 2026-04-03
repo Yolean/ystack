@@ -107,10 +107,10 @@ echo "$OUTPUT" | grep -q "\[yconverge\]" \
   && pass "yconverge.cue detected and checks ran" \
   || fail "yconverge.cue not detected"
 
-# --- test: dependency precondition checks ---
+# --- test: apply with dependency (configmap after namespace) ---
 
 echo ""
-echo "# Test: dependency precondition (configmap depends on namespace)"
+echo "# Test: apply with dependency (configmap needs namespace)"
 OUTPUT=$(kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/ 2>&1) || true # y-script-lint:disable=or-true # capture output even on failure
 echo "$OUTPUT"
 echo "$OUTPUT" | grep -q "\[yconverge\]" \

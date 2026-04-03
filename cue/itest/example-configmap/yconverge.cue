@@ -5,10 +5,9 @@ import (
 	"yolean.se/ystack/cue/itest/example-namespace:example_namespace"
 )
 
+_dep_ns: example_namespace.step
+
 step: converge.#Step & {
-	kustomization: "cue/itest/example-configmap"
-	namespace:     "itest"
-	prechecks:     example_namespace.step.checks
 	checks: [{
 		kind:        "exec"
 		command:     "kubectl --context=$CONTEXT -n itest get configmap itest-config"

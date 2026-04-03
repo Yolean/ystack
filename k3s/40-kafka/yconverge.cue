@@ -5,11 +5,9 @@ import (
 	"yolean.se/ystack/k3s/40-kafka-ystack:kafka_ystack"
 )
 
-_deps: kafka_ystack.step
+_dep_ystack: kafka_ystack.step
 
 step: converge.#Step & {
-	kustomization: "k3s/40-kafka"
-	namespace:     "kafka"
 	checks: [
 		{
 			kind:      "rollout"

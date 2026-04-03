@@ -5,11 +5,9 @@ import (
 	"yolean.se/ystack/k3s/03-namespace-monitoring:namespace_monitoring"
 )
 
-_deps: namespace_monitoring.step
+_dep_ns: namespace_monitoring.step
 
 step: converge.#Step & {
-	kustomization: "k3s/11-monitoring-operator"
-	namespace:     "monitoring"
 	checks: [{
 		kind:      "rollout"
 		resource:  "deploy/prometheus-operator"

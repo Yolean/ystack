@@ -10,14 +10,13 @@ _dep_ns:        namespace_kafka.step
 _dep_kustomize: y_kustomize.step
 
 step: converge.#Step & {
-	kustomization: "k3s/40-kafka-ystack"
-	namespace:     "kafka"
-	actions: [{
-		kind:        "action"
-		command:     "kubectl --context=$CONTEXT -n ystack rollout restart deploy/y-kustomize && kubectl --context=$CONTEXT -n ystack rollout status deploy/y-kustomize --timeout=60s"
-		description: "restart y-kustomize to pick up kafka secrets"
-	}]
 	checks: [
+		{
+			kind:        "exec"
+			command:     "kubectl --context=$CONTEXT -n ystack rollout restart deploy/y-kustomize && kubectl --context=$CONTEXT -n ystack rollout status deploy/y-kustomize --timeout=60s"
+			timeout:     "90s"
+			description: "restart y-kustomize to pick up kafka secrets"
+		},
 		{
 			kind:        "exec"
 			command:     "kubectl --context=$CONTEXT get --raw /api/v1/namespaces/ystack/services/y-kustomize:80/proxy/v1/blobs/setup-bucket-job/base-for-annotations.yaml"

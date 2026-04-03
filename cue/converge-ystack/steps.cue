@@ -21,25 +21,31 @@ import (
 	"yolean.se/ystack/k3s/62-buildkit:buildkit"
 )
 
-// All steps in dependency order. The order here matches the DAG
-// but CUE imports enforce the actual dependency constraints.
-steps: [
-	namespace_ystack.step,
-	namespace_blobs.step,
-	namespace_kafka.step,
-	namespace_monitoring.step,
-	y_kustomize_secrets_init.step,
-	gateway_api.step,
-	monitoring_operator.step,
-	gateway.step,
-	y_kustomize.step,
-	blobs_ystack.step,
-	blobs.step,
-	blobs_minio_disabled.step,
-	kafka_ystack.step,
-	kafka.step,
-	monitoring.step,
-	builds_registry.step,
-	prod_registry.step,
-	buildkit.step,
+import "yolean.se/ystack/cue/converge"
+
+_entry: {
+	path:  string
+	step:  converge.#Step
+}
+
+// All steps in dependency order.
+steps: [..._entry] & [
+	{path: "k3s/00-namespace-ystack", step: namespace_ystack.step},
+	{path: "k3s/01-namespace-blobs", step: namespace_blobs.step},
+	{path: "k3s/02-namespace-kafka", step: namespace_kafka.step},
+	{path: "k3s/03-namespace-monitoring", step: namespace_monitoring.step},
+	{path: "k3s/09-y-kustomize-secrets-init", step: y_kustomize_secrets_init.step},
+	{path: "k3s/10-gateway-api", step: gateway_api.step},
+	{path: "k3s/11-monitoring-operator", step: monitoring_operator.step},
+	{path: "k3s/20-gateway", step: gateway.step},
+	{path: "k3s/29-y-kustomize", step: y_kustomize.step},
+	{path: "k3s/30-blobs-ystack", step: blobs_ystack.step},
+	{path: "k3s/30-blobs", step: blobs.step},
+	{path: "k3s/30-blobs-minio-disabled", step: blobs_minio_disabled.step},
+	{path: "k3s/40-kafka-ystack", step: kafka_ystack.step},
+	{path: "k3s/40-kafka", step: kafka.step},
+	{path: "k3s/50-monitoring", step: monitoring.step},
+	{path: "k3s/60-builds-registry", step: builds_registry.step},
+	{path: "k3s/61-prod-registry", step: prod_registry.step},
+	{path: "k3s/62-buildkit", step: buildkit.step},
 ]

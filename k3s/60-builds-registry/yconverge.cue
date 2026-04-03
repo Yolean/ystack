@@ -12,8 +12,6 @@ _dep_kafka:     kafka_ystack.step
 _dep_kustomize: y_kustomize.step
 
 step: converge.#Step & {
-	kustomization: "k3s/60-builds-registry"
-	namespace:     "ystack"
 	checks: [
 		{
 			kind:      "rollout"

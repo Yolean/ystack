@@ -1,25 +1,14 @@
 package converge
 
 // A convergence step: apply a kustomize base, then verify.
+// The yconverge.cue file must be next to a kustomization.yaml.
+// The kustomization path is implicit from the file location.
 #Step: {
-	// Path to kustomize directory, relative to repo root.
-	kustomization: string
-	// Namespace this step targets. Used for filtering (--exclude-namespace).
-	namespace?: string
-	// Set to false to disable this step (e.g. alternative implementations).
-	enabled: *true | bool
-	// One-shot mutations that run after apply (not retried).
-	actions: [...#Action]
-	// Precondition checks from dependencies. Modules populate this
-	// from their imported dependencies' checks.
-	prechecks: [...#Check]
-	// Checks that must pass after apply. Downstream steps that import
-	// this package use these as preconditions.
+	// Checks that must pass after apply.
 	// Empty list means the step is ready immediately after apply.
 	checks: [...#Check]
-	// True after apply + actions + checks complete successfully.
-	// Downstream steps reference this to express dependencies.
-	// Default false; set by the engine at runtime.
+	// True after apply + checks complete successfully.
+	// Downstream steps that import this package gate on this value.
 	up: *false | bool
 }
 
@@ -31,8 +20,8 @@ package converge
 // Timeout and output are managed by kubectl.
 #Wait: {
 	kind:        "wait"
-	resource:    string // e.g. "pod/redpanda-0" or "crd/gateways.gateway.networking.k8s.io"
-	for:         string // e.g. "condition=Ready" or "condition=Established"
+	resource:    string
+	for:         string
 	namespace?:  string
 	timeout:     *"60s" | string
 	description: *"" | string
@@ -42,7 +31,7 @@ package converge
 // Timeout and output are managed by kubectl.
 #Rollout: {
 	kind:        "rollout"
-	resource:    string // e.g. "deploy/y-kustomize" or "statefulset/redpanda"
+	resource:    string
 	namespace?:  string
 	timeout:     *"60s" | string
 	description: *"" | string
@@ -54,13 +43,5 @@ package converge
 	kind:        "exec"
 	command:     string
 	timeout:     *"60s" | string
-	description: string
-}
-
-// An imperative action that runs once after apply.
-// Unlike checks, actions are not retried -- they either succeed or fail.
-#Action: {
-	kind:        "action"
-	command:     string
 	description: string
 }

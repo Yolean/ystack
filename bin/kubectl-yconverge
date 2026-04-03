@@ -145,8 +145,6 @@ _converge_one() {
     yconverge_dir=$(_find_yconverge_dir "$kdir") || true # y-script-lint:disable=or-true # no yconverge.cue is ok
   fi
 
-  # --- yconverge.cue: enabled check + preconditions ---
-
   if [ -n "$yconverge_dir" ]; then
     echo "  [yconverge] found $yconverge_dir/yconverge.cue"
 
@@ -154,12 +152,6 @@ _converge_one() {
       ./*|/*) ;;
       *) yconverge_dir="./$yconverge_dir" ;;
     esac
-
-    PRECHECKS=$(y-cue eval "$yconverge_dir" -e 'step.prechecks' --out json 2>/dev/null) || true # y-script-lint:disable=or-true # no prechecks is ok
-    if [ -n "$PRECHECKS" ] && [ "$PRECHECKS" != "[]" ]; then
-      echo "  [yconverge] running precondition checks"
-      _run_checks "$PRECHECKS" "precheck:"
-    fi
   fi
 
   # --- apply ---

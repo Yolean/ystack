@@ -5,10 +5,9 @@ import (
 	"yolean.se/ystack/cue/itest/example-configmap:example_configmap"
 )
 
+_dep_config: example_configmap.step
+
 step: converge.#Step & {
-	kustomization: "cue/itest/example-with-dependency"
-	namespace:     "itest"
-	prechecks:     example_configmap.step.checks
 	checks: [{
 		kind:        "exec"
 		command:     "kubectl --context=$CONTEXT -n itest get configmap itest-dependent"

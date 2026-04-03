@@ -10,8 +10,6 @@ _dep_secrets: y_kustomize_secrets_init.step
 _dep_gateway: gateway.step
 
 step: converge.#Step & {
-	kustomization: "k3s/29-y-kustomize"
-	namespace:     "ystack"
 	checks: [{
 		kind:      "rollout"
 		resource:  "deploy/y-kustomize"
