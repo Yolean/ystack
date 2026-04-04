@@ -1,0 +1,63 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+[ "$1" = "help" ] && echo '
+Resolve the dependency tree for a yconverge.cue file.
+Outputs kustomization paths in topological order (dependencies first).
+
+Usage: y-yconverge-deps <dir>
+' && exit 0
+
+YSTACK_HOME="${YSTACK_HOME:-$(cd "$(dirname "$0")/.." && pwd)}"
+MODULE_PREFIX="yolean.se/ystack/"
+
+dir="${1%/}"
+[ -z "$dir" ] && echo "Usage: y-yconverge-deps <dir>" >&2 && exit 1
+
+_VISITED=$(mktemp /tmp/yconverge-deps.XXXXXX)
+
+_find_cue() {
+  local d="$1"
+  if [ -f "$d/yconverge.cue" ]; then
+    echo "$d"
+    return 0
+  fi
+  if [ -f "$d/kustomization.yaml" ]; then
+    local resources count
+    resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$d/kustomization.yaml" 2>/dev/null) || true # y-script-lint:disable=or-true # no local resources
+    count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # empty
+    if [ "$count" = "1" ] && [ -f "$d/$resources/yconverge.cue" ]; then
+      echo "$d/$resources"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+_imports() {
+  grep "\"${MODULE_PREFIX}" "$1" 2>/dev/null \
+    | grep -v '/cue/converge"' \
+    | sed "s|.*\"${MODULE_PREFIX}\([^\":]*\).*|\1|" \
+    || true # y-script-lint:disable=or-true # no deps is valid
+}
+
+_resolve() {
+  local path="$1"
+  local cue_file dep cue_dir
+
+  if grep -qx "$path" "$_VISITED" 2>/dev/null; then return 0; fi
+
+  cue_dir=$(_find_cue "$path") || return 0 # y-script-lint:disable=or-true # no yconverge.cue
+  cue_file="$cue_dir/yconverge.cue"
+
+  for dep in $(_imports "$cue_file"); do
+    _resolve "$dep"
+  done
+
+  echo "$path" >> "$_VISITED"
+  echo "$path"
+}
+
+_resolve "$dir"
+rm -f "$_VISITED"

@@ -19,7 +19,9 @@ Flags (must come before kustomize args):
   --skip-checks      skip yconverge.cue check invocation
 
 If the -k directory contains a yconverge.cue file (or one is found
-one level of resources: indirection away), checks run after apply.
+one level of resources: indirection away):
+  - Dependencies from CUE imports are resolved and converged first
+  - Checks run after apply
 
 Honors KUBECONFIG if set.
 ' && exit 0
@@ -64,6 +66,27 @@ done
 
 CONTEXT="${ctx#--context=}"
 export CONTEXT
+
+# --- dependency resolution ---
+# On first invocation, resolve the dependency tree and call self for each step.
+# Inner calls (during resolution) skip this and go straight to apply + checks.
+
+if [ -z "$_YCONVERGE_RESOLVING" ] && [ -n "$KUSTOMIZE_DIR" ] && [ "$SKIP_CHECKS" = "false" ] && [ "$DIFF" = "false" ]; then
+  deps=$(y-yconverge-deps "$KUSTOMIZE_DIR" 2>/dev/null) || true # y-script-lint:disable=or-true # no deps script or no yconverge.cue
+  dep_count=$(printf '%s\n' "$deps" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # empty
+  if [ "$dep_count" -gt 1 ] 2>/dev/null; then
+    echo "=== Converge plan (context=$CONTEXT) ==="
+    echo "Steps ($dep_count):"
+    for d in $deps; do echo "  $d"; done
+    echo "==="
+    export _YCONVERGE_RESOLVING=1
+    for d in $deps; do
+      echo ">>> $d"
+      kubectl-yconverge $ctx -k "$d/"
+    done
+    exit 0
+  fi
+fi
 
 # --- yconverge.cue lookup ---
 
