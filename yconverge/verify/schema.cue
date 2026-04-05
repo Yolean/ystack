@@ -1,4 +1,4 @@
-package converge
+package verify
 
 // A convergence step: apply a kustomize base, then verify.
 // The yconverge.cue file must be next to a kustomization.yaml.

@@ -1,8 +1,8 @@
 package example_namespace
 
-import "yolean.se/ystack/yconverge/converge"
+import "yolean.se/ystack/yconverge/verify"
 
-step: converge.#Step & {
+step: verify.#Step & {
 	checks: [{
 		kind:     "wait"
 		resource: "ns/itest"

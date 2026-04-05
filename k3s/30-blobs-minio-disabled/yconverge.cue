@@ -1,7 +1,7 @@
 package blobs_minio_disabled
 
-import "yolean.se/ystack/yconverge/converge"
+import "yolean.se/ystack/yconverge/verify"
 
-step: converge.#Step & {
+step: verify.#Step & {
 	checks: []
 }

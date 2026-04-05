@@ -1,13 +1,13 @@
 package kafka
 
 import (
-	"yolean.se/ystack/yconverge/converge"
+	"yolean.se/ystack/yconverge/verify"
 	"yolean.se/ystack/k3s/40-kafka-ystack:kafka_ystack"
 )
 
 _dep_ystack: kafka_ystack.step
 
-step: converge.#Step & {
+step: verify.#Step & {
 	checks: [
 		{
 			kind:      "rollout"

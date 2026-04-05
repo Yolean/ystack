@@ -1,7 +1,7 @@
 package kafka_ystack
 
 import (
-	"yolean.se/ystack/yconverge/converge"
+	"yolean.se/ystack/yconverge/verify"
 	"yolean.se/ystack/k3s/02-namespace-kafka:namespace_kafka"
 	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"
 )
@@ -9,7 +9,7 @@ import (
 _dep_ns:        namespace_kafka.step
 _dep_kustomize: y_kustomize.step
 
-step: converge.#Step & {
+step: verify.#Step & {
 	checks: [
 		{
 			kind:        "exec"

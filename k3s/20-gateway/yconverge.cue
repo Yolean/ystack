@@ -1,13 +1,13 @@
 package gateway
 
 import (
-	"yolean.se/ystack/yconverge/converge"
+	"yolean.se/ystack/yconverge/verify"
 	"yolean.se/ystack/k3s/10-gateway-api:gateway_api"
 )
 
 _dep_crds: gateway_api.step
 
-step: converge.#Step & {
+step: verify.#Step & {
 	checks: [
 		{
 			kind:        "exec"

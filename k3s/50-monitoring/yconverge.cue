@@ -1,13 +1,13 @@
 package monitoring
 
 import (
-	"yolean.se/ystack/yconverge/converge"
+	"yolean.se/ystack/yconverge/verify"
 	"yolean.se/ystack/k3s/11-monitoring-operator:monitoring_operator"
 )
 
 _dep_operator: monitoring_operator.step
 
-step: converge.#Step & {
+step: verify.#Step & {
 	checks: [{
 		kind:      "rollout"
 		resource:  "deploy/kube-state-metrics"
