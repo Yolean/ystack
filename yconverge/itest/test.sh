@@ -6,8 +6,19 @@ set -eo pipefail
 Integration tests for the yconverge framework.
 Uses kwok (registry.k8s.io/kwok/cluster) as a lightweight test cluster.
 
+Flags:
+  --keep    keep the kwok cluster running after tests
+
 Requires: docker, kubectl, y-cue, kubectl-yconverge
 ' && exit 0
+
+KEEP=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --keep) KEEP=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 YSTACK_HOME="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -15,6 +26,10 @@ CONTAINER_NAME="yconverge-itest-$$"
 CTX="yconverge-itest"
 
 cleanup() {
+  if [ "$KEEP" = "true" ]; then
+    echo "[cue itest] KEEP=true, cluster kept: kubectl --context=$CTX get ns"
+    return
+  fi
   echo "[cue itest] Cleaning up ..."
   docker rm -f "$CONTAINER_NAME" 2>/dev/null || true # y-script-lint:disable=or-true # best-effort cleanup
   kubectl config delete-context "$CTX" 2>/dev/null || true # y-script-lint:disable=or-true # best-effort cleanup
