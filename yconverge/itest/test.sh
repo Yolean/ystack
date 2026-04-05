@@ -22,17 +22,26 @@ done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 YSTACK_HOME="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CONTAINER_NAME="yconverge-itest-$$"
 CTX="yconverge-itest"
+
+if [ "$KEEP" = "true" ]; then
+  CONTAINER_NAME="yconverge-itest"
+  ITEST_KUBECONFIG="/tmp/ystack-yconverge-itest"
+else
+  CONTAINER_NAME="yconverge-itest-$$"
+  ITEST_KUBECONFIG=$(mktemp /tmp/ystack-yconverge-itest.XXXXXX)
+fi
+export KUBECONFIG="$ITEST_KUBECONFIG"
 
 cleanup() {
   if [ "$KEEP" = "true" ]; then
-    echo "[cue itest] KEEP=true, cluster kept: kubectl --context=$CTX get ns"
+    echo "[cue itest] KEEP=true, cluster kept:"
+    echo "  KUBECONFIG=$ITEST_KUBECONFIG kubectl --context=$CTX get ns"
     return
   fi
   echo "[cue itest] Cleaning up ..."
   docker rm -f "$CONTAINER_NAME" 2>/dev/null || true # y-script-lint:disable=or-true # best-effort cleanup
-  kubectl config delete-context "$CTX" 2>/dev/null || true # y-script-lint:disable=or-true # best-effort cleanup
+  rm -f "$ITEST_KUBECONFIG"
 }
 trap cleanup EXIT
 
