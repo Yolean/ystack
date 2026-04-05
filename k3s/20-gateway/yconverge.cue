@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/10-gateway-api:gateway_api"
 )
 

@@ -1,6 +1,6 @@
 package namespace_monitoring
 
-import "yolean.se/ystack/cue/converge"
+import "yolean.se/ystack/yconverge/converge"
 
 step: converge.#Step & {
 	checks: []

@@ -37,7 +37,7 @@ _find_cue() {
 
 _imports() {
   grep "\"${MODULE_PREFIX}" "$1" 2>/dev/null \
-    | grep -v '/cue/converge"' \
+    | grep -v '/yconverge/cue"' \
     | sed "s|.*\"${MODULE_PREFIX}\([^\":]*\).*|\1|" \
     || true # y-script-lint:disable=or-true # no deps is valid
 }

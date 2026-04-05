@@ -1,7 +1,7 @@
 package buildkit
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/60-builds-registry:builds_registry"
 )
 

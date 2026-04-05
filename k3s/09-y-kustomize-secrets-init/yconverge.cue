@@ -1,7 +1,7 @@
 package y_kustomize_secrets_init
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/00-namespace-ystack:namespace_ystack"
 )
 

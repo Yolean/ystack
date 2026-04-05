@@ -1,7 +1,7 @@
 package builds_registry
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/30-blobs:blobs"
 	"yolean.se/ystack/k3s/40-kafka-ystack:kafka_ystack"
 	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"

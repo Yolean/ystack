@@ -55,44 +55,44 @@ kubectl version --client=true >/dev/null 2>&1
 
 echo ""
 echo "[cue itest] CUE schema validation"
-y-cue vet ./cue/itest/example-namespace/
-y-cue vet ./cue/itest/example-configmap/
-y-cue vet ./cue/itest/example-with-dependency/
-y-cue vet ./cue/itest/example-disabled/
+y-cue vet ./yconverge/itest/example-namespace/
+y-cue vet ./yconverge/itest/example-configmap/
+y-cue vet ./yconverge/itest/example-with-dependency/
+y-cue vet ./yconverge/itest/example-disabled/
 
 # --- apply with auto-checks ---
 
 echo ""
 echo "[cue itest] Apply with auto-checks (namespace)"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-namespace/
 
 echo ""
 echo "[cue itest] Apply with checks (configmap depends on namespace)"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-configmap/
 
 echo ""
 echo "[cue itest] Transitive dependency (depends on configmap which depends on namespace)"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-with-dependency/
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/
 
 # --- indirection with namespace from referenced base ---
 
 echo ""
 echo "[cue itest] Indirection: yconverge.cue and namespace from referenced base"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-indirect/
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-indirect/
 
 # --- idempotent re-converge ---
 
 echo ""
 echo "[cue itest] Idempotent re-apply"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-namespace/
-kubectl-yconverge --context="$CTX" -k cue/itest/example-configmap/
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-namespace/
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-configmap/
 
 # --- converge-mode labels ---
 
 echo ""
 echo "[cue itest] Serverside-force label (other selectors match nothing)"
-kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/
-kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-serverside/
+kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
+kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
 
 _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
@@ -100,14 +100,14 @@ _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
 echo ""
 echo "[cue itest] Indirection output must reference the base directory"
-kubectl-yconverge --context="$CTX" -k cue/itest/example-indirect/ 2>&1 | tee "$_OUT"
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-indirect/ 2>&1 | tee "$_OUT"
 grep -q "example-configmap/yconverge.cue" "$_OUT"
 
 # --- negative: --skip-checks suppresses check invocation ---
 
 echo ""
 echo "[cue itest] --skip-checks must not produce [yconverge] output"
-kubectl-yconverge --context="$CTX" --skip-checks -k cue/itest/example-namespace/ 2>&1 | tee "$_OUT"
+kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-namespace/ 2>&1 | tee "$_OUT"
 ! grep -q "\[yconverge\]" "$_OUT"
 
 # --- negative: broken yconverge.cue must fail ---

@@ -1,7 +1,7 @@
 package prod_registry
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/00-namespace-ystack:namespace_ystack"
 )
 

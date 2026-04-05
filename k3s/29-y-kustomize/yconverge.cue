@@ -1,7 +1,7 @@
 package y_kustomize
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/09-y-kustomize-secrets-init:y_kustomize_secrets_init"
 	"yolean.se/ystack/k3s/20-gateway:gateway"
 )

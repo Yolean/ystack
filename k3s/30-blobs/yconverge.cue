@@ -1,7 +1,7 @@
 package blobs
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/30-blobs-ystack:blobs_ystack"
 )
 

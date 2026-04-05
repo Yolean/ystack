@@ -1,7 +1,7 @@
 package kafka_ystack
 
 import (
-	"yolean.se/ystack/cue/converge"
+	"yolean.se/ystack/yconverge/converge"
 	"yolean.se/ystack/k3s/02-namespace-kafka:namespace_kafka"
 	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"
 )

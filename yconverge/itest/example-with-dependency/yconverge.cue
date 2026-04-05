@@ -1,8 +1,8 @@
 package example_with_dependency
 
 import (
-	"yolean.se/ystack/cue/converge"
-	"yolean.se/ystack/cue/itest/example-configmap:example_configmap"
+	"yolean.se/ystack/yconverge/converge"
+	"yolean.se/ystack/yconverge/itest/example-configmap:example_configmap"
 )
 
 _dep_config: example_configmap.step
