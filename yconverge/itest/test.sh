@@ -62,6 +62,9 @@ done
 
 kubectl config set-cluster "$CTX" --server="http://127.0.0.1:$PORT" >/dev/null
 kubectl config set-context "$CTX" --cluster="$CTX" >/dev/null
+kubectl config set-credentials "$CTX" >/dev/null
+kubectl config set-context "$CTX" --user="$CTX" >/dev/null
+kubectl config use-context "$CTX" >/dev/null
 kubectl --context="$CTX" get ns default >/dev/null 2>&1 \
   && echo "[cue itest] kwok cluster ready at port $PORT" \
   || { echo "[cue itest] FATAL: kwok cluster not reachable"; exit 1; }
