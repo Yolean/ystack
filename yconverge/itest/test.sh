@@ -7,18 +7,29 @@ Integration tests for the yconverge framework.
 Uses kwok (registry.k8s.io/kwok/cluster) as a lightweight test cluster.
 
 Flags:
-  --keep    keep the kwok cluster running after tests
+  --keep      keep the kwok cluster running after tests
+  --teardown  remove a kept cluster and exit
 
 Requires: docker, kubectl, y-cue, kubectl-yconverge
 ' && exit 0
 
 KEEP=false
+TEARDOWN=false
 while [ $# -gt 0 ]; do
   case "$1" in
     --keep) KEEP=true; shift ;;
+    --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
+
+if [ "$TEARDOWN" = "true" ]; then
+  echo "[cue itest] Tearing down kept cluster ..."
+  docker rm -f yconverge-itest 2>/dev/null || true # y-script-lint:disable=or-true # may not exist
+  rm -f /tmp/ystack-yconverge-itest
+  echo "[cue itest] Done"
+  exit 0
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 YSTACK_HOME="$(cd "$SCRIPT_DIR/../.." && pwd)"
