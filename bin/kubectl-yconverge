@@ -72,8 +72,8 @@ export CONTEXT
 # Inner calls (during resolution) skip this and go straight to apply + checks.
 
 if [ -z "$_YCONVERGE_RESOLVING" ] && [ -n "$KUSTOMIZE_DIR" ] && [ "$SKIP_CHECKS" = "false" ] && [ "$DIFF" = "false" ]; then
-  deps=$(y-yconverge-deps "$KUSTOMIZE_DIR" 2>/dev/null) || true # y-script-lint:disable=or-true # no deps script or no yconverge.cue
-  dep_count=$(printf '%s\n' "$deps" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # empty
+  deps=$(y-yconverge-deps "$KUSTOMIZE_DIR")
+  dep_count=$(printf '%s\n' "$deps" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # grep -c . exit 1 = zero matches
   if [ "$dep_count" -gt 1 ] 2>/dev/null; then
     echo "=== Converge plan (context=$CONTEXT) ==="
     echo "Steps ($dep_count):"
@@ -96,20 +96,18 @@ _find_yconverge_dir() {
     echo "$dir"
     return 0
   fi
-  if [ -f "$dir/kustomization.yaml" ]; then
-    resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$dir/kustomization.yaml" 2>/dev/null)
-    count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null)
-    if [ "$count" = "1" ] && [ -d "$dir/$resources" ] && [ -f "$dir/$resources/yconverge.cue" ]; then
-      echo "$dir/$resources"
-      return 0
-    fi
+  [ -f "$dir/kustomization.yaml" ] || return 0
+  resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$dir/kustomization.yaml")
+  count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # grep -c . exit 1 = zero matches
+  if [ "$count" = "1" ] && [ -d "$dir/$resources" ] && [ -f "$dir/$resources/yconverge.cue" ]; then
+    echo "$dir/$resources"
   fi
-  return 1
+  return 0
 }
 
 yconverge_dir=""
 if [ -n "$KUSTOMIZE_DIR" ] && [ "$SKIP_CHECKS" = "false" ] && [ "$DRY_RUN" = "false" ] && [ "$DIFF" = "false" ]; then
-  yconverge_dir=$(_find_yconverge_dir "$KUSTOMIZE_DIR") || true # y-script-lint:disable=or-true # no yconverge.cue is ok
+  yconverge_dir=$(_find_yconverge_dir "$KUSTOMIZE_DIR")
 fi
 
 if [ -n "$yconverge_dir" ]; then
@@ -122,8 +120,9 @@ fi
 
 # --- resolve namespace guess ---
 # Priority: 1. -n CLI arg
-#           2. referenced base namespace (when indirection found yconverge.cue)
-#           3. kustomization namespace:
+#           2. outer kustomization namespace: (the rendered namespace kustomize uses)
+#           3. referenced base namespace (fallback when indirection found yconverge.cue
+#              and the outer kustomization did not set its own namespace)
 #           4. context default
 NS_GUESS=""
 _prev=""
@@ -134,16 +133,16 @@ for arg in "$@"; do
   fi
   _prev="$arg"
 done
+if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ] && [ -f "$KUSTOMIZE_DIR/kustomization.yaml" ]; then
+  NS_GUESS=$(y-yq '.namespace // ""' "$KUSTOMIZE_DIR/kustomization.yaml")
+fi
 if [ -z "$NS_GUESS" ] && [ -n "$yconverge_dir" ] && [ -n "$KUSTOMIZE_DIR" ] && [ "$yconverge_dir" != "$KUSTOMIZE_DIR" ] && [ "$yconverge_dir" != "./$KUSTOMIZE_DIR" ]; then
   _ref_kust="$yconverge_dir/kustomization.yaml"
   [ ! -f "$_ref_kust" ] && _ref_kust="$yconverge_dir/kustomization.yml"
-  [ -f "$_ref_kust" ] && NS_GUESS=$(y-yq '.namespace // ""' "$_ref_kust" 2>/dev/null)
-fi
-if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ] && [ -f "$KUSTOMIZE_DIR/kustomization.yaml" ]; then
-  NS_GUESS=$(y-yq '.namespace // ""' "$KUSTOMIZE_DIR/kustomization.yaml" 2>/dev/null)
+  [ -f "$_ref_kust" ] && NS_GUESS=$(y-yq '.namespace // ""' "$_ref_kust")
 fi
 if [ -z "$NS_GUESS" ]; then
-  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null) || true # y-script-lint:disable=or-true # context may not have default namespace
+  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}')
 fi
 [ -z "$NS_GUESS" ] && NS_GUESS="default"
 
@@ -157,25 +156,50 @@ fi
 DRY_RUN_FLAG=""
 [ "$DRY_RUN" = "true" ] && DRY_RUN_FLAG="--dry-run=server"
 
-kubectl $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create "$@" 2>/dev/null || true # y-script-lint:disable=or-true # idempotent
-if [ "$DRY_RUN" = "false" ]; then
-  kubectl $ctx delete --selector=yolean.se/converge-mode=replace "$@" 2>/dev/null || true # y-script-lint:disable=or-true # ignore not-found
-fi
-
-_apply_if_any() {
-  output=$(kubectl "$@" 2>&1) || {
-    case "$output" in
-      *"no objects passed to apply"*) return 0 ;;
-      *"not found"*) return 0 ;;
-      *) printf '%s\n' "$output" >&2; return 1 ;;
-    esac
+# Run one internal kubectl step, passing meaningful output through raw.
+#   $1 |-separated error substrings to tolerate silently (exit nonzero but expected)
+#   $2 |-separated stdout substrings that mean "nothing to do" (exit zero but uninteresting)
+#   $3... kubectl args
+# Any other failure is fatal and shown raw on stderr. Any other success output is passed through.
+_kubectl_step() {
+  _err_ok="$1"
+  _empty_ok="$2"
+  shift 2
+  _out=$(kubectl "$@" 2>&1) || {
+    _old_ifs="$IFS"; IFS='|'
+    for _pat in $_err_ok; do
+      case "$_out" in *"$_pat"*) IFS="$_old_ifs"; return 0 ;; esac
+    done
+    IFS="$_old_ifs"
+    printf '%s\n' "$_out" >&2
+    return 1
   }
-  [ -n "$output" ] && printf '%s\n' "$output"
+  [ -z "$_out" ] && return 0
+  _old_ifs="$IFS"; IFS='|'
+  for _pat in $_empty_ok; do
+    case "$_out" in *"$_pat"*) IFS="$_old_ifs"; return 0 ;; esac
+  done
+  IFS="$_old_ifs"
+  printf '%s\n' "$_out"
 }
 
-_apply_if_any $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside-force "$@"
-_apply_if_any $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside "$@"
-_apply_if_any $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' "$@"
+# create --save-config for converge-mode=create resources: AlreadyExists on re-run
+# is the whole point of "idempotent"; no-match on selector is also expected.
+_kubectl_step 'AlreadyExists|no objects passed to create' '' \
+  $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create "$@"
+
+if [ "$DRY_RUN" = "false" ]; then
+  # delete with --selector and no matches exits 0 with "No resources found" — silent.
+  _kubectl_step '' 'No resources found' \
+    $ctx delete --selector=yolean.se/converge-mode=replace "$@"
+fi
+
+_kubectl_step 'no objects passed to apply' '' \
+  $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside-force "$@"
+_kubectl_step 'no objects passed to apply' '' \
+  $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside "$@"
+_kubectl_step 'no objects passed to apply' '' \
+  $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' "$@"
 
 # --- yconverge.cue: post-apply checks ---
 
@@ -184,7 +208,7 @@ if [ -n "$yconverge_dir" ]; then
     checks_json="$1"
     label="$2"
     [ -z "$checks_json" ] || [ "$checks_json" = "[]" ] && return 0
-    count=$(echo "$checks_json" | y-yq '. | length' - 2>/dev/null)
+    count=$(echo "$checks_json" | y-yq '. | length' -)
     [ "$count" = "0" ] && return 0
     i=0
     while [ "$i" -lt "$count" ]; do

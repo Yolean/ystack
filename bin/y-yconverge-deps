@@ -23,16 +23,14 @@ _find_cue() {
     echo "$d"
     return 0
   fi
-  if [ -f "$d/kustomization.yaml" ]; then
-    local resources count
-    resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$d/kustomization.yaml" 2>/dev/null) || true # y-script-lint:disable=or-true # no local resources
-    count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # empty
-    if [ "$count" = "1" ] && [ -f "$d/$resources/yconverge.cue" ]; then
-      echo "$d/$resources"
-      return 0
-    fi
+  [ -f "$d/kustomization.yaml" ] || return 0
+  local resources count
+  resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$d/kustomization.yaml")
+  count=$(printf '%s\n' "$resources" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # grep -c . exit 1 = zero matches
+  if [ "$count" = "1" ] && [ -f "$d/$resources/yconverge.cue" ]; then
+    echo "$d/$resources"
   fi
-  return 1
+  return 0
 }
 
 _imports() {
@@ -48,7 +46,8 @@ _resolve() {
 
   if grep -qx "$path" "$_VISITED" 2>/dev/null; then return 0; fi
 
-  cue_dir=$(_find_cue "$path") || return 0 # y-script-lint:disable=or-true # no yconverge.cue
+  cue_dir=$(_find_cue "$path")
+  [ -z "$cue_dir" ] && return 0
   cue_file="$cue_dir/yconverge.cue"
 
   for dep in $(_imports "$cue_file"); do

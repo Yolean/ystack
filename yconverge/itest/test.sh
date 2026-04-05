@@ -23,9 +23,20 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# Remove a docker container, tolerating only the "not there" case.
+_docker_rm_tolerant() {
+  _name="$1"
+  if ! _out=$(docker rm -f "$_name" 2>&1); then
+    case "$_out" in
+      *"No such container"*) ;;
+      *) echo "[cue itest] warn: docker rm $_name: $_out" >&2 ;;
+    esac
+  fi
+}
+
 if [ "$TEARDOWN" = "true" ]; then
   echo "[cue itest] Tearing down kept cluster ..."
-  docker rm -f yconverge-itest 2>/dev/null || true # y-script-lint:disable=or-true # may not exist
+  _docker_rm_tolerant yconverge-itest
   rm -f /tmp/ystack-yconverge-itest
   echo "[cue itest] Done"
   exit 0
@@ -51,7 +62,7 @@ cleanup() {
     return
   fi
   echo "[cue itest] Cleaning up ..."
-  docker rm -f "$CONTAINER_NAME" 2>/dev/null || true # y-script-lint:disable=or-true # best-effort cleanup
+  _docker_rm_tolerant "$CONTAINER_NAME"
   rm -f "$ITEST_KUBECONFIG"
 }
 trap cleanup EXIT
@@ -97,6 +108,7 @@ y-cue vet ./yconverge/itest/example-namespace/
 y-cue vet ./yconverge/itest/example-configmap/
 y-cue vet ./yconverge/itest/example-with-dependency/
 y-cue vet ./yconverge/itest/example-disabled/
+y-cue vet ./yconverge/itest/example-db/single/
 
 # --- apply with auto-checks ---
 
@@ -176,6 +188,14 @@ grep -q "ERROR" "$_OUT"
 rm -rf /tmp/yconverge-itest-broken
 
 rm -f "$_OUT"
+
+# --- prod/qa kustomize example ---
+
+# never include namespaces in actual bases as it makes delete -k irreversibe in many cases
+kubectl yconverge --context="$CTX" -k yconverge/itest/example-db/namespace/
+kubectl yconverge --context="$CTX" -k yconverge/itest/cluster-prod/db/
+
+kubectl yconverge --context="$CTX" -k yconverge/itest/cluster-qa/db/
 
 echo ""
 echo "[cue itest] All tests passed"
