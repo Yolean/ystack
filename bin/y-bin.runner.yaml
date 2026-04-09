@@ -123,17 +123,14 @@ esbuild:
     path: package/bin/esbuild
 
 turbo:
-  version: 2.8.17
+  version: 2.9.5-hashdepends.1
   templates:
-    download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
+    download: https://github.com/solsson/turbo/releases/download/v${version}/turbo-${os}-${arch}
   sha256:
-    darwin_amd64: c1653788f3e82aac33c38a2cf0be8bb3c94069f50bf742826d17ab0fbcabd430
-    darwin_arm64: 7bbcb3a0218702bfd43916828abcd42a892777f751c2c7b40a02f6730cf789ac
-    linux_amd64: dcb1bac57f5745503defe968dc23780b2ad986615c2a4c9a44439061eb10753a
-    linux_arm64: 8b20bfcd34adfbe8fb670653571b87947c882ee850c56969ebf6cd7d63a8192b
-  archive:
-    tool: tar
-    path: turbo-${os}-${xarm}64/bin/turbo
+    darwin_amd64: 45ca441c683ec728d35056406de588b3d40dfbee0d2c6f2e1b5cf36c9b826843
+    darwin_arm64: c866d3f6ac4dc89233775cab233bdf886c0bc8f027cdeba96a897b0f90c7a5f8
+    linux_amd64: ac3b3ea6db7bf1b59ae7ac0024a0af649fc5543fac70aae2e4785ed8a4f0a27b
+    linux_arm64: c5f746d9a1a1628900ac464bb4af989c60a0e888898f68474ee58548fce4b690
 
 yarn:
   version: 0.2.1
