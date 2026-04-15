@@ -91,6 +91,23 @@ kubectl --context="$CTX" get ns default >/dev/null 2>&1 \
   && echo "[cue itest] kwok cluster ready at port $PORT" \
   || { echo "[cue itest] FATAL: kwok cluster not reachable"; exit 1; }
 
+# kwok --manage-all-nodes=true only manages nodes that already exist. Without a
+# node, pods stay Pending ("no nodes available to schedule pods") and StatefulSet
+# status.currentReplicas never advances past the OrderedReady gate. Create one
+# fake node so pod-ready stages fire and replica counts reflect spec.
+kubectl --context="$CTX" apply -f - <<'YAML' >/dev/null
+apiVersion: v1
+kind: Node
+metadata:
+  name: kwok-node-0
+  labels:
+    kubernetes.io/hostname: kwok-node-0
+    type: kwok
+status:
+  capacity: { cpu: "32", memory: 256Gi, pods: "110" }
+  allocatable: { cpu: "32", memory: 256Gi, pods: "110" }
+YAML
+
 export CONTEXT="$CTX"
 
 cd "$YSTACK_HOME"
@@ -109,6 +126,7 @@ y-cue vet ./yconverge/itest/example-configmap/
 y-cue vet ./yconverge/itest/example-with-dependency/
 y-cue vet ./yconverge/itest/example-disabled/
 y-cue vet ./yconverge/itest/example-db/single/
+y-cue vet ./yconverge/itest/example-db/distributed/
 
 # --- apply with auto-checks ---
 
@@ -143,6 +161,19 @@ echo ""
 echo "[cue itest] Serverside-force label (other selectors match nothing)"
 kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
 kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
+
+echo ""
+echo "[cue itest] replace-mode under --dry-run=server must not delete anything"
+kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-replace/
+_REPLACE_UID_BEFORE=$(kubectl --context="$CTX" -n default get job example-replace-job -o jsonpath='{.metadata.uid}')
+_REPLACE_DRY_OUT=$(mktemp /tmp/yconverge-itest-replace.XXXXXX)
+kubectl-yconverge --context="$CTX" --skip-checks --dry-run=server -k yconverge/itest/example-replace/ 2>&1 | tee "$_REPLACE_DRY_OUT"
+grep -q '(server dry run)' "$_REPLACE_DRY_OUT"
+_REPLACE_UID_AFTER=$(kubectl --context="$CTX" -n default get job example-replace-job -o jsonpath='{.metadata.uid}')
+[ "$_REPLACE_UID_BEFORE" = "$_REPLACE_UID_AFTER" ] \
+  || { echo "[cue itest] FAIL: dry-run deleted/recreated the replace-mode Job (uid $_REPLACE_UID_BEFORE -> $_REPLACE_UID_AFTER)"; exit 1; }
+kubectl --context="$CTX" -n default delete job example-replace-job >/dev/null
+rm -f "$_REPLACE_DRY_OUT"
 
 _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
@@ -194,6 +225,11 @@ rm -f "$_OUT"
 # never include namespaces in actual bases as it makes delete -k irreversibe in many cases
 kubectl yconverge --context="$CTX" -k yconverge/itest/example-db/namespace/
 kubectl yconverge --context="$CTX" -k yconverge/itest/cluster-prod/db/
+
+# cluster-qa/db asserts that no PDB requires more than 1 replica. Applying prod
+# first left a PDB with minAvailable: 2 in the namespace, so remove it before
+# running qa — recovery step, not a framework feature.
+kubectl --context="$CTX" -n db delete pdb database
 
 kubectl yconverge --context="$CTX" -k yconverge/itest/cluster-qa/db/
 
