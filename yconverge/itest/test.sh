@@ -142,6 +142,24 @@ echo ""
 echo "[cue itest] Transitive dependency (depends on configmap which depends on namespace)"
 kubectl-yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/
 
+# --- dependency ordering: checks must complete before downstream steps start ---
+
+echo ""
+echo "[cue itest] Verify dependency checks serialize before downstream steps"
+_DEP_OUT=$(mktemp /tmp/yconverge-itest-deps.XXXXXX)
+kubectl-yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/ 2>&1 | tee "$_DEP_OUT"
+# namespace check must complete before configmap step begins
+_ns_check=$(grep -n 'condition met' "$_DEP_OUT" | head -1 | cut -d: -f1)
+_cm_step=$(grep -n '>>> .*example-configmap' "$_DEP_OUT" | cut -d: -f1)
+[ "$_ns_check" -lt "$_cm_step" ] \
+  || { echo "[cue itest] FAIL: namespace check (line $_ns_check) must complete before configmap step (line $_cm_step)"; exit 1; }
+# configmap check must complete before with-dependency step begins
+_cm_check=$(grep -n 'configmap exists' "$_DEP_OUT" | head -1 | cut -d: -f1)
+_wd_step=$(grep -n '>>> .*example-with-dependency' "$_DEP_OUT" | cut -d: -f1)
+[ "$_cm_check" -lt "$_wd_step" ] \
+  || { echo "[cue itest] FAIL: configmap check (line $_cm_check) must complete before with-dependency step (line $_wd_step)"; exit 1; }
+rm -f "$_DEP_OUT"
+
 # --- indirection with namespace from referenced base ---
 
 echo ""

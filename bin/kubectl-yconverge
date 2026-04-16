@@ -37,7 +37,7 @@ HELP
 }
 
 case "${1:-}" in
-  ""|help|--help|-h)
+  ""|--help|-h|help)
     _print_help
     exit 0
     ;;
@@ -371,7 +371,7 @@ if [ -n "$yconverge_dir" ]; then
     done
   }
 
-  CHECKS=$(y-cue eval "$yconverge_dir" -e 'step.checks' --out json) || {
+  CHECKS=$(y-cue export "$yconverge_dir" -e 'step.checks') || {
     echo "  [yconverge] ERROR: failed to evaluate $yconverge_dir/yconverge.cue" >&2
     exit 1
   }
