@@ -36,7 +36,8 @@ Flags:
   --exclude=SUBSTRING     exclude k3s bases matching substring (default: monitoring)
   --skip-converge         skip converge and post-provision steps
   --skip-image-load       skip image cache and load into containerd
-  --teardown              stop and delete the VM
+  --teardown              stop and delete the VM (removes disk by default)
+  --keep-disk             preserve disk image on teardown for faster re-provision
   --export-vmdk=PATH      export disk as streamOptimized VMDK
 
 Prerequisites:
@@ -53,6 +54,7 @@ EOF
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
     --teardown) TEARDOWN=true; shift ;;
+    --keep-disk) KEEP_DISK=true; shift ;;
     --export-vmdk=*) EXPORT_VMDK="${1#*=}"; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -116,7 +118,12 @@ if [ "$TEARDOWN" = "true" ]; then
     rm -f "$VM_PIDFILE"
   fi
   kubectl config delete-context $CTX 2>/dev/null || true
-  echo "[y-cluster-provision-qemu] Teardown complete. Disk preserved at $VM_DISK"
+  if [ "$KEEP_DISK" = "true" ]; then
+    echo "[y-cluster-provision-qemu] Teardown complete. Disk preserved at $VM_DISK"
+  else
+    rm -f "$VM_DISK"
+    echo "[y-cluster-provision-qemu] Teardown complete. Disk deleted."
+  fi
   exit 0
 fi
 

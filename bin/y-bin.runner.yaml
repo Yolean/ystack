@@ -57,15 +57,15 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.18.1
+  version: 2.18.3
   templates:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: f03cd75482ccd6779d586bbb6d1dcf52d384851e4f5fc2d94296b7249f600a4c
-    darwin_arm64: 41d64d2e11920d569b9a78e8545f205a3131a7eabaf3ebf5178b983e2cff1cfe
-    linux_amd64: 500ab795d5e4e162b3aeed161e28b71d54d2478c1df94f2dd21310ebc33c8646
-    linux_arm64: c01dbdf4fc9a342295bf07438b2ec74c32901646f2a03dc6fb0f751063af66c2
+    darwin_amd64: f4adc30d7ff0c612342b05250db65c2b9fb4da683728f7e6474b72ee27290616
+    darwin_arm64: a47083da351cd2fb2cd4faacc29d8a3af0046593a147111c18a7cc5ec3d5b5e0
+    linux_amd64: d8bfce071e3e3096736f12f0233d24f16d4baedaadd2181e1eaa1865a346ec3f
+    linux_arm64: 96dc3c6eeb5861c821010ea9d2e0eef14baa48abb613f850070a539be86b7aba
 
 helm:
   version: 3.19.0
@@ -96,44 +96,41 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.21.3
+  version: 0.21.5
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: ee6b02fa1864dca869df0f71838c60048502ab6eed681d795903ecf356471653
-    darwin_arm64: 4c00c3a1ecfac44601abb9a4ef0223f491e3eeb4193c9e644540fb1ea6f2275d
-    linux_amd64: 46dbf12d943efa5673ab654186c5d7c1503580544de0df9325537083436fe5d0
-    linux_arm64: dabcf2aee76ca72da63b5da5137c910a6852ccff13e35628e8f0a9dd8b73f4f3
+    darwin_amd64: d5ad8d97d7c5407f761b4fd37801044473f58b79a033f6a64e84ce6d010c1b2c
+    darwin_arm64: a41938cdbd8becc59e90f4bb491a557d52dce5681f9812c961854cab706f5f59
+    linux_amd64: 9f823ae5ee25803161110f957b5fd4538f714d40cdf25dacb4914fefafd246bf
+    linux_arm64: 3a47c6da5a0ba1ca7a93def41036d8f262a2160799e5d4ca25dba3cfa47dab41
   archive:
     tool: tar
     path: crane
 
 esbuild:
-  version: 0.25.11
+  version: 0.28.0
   templates:
     download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
   sha256:
-    darwin_amd64: 6c685589690123a0a2b6424f82cfe21973e81923c0c61246bc48c69911f24dba
-    darwin_arm64: 42ea27b04af4aaf177f5a6fa5cb6dda85d21ecd2fa45adb865cc3430eb985e2e
-    linux_amd64: e9e893cfe6a327b97b8d749a2d477d7379ef87eb576b88e03e91b7d07ec935e0
-    linux_arm64: 5bb8193032b55494841f27aa5bec41e6e1c717d6d90ae5651a4bd9ac01ebc930
+    darwin_amd64: 58716de460d4e258a56191c1bb47c7341c1ed61d8d4d92b8991c85907e117667
+    darwin_arm64: 6ef1261e245caed64e4d5195572e3468f18a5df4b65df5e14f9ae10408ad5502
+    linux_amd64: e94bf1c7f44197b22cf6a787578eca9af805aa9624104488252de2a765c6a4f0
+    linux_arm64: 9fdc4e2d6fac8e55b7ee3a69617d1fd4856d19eab72f8a150c5545c9f666973a
   archive:
     tool: tar
     path: package/bin/esbuild
 
 turbo:
-  version: 2.8.17
+  version: 2.9.5-hashdepends.1
   templates:
-    download: https://registry.npmjs.org/turbo-${os}-${arm}64/-/turbo-${os}-${arm}64-${version}.tgz
+    download: https://github.com/solsson/turbo/releases/download/v${version}/turbo-${os}-${arch}
   sha256:
-    darwin_amd64: c1653788f3e82aac33c38a2cf0be8bb3c94069f50bf742826d17ab0fbcabd430
-    darwin_arm64: 7bbcb3a0218702bfd43916828abcd42a892777f751c2c7b40a02f6730cf789ac
-    linux_amd64: dcb1bac57f5745503defe968dc23780b2ad986615c2a4c9a44439061eb10753a
-    linux_arm64: 8b20bfcd34adfbe8fb670653571b87947c882ee850c56969ebf6cd7d63a8192b
-  archive:
-    tool: tar
-    path: turbo-${os}-${xarm}64/bin/turbo
+    darwin_amd64: 45ca441c683ec728d35056406de588b3d40dfbee0d2c6f2e1b5cf36c9b826843
+    darwin_arm64: c866d3f6ac4dc89233775cab233bdf886c0bc8f027cdeba96a897b0f90c7a5f8
+    linux_amd64: ac3b3ea6db7bf1b59ae7ac0024a0af649fc5543fac70aae2e4785ed8a4f0a27b
+    linux_arm64: c5f746d9a1a1628900ac464bb4af989c60a0e888898f68474ee58548fce4b690
 
 yarn:
   version: 0.2.1
@@ -144,6 +141,19 @@ yarn:
     darwin_arm64: 8ebb026be9f0bec5114691b82c67fae936f856df0598b4ab1642f1cf729936c0
     linux_amd64: 16252fe8ac0b3500bd697bc47213cc438209e2d5f8a812def075a0cdec891301
     linux_arm64: 05ca3451a6f78a68b08c13b4b0b582cb22220b90ccd00160bffff80224d8c50d
+
+cue:
+  version: 0.16.1
+  templates:
+    download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
+  sha256:
+    darwin_amd64: 97b0d78e4c5ee49ff72145fd6ef4f4bab0bb332d55f29660de3fec2af5ec96a9
+    darwin_arm64: a72b0cddb377c52d1b003bed9a335d893b70cd75a182cd5e3fee8bae30ddb6d6
+    linux_amd64: 5d644c1305a2b86504c8dcd2ec829cf5b4999efc2cf51ee375624e0455f774ae
+    linux_arm64: 3cc715a9e969f87b93c4fa34cfaef5388b93e96efa20b248e8ad6826abd25a83
+  archive:
+    tool: tar
+    path: cue
 
 npx:
   version: 0.2.1
