@@ -1,12 +1,8 @@
 package gateway
 
-import (
-	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/k3s/10-gateway-api:gateway_api"
-)
+import "yolean.se/ystack/yconverge/verify"
 
-_dep_crds: gateway_api.step
-
+// Gateway API CRDs are assumed installed by the provisioner.
 step: verify.#Step & {
 	checks: [
 		{
@@ -17,7 +13,7 @@ step: verify.#Step & {
 		},
 		{
 			kind:        "exec"
-			command:     "y-k8s-ingress-hosts --context=$CONTEXT --ensure || echo 'WARNING: /etc/hosts update failed (may need manual sudo)'"
+			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write || echo 'WARNING: /etc/hosts update failed (may need manual sudo)'"
 			timeout:     "10s"
 			description: "update /etc/hosts for gateway routes"
 		},

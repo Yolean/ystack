@@ -59,11 +59,18 @@ echo "# Phase 4: prod registry"
 kubectl yconverge --context=local -k k3s/61-prod-registry/
 
 echo ""
-echo "# Phase 5: full converge — idempotency proof, also adds monitoring"
-y-cluster-provision
+echo "# Phase 5: monitoring (independent branch)"
+kubectl yconverge --context=local -k k3s/50-monitoring/
 
 echo ""
-echo "# Phase 6: validate the complete stack"
+echo "# Phase 6: idempotency proof — re-converge everything"
+kubectl yconverge --context=local -k k3s/62-buildkit/
+kubectl yconverge --context=local -k k3s/50-monitoring/
+kubectl yconverge --context=local -k k3s/61-prod-registry/
+kubectl yconverge --context=local -k k3s/40-kafka/
+
+echo ""
+echo "# Phase 7: validate the complete stack"
 y-cluster-validate-ystack --context=local
 
 echo "Acceptance tests completed"
