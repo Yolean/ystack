@@ -1,0 +1,379 @@
+#!/bin/sh
+[ -z "$DEBUG" ] || set -x
+set -e
+
+_print_help() {
+  cat <<'HELP'
+Idempotent apply with CUE-backed checks.
+
+Usage:
+  kubectl yconverge --context=<name> [flags] -k <kustomize-dir>
+  kubectl yconverge help | --help
+
+Modes (mutually exclusive; default is apply):
+  --diff=true        run kubectl diff, no apply, no checks
+  --checks-only      run yconverge.cue checks against current state, no apply
+  --print-deps       print dependency order from yconverge.cue imports, exit
+
+Apply-mode modifiers:
+  --dry-run=MODE     forward to kubectl apply/delete (server|none)
+                     (client is rejected: incompatible with --server-side)
+  --skip-checks      skip yconverge.cue check invocation after apply
+
+Converge modes (label yolean.se/converge-mode on a resource):
+  (none)             standard kubectl apply
+  create             kubectl create --save-config (skip if exists)
+  replace            kubectl delete + apply (for immutable resources like Jobs)
+  serverside         kubectl apply --server-side
+  serverside-force   kubectl apply --server-side --force-conflicts
+
+If the -k directory contains a yconverge.cue file (or one is found one
+level of resources: indirection away):
+  - Dependencies from CUE imports are resolved and converged first
+  - Checks run after apply (unless --skip-checks)
+
+Honors KUBECONFIG if set.
+HELP
+}
+
+case "${1:-}" in
+  ""|help|--help|-h)
+    _print_help
+    exit 0
+    ;;
+esac
+
+_die() { echo "Error: $1" >&2; exit 1; }
+
+# --- arg parsing ---
+
+ctx="$1"
+case "$ctx" in
+  "--context="*) shift 1 ;;
+  *) _die "first arg must be --context= (try --help)" ;;
+esac
+CONTEXT="${ctx#--context=}"
+export CONTEXT
+
+MODE="apply"
+DRY_RUN=""
+SKIP_CHECKS=false
+
+_set_mode() {
+  [ "$MODE" = "apply" ] || _die "$1 conflicts with $MODE mode"
+  MODE="$1"
+}
+
+while true; do
+  case "${1:-}" in
+    --diff=true)    _set_mode diff; shift ;;
+    --checks-only)  _set_mode checks-only; shift ;;
+    --print-deps)   _set_mode print-deps; shift ;;
+    --dry-run=*)    DRY_RUN="${1#--dry-run=}"; shift ;;
+    --skip-checks)  SKIP_CHECKS=true; shift ;;
+    --help|-h)      _print_help; exit 0 ;;
+    *) break ;;
+  esac
+done
+
+case "$DRY_RUN" in
+  ""|server|none) ;;
+  client) _die "--dry-run=client is not supported: yconverge uses server-side apply, and kubectl rejects --dry-run=client with --server-side. Use --dry-run=server instead." ;;
+  *) _die "--dry-run must be one of: server, none" ;;
+esac
+
+if [ -n "$DRY_RUN" ] && [ "$MODE" != "apply" ]; then
+  _die "--dry-run is only valid in apply mode (got --$MODE)"
+fi
+if [ "$SKIP_CHECKS" = "true" ] && [ "$MODE" != "apply" ]; then
+  _die "--skip-checks is only valid in apply mode (got --$MODE)"
+fi
+
+# --- extract -k directory from remaining args ---
+
+KUSTOMIZE_DIR=""
+for arg in "$@"; do
+  case "$arg" in
+    -l|--selector) _die "yconverge can not be combined with other selectors" ;;
+  esac
+done
+_prev=""
+for arg in "$@"; do
+  if [ "$_prev" = "-k" ]; then
+    KUSTOMIZE_DIR="${arg%/}"
+    break
+  fi
+  case "$arg" in
+    -k)  _prev="-k" ;;
+    -k*) KUSTOMIZE_DIR="${arg#-k}"; KUSTOMIZE_DIR="${KUSTOMIZE_DIR%/}"; break ;;
+  esac
+done
+
+# --- mode args to propagate on recursive calls ---
+
+MODE_ARGS=""
+case "$MODE" in
+  diff)        MODE_ARGS="--diff=true" ;;
+  checks-only) MODE_ARGS="--checks-only" ;;
+  print-deps)  MODE_ARGS="--print-deps" ;;
+esac
+[ -n "$DRY_RUN" ]             && MODE_ARGS="$MODE_ARGS --dry-run=$DRY_RUN"
+[ "$SKIP_CHECKS" = "true" ]   && MODE_ARGS="$MODE_ARGS --skip-checks"
+
+# --- diff mode: pass through and exit ---
+
+if [ "$MODE" = "diff" ]; then
+  kubectl $ctx diff "$@"
+  exit $?
+fi
+
+# --- yconverge.cue lookup: finds a yconverge.cue file, with 1-level indirection
+#     through a kustomization.yaml that references exactly one local directory. ---
+
+_find_cue_dir() {
+  d="$1"
+  if [ -f "$d/yconverge.cue" ]; then
+    echo "$d"
+    return 0
+  fi
+  [ -f "$d/kustomization.yaml" ] || return 0
+  _resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$d/kustomization.yaml")
+  _base_dir=""
+  _dir_count=0
+  _old_ifs="$IFS"; IFS='
+'
+  for _r in $_resources; do
+    if [ -d "$d/$_r" ]; then
+      _dir_count=$((_dir_count + 1))
+      [ "$_dir_count" = "1" ] && _base_dir="$_r"
+    fi
+  done
+  IFS="$_old_ifs"
+  if [ "$_dir_count" = "1" ] && [ -f "$d/$_base_dir/yconverge.cue" ]; then
+    echo "$d/$_base_dir"
+  fi
+  return 0
+}
+
+# --- dependency graph walk via CUE imports ---
+# Emits paths in topological order (deps first, target last). _DEP_VISITED
+# holds already-resolved paths, newline-separated, to avoid re-walks/cycles.
+
+_DEP_VISITED=""
+
+_find_imports() {
+  grep '"yolean.se/ystack/' "$1" 2>/dev/null \
+    | grep -v '"yolean.se/ystack/yconverge/verify"' \
+    | sed 's|.*"yolean.se/ystack/\([^":]*\).*|\1|' \
+    || true # y-script-lint:disable=or-true # no imports is valid
+}
+
+_resolve_deps() {
+  # POSIX sh has no `local`, so recursive calls share named variables.
+  # Reference $1 (positional arg, call-scoped) for the path throughout, and
+  # only read _cue_dir before recursing (its subsequent clobbering is harmless).
+  case "
+$_DEP_VISITED
+" in
+    *"
+${1%/}
+"*) return 0 ;;
+  esac
+  _cue_dir=$(_find_cue_dir "${1%/}")
+  [ -z "$_cue_dir" ] && return 0
+  for _dep in $(_find_imports "$_cue_dir/yconverge.cue"); do
+    _resolve_deps "$_dep"
+  done
+  _DEP_VISITED="$_DEP_VISITED
+${1%/}"
+  echo "${1%/}"
+}
+
+# --- dependency resolution ---
+# On first (top-level) invocation, resolve the full dep graph. For print-deps
+# mode, print and exit. For multi-step graphs, iterate calling self per step
+# and let each run its own apply + checks.
+
+if [ -z "$_YCONVERGE_RESOLVING" ] && [ -n "$KUSTOMIZE_DIR" ]; then
+  deps=$(_resolve_deps "$KUSTOMIZE_DIR")
+  dep_count=$(printf '%s\n' "$deps" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # grep -c . exit 1 = zero matches
+
+  if [ "$MODE" = "print-deps" ]; then
+    printf '%s\n' "$deps"
+    exit 0
+  fi
+
+  if [ "$dep_count" -gt 1 ] 2>/dev/null; then
+    echo "=== Converge plan (context=$CONTEXT, mode=$MODE) ==="
+    echo "Steps ($dep_count):"
+    for d in $deps; do echo "  $d"; done
+    echo "==="
+    export _YCONVERGE_RESOLVING=1
+    for d in $deps; do
+      echo ">>> $d"
+      kubectl-yconverge $ctx $MODE_ARGS -k "$d/"
+    done
+    exit 0
+  fi
+fi
+
+# --- single-step path: find yconverge.cue for this target, resolve namespace ---
+
+yconverge_dir=""
+if [ -n "$KUSTOMIZE_DIR" ]; then
+  case "$MODE" in
+    apply)
+      [ "$SKIP_CHECKS" = "false" ] && yconverge_dir=$(_find_cue_dir "$KUSTOMIZE_DIR")
+      ;;
+    checks-only)
+      yconverge_dir=$(_find_cue_dir "$KUSTOMIZE_DIR")
+      [ -z "$yconverge_dir" ] && _die "--checks-only: no yconverge.cue found for $KUSTOMIZE_DIR"
+      ;;
+  esac
+fi
+
+if [ -n "$yconverge_dir" ]; then
+  echo "  [yconverge] found $yconverge_dir/yconverge.cue"
+  case "$yconverge_dir" in
+    ./*|/*) ;;
+    *) yconverge_dir="./$yconverge_dir" ;;
+  esac
+fi
+
+# --- resolve namespace guess ---
+# Priority: 1. -n CLI arg
+#           2. outer kustomization namespace: (the rendered namespace kustomize uses)
+#           3. referenced base namespace (fallback when indirection found yconverge.cue
+#              and the outer kustomization did not set its own namespace)
+#           4. context default
+NS_GUESS=""
+_prev=""
+for arg in "$@"; do
+  if [ "$_prev" = "-n" ]; then
+    NS_GUESS="$arg"
+    break
+  fi
+  _prev="$arg"
+done
+if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ] && [ -f "$KUSTOMIZE_DIR/kustomization.yaml" ]; then
+  NS_GUESS=$(y-yq '.namespace // ""' "$KUSTOMIZE_DIR/kustomization.yaml")
+fi
+if [ -z "$NS_GUESS" ] && [ -n "$yconverge_dir" ] && [ -n "$KUSTOMIZE_DIR" ] && [ "$yconverge_dir" != "$KUSTOMIZE_DIR" ] && [ "$yconverge_dir" != "./$KUSTOMIZE_DIR" ]; then
+  _ref_kust="$yconverge_dir/kustomization.yaml"
+  [ ! -f "$_ref_kust" ] && _ref_kust="$yconverge_dir/kustomization.yml"
+  [ -f "$_ref_kust" ] && NS_GUESS=$(y-yq '.namespace // ""' "$_ref_kust")
+fi
+if [ -z "$NS_GUESS" ]; then
+  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}')
+fi
+[ -z "$NS_GUESS" ] && NS_GUESS="default"
+export NS_GUESS
+
+# --- apply (skipped in checks-only mode) ---
+
+# Run one internal kubectl step, passing meaningful output through raw.
+#   $1 |-separated error substrings to tolerate silently (exit nonzero but expected)
+#   $2 |-separated stdout substrings that mean "nothing to do" (exit zero but uninteresting)
+#   $3... kubectl args
+# Any other failure is fatal and shown raw on stderr. Any other success output is passed through.
+_kubectl_step() {
+  _err_ok="$1"
+  _empty_ok="$2"
+  shift 2
+  _out=$(kubectl "$@" 2>&1) || {
+    _old_ifs="$IFS"; IFS='|'
+    for _pat in $_err_ok; do
+      case "$_out" in *"$_pat"*) IFS="$_old_ifs"; return 0 ;; esac
+    done
+    IFS="$_old_ifs"
+    printf '%s\n' "$_out" >&2
+    return 1
+  }
+  [ -z "$_out" ] && return 0
+  _old_ifs="$IFS"; IFS='|'
+  for _pat in $_empty_ok; do
+    case "$_out" in *"$_pat"*) IFS="$_old_ifs"; return 0 ;; esac
+  done
+  IFS="$_old_ifs"
+  printf '%s\n' "$_out"
+}
+
+if [ "$MODE" = "apply" ]; then
+  DRY_RUN_FLAG=""
+  [ -n "$DRY_RUN" ] && DRY_RUN_FLAG="--dry-run=$DRY_RUN"
+
+  _kubectl_step 'AlreadyExists|no objects passed to create' '' \
+    $ctx create --save-config $DRY_RUN_FLAG --selector=yolean.se/converge-mode=create "$@"
+
+  # delete for replace-mode resources: under dry-run, kubectl itself simulates
+  # and prints "(dry run)" without actually deleting.
+  _kubectl_step '' 'No resources found' \
+    $ctx delete $DRY_RUN_FLAG --selector=yolean.se/converge-mode=replace "$@"
+
+  _kubectl_step 'no objects passed to apply' '' \
+    $ctx apply --server-side --force-conflicts $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside-force "$@"
+  _kubectl_step 'no objects passed to apply' '' \
+    $ctx apply --server-side $DRY_RUN_FLAG --selector=yolean.se/converge-mode=serverside "$@"
+  _kubectl_step 'no objects passed to apply' '' \
+    $ctx apply $DRY_RUN_FLAG --selector='yolean.se/converge-mode!=create,yolean.se/converge-mode!=serverside,yolean.se/converge-mode!=serverside-force' "$@"
+fi
+
+# --- yconverge.cue: post-apply checks ---
+
+if [ -n "$yconverge_dir" ]; then
+  _run_checks() {
+    checks_json="$1"
+    label="$2"
+    [ -z "$checks_json" ] || [ "$checks_json" = "[]" ] && return 0
+    count=$(echo "$checks_json" | y-yq '. | length' -)
+    [ "$count" = "0" ] && return 0
+    i=0
+    while [ "$i" -lt "$count" ]; do
+      kind=$(echo "$checks_json" | y-yq ".[$i].kind" -)
+      desc=$(echo "$checks_json" | y-yq ".[$i].description // \"\"" -)
+      resource=$(echo "$checks_json" | y-yq ".[$i].resource // \"\"" -)
+      forcond=$(echo "$checks_json" | y-yq ".[$i].for // \"\"" -)
+      ns=$(echo "$checks_json" | y-yq ".[$i].namespace // \"\"" -)
+      timeout=$(echo "$checks_json" | y-yq ".[$i].timeout // \"60s\"" -)
+      command=$(echo "$checks_json" | y-yq ".[$i].command // \"\"" -)
+      [ -z "$ns" ] && ns="$NS_GUESS"
+      ns_flag=""
+      [ -n "$ns" ] && ns_flag="-n $ns"
+      case "$kind" in
+        wait)
+          echo "  [yconverge] $label wait $resource $forcond"
+          kubectl --context="$CONTEXT" wait --for="$forcond" --timeout="$timeout" $ns_flag "$resource"
+          ;;
+        rollout)
+          echo "  [yconverge] $label rollout $resource"
+          kubectl --context="$CONTEXT" rollout status --timeout="$timeout" $ns_flag "$resource"
+          ;;
+        exec)
+          echo "  [yconverge] $label $desc"
+          _timeout_s=${timeout%s}
+          _deadline=$(($(date +%s) + _timeout_s))
+          _exec_ok=0
+          while :; do
+            if sh -c "$command"; then
+              _exec_ok=1
+              break
+            fi
+            [ "$(date +%s)" -ge "$_deadline" ] && break
+            sleep 2
+          done
+          if [ "$_exec_ok" = "0" ]; then
+            echo "  [yconverge] ERROR: exec check failed after ${timeout}: $desc" >&2
+            return 1
+          fi
+          ;;
+      esac
+      i=$((i + 1))
+    done
+  }
+
+  CHECKS=$(y-cue eval "$yconverge_dir" -e 'step.checks' --out json) || {
+    echo "  [yconverge] ERROR: failed to evaluate $yconverge_dir/yconverge.cue" >&2
+    exit 1
+  }
+  _run_checks "$CHECKS" "check:"
+fi
