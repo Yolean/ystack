@@ -18,28 +18,19 @@ step: verify.#Step & {
 			description: "restart y-kustomize to pick up kafka secrets"
 		},
 		{
+			// After restart, wait for y-kustomize to serve kafka content via Traefik.
+			// This is the path kustomize uses — if this works, builds will resolve.
+			// Traefik checks first because they're the real consumer requirement.
 			kind:        "exec"
-			command:     "kubectl --context=$CONTEXT get --raw /api/v1/namespaces/ystack/services/y-kustomize:80/proxy/v1/blobs/setup-bucket-job/base-for-annotations.yaml"
-			timeout:     "60s"
-			description: "y-kustomize serving blobs bases (API proxy)"
-		},
-		{
-			kind:        "exec"
-			command:     "kubectl --context=$CONTEXT get --raw /api/v1/namespaces/ystack/services/y-kustomize:80/proxy/v1/kafka/setup-topic-job/base-for-annotations.yaml"
-			timeout:     "60s"
-			description: "y-kustomize serving kafka bases (API proxy)"
+			command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null"
+			timeout:     "120s"
+			description: "y-kustomize serving kafka bases (Traefik)"
 		},
 		{
 			kind:        "exec"
 			command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null"
-			timeout:     "60s"
+			timeout:     "120s"
 			description: "y-kustomize serving blobs bases (Traefik)"
-		},
-		{
-			kind:        "exec"
-			command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null"
-			timeout:     "60s"
-			description: "y-kustomize serving kafka bases (Traefik)"
 		},
 	]
 }
