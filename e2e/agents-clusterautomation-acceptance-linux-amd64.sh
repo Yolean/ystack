@@ -37,7 +37,33 @@ trap cleanup EXIT
 cleanup
 
 ss -tlnp 2>/dev/null | grep -qE ':80 |:443 ' && echo "port 80 and 443 must be available for local cluster to bind to" && exit 1
-y-cluster-provision-k3d
+
+y-cluster-provision --skip-converge
+
+# --- progressive convergence: proves DAG resolves deps without include/exclude ---
+
+echo ""
+echo "# Phase 1: base platform (registry + y-kustomize serving)"
+kubectl yconverge --context=local -k k3s/60-builds-registry/
+
+echo ""
+echo "# Phase 2: kafka stack (transitive deps through y-kustomize)"
+kubectl yconverge --context=local -k k3s/40-kafka/
+
+echo ""
+echo "# Phase 3: build infra"
+kubectl yconverge --context=local -k k3s/62-buildkit/
+
+echo ""
+echo "# Phase 4: prod registry"
+kubectl yconverge --context=local -k k3s/61-prod-registry/
+
+echo ""
+echo "# Phase 5: full converge — idempotency proof, also adds monitoring"
+y-cluster-provision
+
+echo ""
+echo "# Phase 6: validate the complete stack"
 y-cluster-validate-ystack --context=local
 
 echo "Acceptance tests completed"
