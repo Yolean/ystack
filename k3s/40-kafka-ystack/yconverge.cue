@@ -23,13 +23,16 @@ step: verify.#Step & {
 			// Traefik checks first because they're the real consumer requirement.
 			kind:        "exec"
 			command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml >/dev/null"
-			timeout:     "120s"
+			timeout:     "30s"
 			description: "y-kustomize serving kafka bases (Traefik)"
 		},
 		{
+			// After the second restart (kafka), the blobs secret may take up to
+			// 60-90s to propagate via kubelet volume sync. This is a known
+			// Kubernetes limitation (syncInterval + cache TTL).
 			kind:        "exec"
 			command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize.ystack.svc.cluster.local/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null"
-			timeout:     "120s"
+			timeout:     "90s"
 			description: "y-kustomize serving blobs bases (Traefik)"
 		},
 	]

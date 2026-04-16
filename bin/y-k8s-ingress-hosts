@@ -89,6 +89,19 @@ if $CHECK || $ENSURE; then
   PASSTHROUGH+=("-write")
 fi
 
+# Guard: don't write an empty block that clears existing entries.
+# Preview without -write to check if there are entries.
+_PREVIEW_ARGS=()
+for _a in "${PASSTHROUGH[@]}"; do
+  [ "$_a" = "-write" ] || _PREVIEW_ARGS+=("$_a")
+done
+echo "# reading k8s ingress resources..."
+_PREVIEW=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${_PREVIEW_ARGS[@]}" 2>/dev/null | grep -v '^#')
+if [ -z "$_PREVIEW" ]; then
+  echo "# no ingress/gateway entries found, skipping write to preserve existing /etc/hosts"
+  exit 0
+fi
+
 [ $(id -u) -ne 0 ] && exec sudo $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"
 
 $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" || exit $?
