@@ -14,4 +14,7 @@ case "$PROVISIONER" in
   lima)
     limactl shell ystack sudo k3s ctr "$@"
     ;;
+  qemu)
+    ssh -p 2222 -i "$HOME/.cache/ystack-qemu/ystack-qemu-ssh" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ystack@localhost sudo k3s ctr "$@"
+    ;;
 esac
