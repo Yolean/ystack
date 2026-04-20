@@ -7,6 +7,6 @@ secretGenerator:
   options:
     disableNameSuffixHash: true
     labels:
-      yolean.se/module-part: config
+      yolean.se/module-part: y-kustomize
   files:
   - base-for-annotations.yaml=y-kustomize-bases/blobs/setup-bucket-job/base-for-annotations.yaml

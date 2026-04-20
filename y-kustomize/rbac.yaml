@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: y-kustomize
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: y-kustomize
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: y-kustomize
+subjects:
+- kind: ServiceAccount
+  name: y-kustomize
+roleRef:
+  kind: Role
+  name: y-kustomize
+  apiGroup: rbac.authorization.k8s.io

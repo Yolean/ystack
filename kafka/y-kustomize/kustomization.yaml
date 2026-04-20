@@ -8,6 +8,6 @@ secretGenerator:
   options:
     disableNameSuffixHash: true
     labels:
-      yolean.se/module-part: config
+      yolean.se/module-part: y-kustomize
   files:
   - base-for-annotations.yaml=y-kustomize-bases/kafka/setup-topic-job/setup-topic-job.yaml
