@@ -4,10 +4,38 @@ on:
   push:
     branches:
     - main
+    - y-converge-checks-dag
 
 jobs:
   checks:
     uses: ./.github/workflows/checks.yaml
+  y-kustomize:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.26'
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build Go binary
+      working-directory: y-kustomize/cmd
+      run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o target/linux/amd64/y-kustomize .
+    - name: Build and push image
+      working-directory: y-kustomize/cmd
+      env:
+        YSTACK_HOME: ${{ github.workspace }}
+        PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin
+      run: |
+        IMAGE=ghcr.io/yolean/y-kustomize:${{ github.sha }} \
+          y-contain build --push
   docker:
     needs: checks
     runs-on: ubuntu-latest

@@ -15,18 +15,10 @@ spec:
       labels:
         app: y-kustomize
     spec:
+      serviceAccountName: y-kustomize
       containers:
-      - name: sws
-        image: ghcr.io/yolean/static-web-server:2.41.0
-        args:
-        - --port=8787
-        - --root=/srv
-        - --directory-listing=false
-        - --health
-        - --log-level=info
-        - --log-remote-address
-        - --ignore-hidden-files=false
-        - --disable-symlinks=false
+      - name: y-kustomize
+        image: ghcr.io/yolean/y-kustomize:latest
         ports:
         - containerPort: 8787
           name: http
@@ -37,18 +29,6 @@ spec:
         resources:
           requests:
             cpu: 5m
-            memory: 8Mi
+            memory: 16Mi
           limits:
             memory: 32Mi
-        volumeMounts:
-        - name: base-blobs-setup-bucket-job
-          mountPath: /srv/v1/blobs/setup-bucket-job
-        - name: base-kafka-setup-topic-job
-          mountPath: /srv/v1/kafka/setup-topic-job
-      volumes:
-      - name: base-blobs-setup-bucket-job
-        secret:
-          secretName: y-kustomize.blobs.setup-bucket-job
-      - name: base-kafka-setup-topic-job
-        secret:
-          secretName: y-kustomize.kafka.setup-topic-job
