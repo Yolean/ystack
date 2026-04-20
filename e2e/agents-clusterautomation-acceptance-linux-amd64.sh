@@ -3,11 +3,21 @@
 # Get absolute path of the script
 SCRIPT_PATH="$(readlink -f "$0")"
 
-# TODO restore clean env after sudo troubleshooting
-# if [[ "$ENV_IS_CLEAN" != "true" ]]; then
-#   exec env -i HOME="$HOME" USER="$USER" LOGNAME="$USER" SHELL="/bin/bash" TERM="$TERM" PATH="/usr/bin:/bin:/usr/sbin:/sbin" ENV_IS_CLEAN=true /bin/bash -lic "$SCRIPT_PATH $*"
-#   exit 0
-# fi
+if [[ "$ENV_IS_CLEAN" != "true" ]]; then
+  echo "Mirroring a fresh interactive terminal..."
+
+  exec env -i \
+    HOME="$HOME" \
+    USER="$USER" \
+    LOGNAME="$USER" \
+    SHELL="/bin/bash" \
+    TERM="$TERM" \
+    PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+    ENV_IS_CLEAN=true \
+    /bin/bash -lic "$SCRIPT_PATH $*"
+
+  exit 0
+fi
 
 echo "Acceptance test PATH:"
 echo "$PATH"
