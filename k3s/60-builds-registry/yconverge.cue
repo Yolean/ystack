@@ -17,7 +17,7 @@ step: verify.#Step & {
 			kind:      "rollout"
 			resource:  "deploy/registry"
 			namespace: "ystack"
-			timeout:   "120s"
+			timeout:   "60s"
 		},
 		{
 			kind:        "exec"
