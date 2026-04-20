@@ -121,8 +121,8 @@ until kubectl --context=$CTX get nodes >/dev/null 2>&1; do sleep 2; done
 
 # Gateway API is always set up, even with --skip-converge.
 export OVERRIDE_IP=${YSTACK_PORTS_IP:-127.0.0.1}
-kubectl-yconverge --context=$CTX -k k3s/10-gateway-api/
-kubectl-yconverge --context=$CTX -k k3s/20-gateway/
+(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/10-gateway-api/)
+(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/20-gateway/)
 
 if [ "$SKIP_CONVERGE" = "true" ]; then
   echo "# --skip-converge: skipping converge, validate, and post-provision steps"

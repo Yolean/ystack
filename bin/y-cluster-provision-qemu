@@ -245,8 +245,8 @@ y-kubeconfig-import "$KUBECONFIG.tmp"
 # Gateway API is always set up, even with --skip-converge.
 # Services are reachable via port-forward at 127.0.0.1.
 export OVERRIDE_IP=127.0.0.1
-kubectl-yconverge --context=$CTX -k k3s/10-gateway-api/
-kubectl-yconverge --context=$CTX -k k3s/20-gateway/
+(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/10-gateway-api/)
+(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/20-gateway/)
 
 if [ "$SKIP_CONVERGE" = "true" ]; then
   echo "[y-cluster-provision-qemu] --skip-converge: done"
