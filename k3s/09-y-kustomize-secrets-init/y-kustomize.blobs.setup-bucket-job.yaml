@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: y-kustomize.blobs.setup-bucket-job
-  labels:
-    yolean.se/module-part: y-kustomize
-    yolean.se/converge-mode: create
-type: Opaque

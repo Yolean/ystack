@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: y-kustomize.kafka.setup-topic-job
-  labels:
-    yolean.se/module-part: y-kustomize
-    yolean.se/converge-mode: create
-type: Opaque
