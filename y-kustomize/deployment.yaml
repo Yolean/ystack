@@ -18,7 +18,7 @@ spec:
       serviceAccountName: y-kustomize
       containers:
       - name: y-kustomize
-        image: ghcr.io/yolean/y-kustomize:latest
+        image: ghcr.io/yolean/y-kustomize:c55953b69f74067043f2351f8727ea84db1737ca@sha256:e44f99f6bbae59aef485610402c8f3f0125e197fff8616643bd4d5c65ce619e1
         ports:
         - containerPort: 8787
           name: http
