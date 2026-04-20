@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://github.com/turbokube/contain/raw/refs/heads/main/jsonschema/config.json
+base: gcr.io/distroless/static:nonroot@sha256:e3f945647ffb95b5839c07038d64f9811adf17308b9121d8a2b87b6a22a80a39
+layers:
+- localFile:
+    path: target/linux/amd64/y-kustomize
+    containerPath: /usr/local/bin/y-kustomize
+  layerAttributes:
+    uid: 65532
+    gid: 65534
+    mode: 0755
+entrypoint:
+- /usr/local/bin/y-kustomize

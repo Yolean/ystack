@@ -2,6 +2,19 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
+[ "$1" = "help" ] && echo '
+Load a cached OCI image into the local cluster containerd.
+
+Usage: y-image-cache-load <image-ref>
+
+The image must be cached at:
+  ${XDG_CACHE_HOME:-$HOME/.cache}/ystack-image-cache/oci/<OCI_NAME>/index.json
+
+Use y-image-cache-save to populate the cache from a registry.
+
+Supports k3d, qemu, and multipass provisioners.
+' && exit 0
+
 [ -z "$1" ] && echo "Usage: y-image-cache-load <image-ref>" >&2 && exit 1
 
 IMAGE_REF="$1"
@@ -58,11 +71,11 @@ if [[ "$ANNOTATED_REF" == *@sha256:* ]]; then
       FULL_TAG_REF="docker.io/$FULL_TAG_REF"
     fi
     echo "# Tagging tag ref: $FULL_TAG_REF"
-    y-cluster-local-ctr images tag "$ANNOTATED_REF" "$FULL_TAG_REF" 2>/dev/null || true
+    y-cluster-local-ctr images tag "$ANNOTATED_REF" "$FULL_TAG_REF" 2>/dev/null || true # y-script-lint:disable=or-true # tag may already exist
   fi
 else
   REPO="${ANNOTATED_REF%:*}"
   DIGEST_REF="${REPO}@${CACHED_DIGEST}"
   echo "# Tagging digest ref: $DIGEST_REF"
-  y-cluster-local-ctr images tag "$ANNOTATED_REF" "$DIGEST_REF" 2>/dev/null || true
+  y-cluster-local-ctr images tag "$ANNOTATED_REF" "$DIGEST_REF" 2>/dev/null || true # y-script-lint:disable=or-true # tag may already exist
 fi

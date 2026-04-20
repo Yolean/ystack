@@ -155,6 +155,16 @@ cue:
     tool: tar
     path: cue
 
+contain:
+  version: 0.8.0
+  templates:
+    download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
+  sha256:
+    darwin_amd64: f1bf0e8a8ac055a57d7db3db847de2f375cb1bceeecbb3e3a17bda2c8ef227df
+    darwin_arm64: 0de02c17ed5bd013ff3f0335f51a41a2ab7d1ae2e14f2c4d94f8ee85943a2495
+    linux_amd64: 3ae1b2fa80c66ae113c23cbe5d5f31456eccaf37723cd2944a9cdd880ebd1b72
+    linux_arm64: 4a920ec5956acfde430c2efdb5043a6aec65fb20eb5fc2b9f961b60c6505ce7c
+
 npx:
   version: 0.2.1
   templates:
