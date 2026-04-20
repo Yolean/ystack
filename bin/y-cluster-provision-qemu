@@ -124,6 +124,10 @@ if [ "$TEARDOWN" = "true" ]; then
     rm -f "$VM_DISK"
     echo "[y-cluster-provision-qemu] Teardown complete. Disk deleted."
   fi
+  # Fix kubectl writing null instead of [] when last item is removed
+  sed -i 's/^contexts: null$/contexts: []/' "$KUBECONFIG" 2>/dev/null
+  sed -i 's/^clusters: null$/clusters: []/' "$KUBECONFIG" 2>/dev/null
+  sed -i 's/^users: null$/users: []/' "$KUBECONFIG" 2>/dev/null
   exit 0
 fi
 
