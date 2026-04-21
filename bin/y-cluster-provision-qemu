@@ -15,7 +15,8 @@ VM_CPUS="4"
 VM_SSH_PORT="2222"
 SKIP_CONVERGE=false
 SKIP_IMAGE_LOAD=false
-EXCLUDE=monitoring
+CONVERGE_TARGETS="y-kustomize,blobs,builds-registry"
+DRY_RUN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -33,9 +34,10 @@ Flags:
   --memory=MB             memory in MB (default: 8192)
   --cpus=N                CPU count (default: 4)
   --ssh-port=PORT         host port forwarded to VM ssh (default: 2222)
-  --exclude=SUBSTRING     exclude k3s bases matching substring (default: monitoring)
+  --converge=LIST         comma-separated k3s bases to converge (default: y-kustomize,blobs,builds-registry)
   --skip-converge         skip converge and post-provision steps
   --skip-image-load       skip image cache and load into containerd
+  --dry-run=MODE          forward to kubectl-yconverge (server|none)
   --teardown              stop and delete the VM (removes disk by default)
   --keep-disk             preserve disk image on teardown for faster re-provision
   --export-vmdk=PATH      export disk as streamOptimized VMDK
@@ -50,9 +52,10 @@ EOF
     --memory=*) VM_MEMORY="${1#*=}"; shift ;;
     --cpus=*) VM_CPUS="${1#*=}"; shift ;;
     --ssh-port=*) VM_SSH_PORT="${1#*=}"; shift ;;
-    --exclude=*) EXCLUDE="${1#*=}"; shift ;;
+    --converge=*) CONVERGE_TARGETS="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
+    --dry-run=*) DRY_RUN="$1"; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     --keep-disk) KEEP_DISK=true; shift ;;
     --export-vmdk=*) EXPORT_VMDK="${1#*=}"; shift ;;
@@ -261,13 +264,13 @@ if [ "$SKIP_IMAGE_LOAD" = "true" ]; then
   echo "[y-cluster-provision-qemu] --skip-image-load: skipping"
 else
   echo "[y-cluster-provision-qemu] Loading images ..."
-  y-image-cache-ystack </dev/null
+  y-image-cache-ystack --converge=$CONVERGE_TARGETS </dev/null
   y-image-cache-load-all </dev/null || true
 fi
 
 # Converge ystack infrastructure (includes Gateway API and /etc/hosts via y-k8s-ingress-hosts)
 # Use 127.0.0.1 as override IP since services are reachable via port-forward
-y-cluster-converge-ystack --context=$CTX --exclude=$EXCLUDE --override-ip=127.0.0.1
+y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS $DRY_RUN --override-ip=127.0.0.1
 
 # Update VM /etc/hosts for registry resolution (containerd needs these)
 BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')

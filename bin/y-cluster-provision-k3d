@@ -14,7 +14,8 @@ K3D_AGENTS="0"
 K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
 SKIP_CONVERGE=false
 SKIP_IMAGE_LOAD=false
-EXCLUDE=monitoring
+CONVERGE_TARGETS="y-kustomize,blobs,builds-registry"
+DRY_RUN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -28,9 +29,10 @@ Flags:
   --agents=N            number of agent nodes (default: 0)
   --docker-update=ARGS  docker update flags for the server container (default: --cpuset-cpus=3 --cpus=3)
   --host=HOSTNAME       hostname for ingress (default: ystack.local)
-  --exclude=SUBSTRING   exclude k3s bases matching substring (default: monitoring)
+  --converge=LIST       comma-separated k3s bases to converge (default: y-kustomize,blobs,builds-registry)
   --skip-converge       skip converge, validate, and post-provision steps
   --skip-image-load     skip image cache and load into containerd
+  --dry-run=MODE        forward to kubectl-yconverge (server|none)
   --teardown            delete existing cluster and exit
   -h, --help            show this help
 EOF
@@ -40,9 +42,10 @@ EOF
     --agents=*) K3D_AGENTS="${1#*=}"; shift ;;
     --docker-update=*) K3D_DOCKER_UPDATE="${1#*=}"; shift ;;
     --host=*) YSTACK_HOST="${1#*=}"; shift ;;
-    --exclude=*) EXCLUDE="${1#*=}"; shift ;;
+    --converge=*) CONVERGE_TARGETS="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
+    --dry-run=*) DRY_RUN="$1"; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -139,7 +142,7 @@ else
   y-image-cache-load-all </dev/null || true
 fi
 
-y-cluster-converge-ystack --context=$CTX --exclude=$EXCLUDE --override-ip=${YSTACK_PORTS_IP:-127.0.0.1}
+y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS $DRY_RUN --override-ip=${YSTACK_PORTS_IP:-127.0.0.1}
 
 # k3d-specific: update node /etc/hosts for registry access
 BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')

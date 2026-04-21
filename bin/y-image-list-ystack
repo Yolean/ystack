@@ -4,11 +4,26 @@ set -eo pipefail
 
 YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Converge bases from y-cluster-converge-ystack BASES array
-BASES=$(sed -n '/^BASES=(/,/^)/{ /^BASES=(/d; /^)/d; s/^[[:space:]]*//; p; }' "$YSTACK_HOME/bin/y-cluster-converge-ystack")
-for base in $BASES; do
-  kubectl kustomize "$YSTACK_HOME/k3s/$base/" 2>/dev/null \
-    | grep -oE 'image:\s*\S+' \
-    | sed 's/image:[[:space:]]*//' \
-    || true
+[ "$1" = "help" ] && echo '
+Lists container images used by ystack converge targets.
+Uses the same --converge syntax as y-cluster-converge-ystack.
+
+Usage: y-image-list-ystack [--converge=LIST]
+' && exit 0
+
+CONVERGE_TARGETS="${1#--converge=}"
+[ -n "$CONVERGE_TARGETS" ] || CONVERGE_TARGETS="${CONVERGE_TARGETS:-y-kustomize,blobs,builds-registry}"
+
+for target in $(echo "$CONVERGE_TARGETS" | tr ',' ' '); do
+  for d in "$YSTACK_HOME"/k3s/*/; do
+    base="${d%/}"
+    base="${base##*/}"
+    base="${base#[0-9][0-9]-}"
+    [ "$base" = "$target" ] || continue
+    kubectl kustomize "$d" 2>/dev/null \
+      | grep -oE 'image:\s*\S+' \
+      | sed 's/image:[[:space:]]*//' \
+      || true # y-script-lint:disable=or-true # kustomize may fail for bases requiring y-kustomize HTTP
+    break
+  done
 done | sort -u
