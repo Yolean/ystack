@@ -144,8 +144,5 @@ fi
 
 y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS $DRY_RUN --override-ip=${YSTACK_PORTS_IP:-127.0.0.1}
 
-# k3d-specific: update node /etc/hosts for registry access
-BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
-PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
-docker exec k3d-ystack-server-0 sh -cex "echo '$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local' >> /etc/hosts"
-docker exec k3d-ystack-server-0 sh -cex "echo '$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local' >> /etc/hosts"
+# Registry resolution uses magic ClusterIPs in registries.yaml — no /etc/hosts needed.
+# TODO: add containerd registry access verification (like qemu provisioner)

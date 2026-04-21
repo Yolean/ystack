@@ -11,7 +11,7 @@ export K3S_NODE_NAME=ystack-master
 export INSTALL_K3S_EXEC="--kubelet-arg=address=0.0.0.0 ${INSTALL_K3S_EXEC}"
 
 INSTALLER_REVISION=50fa2d70c239b3984dab99a2fb1ddaa35c3f2051
-export INSTALL_K3S_VERSION=v1.35.1+k3s1
+export INSTALL_K3S_VERSION=v1.35.3+k3s1
 curl -sfL https://github.com/k3s-io/k3s/raw/$INSTALLER_REVISION/install.sh | sh -
 
 service k3s start

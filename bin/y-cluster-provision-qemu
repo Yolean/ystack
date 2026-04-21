@@ -272,11 +272,15 @@ fi
 # Use 127.0.0.1 as override IP since services are reachable via port-forward
 y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS $DRY_RUN --override-ip=127.0.0.1
 
-# Update VM /etc/hosts for registry resolution (containerd needs these)
-BUILDS_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service builds-registry -o=jsonpath='{.spec.clusterIP}')
-PROD_REGISTRY_IP=$(kubectl --context=$CTX -n ystack get service prod-registry -o=jsonpath='{.spec.clusterIP}')
-ssh_vm "sudo sh -c 'echo \"$BUILDS_REGISTRY_IP builds-registry.ystack.svc.cluster.local\" >> /etc/hosts'"
-ssh_vm "sudo sh -c 'echo \"$PROD_REGISTRY_IP   prod-registry.ystack.svc.cluster.local\" >> /etc/hosts'"
+# Verify containerd can reach registries via mirror config (magic ClusterIPs)
+echo "[y-cluster-provision-qemu] Verifying containerd registry access ..."
+for reg in builds-registry prod-registry; do
+  if echo "$CONVERGE_TARGETS" | tr ',' '\n' | grep -q "$reg"; then
+    ssh_vm "curl -sf http://$(kubectl --context=$CTX -n ystack get service $reg -o=jsonpath='{.spec.clusterIP}')/v2/ >/dev/null" \
+      && echo "  $reg: OK" \
+      || { echo "  $reg: FAIL — containerd cannot reach registry" >&2; exit 1; }
+  fi
+done
 
 echo "[y-cluster-provision-qemu] Done. SSH: ssh -p $VM_SSH_PORT -i $VM_SSH_KEY ystack@localhost"
 echo "[y-cluster-provision-qemu] Export: y-cluster-provision-qemu --export-vmdk=appliance.vmdk"
