@@ -69,6 +69,13 @@ trap cleanup EXIT
 
 echo "[cue itest] yconverge framework integration tests"
 
+# --- lint (zero failures required) ---
+
+echo "[cue itest] Linting scripts ..."
+y-script-lint "$YSTACK_HOME/bin/y-cluster-converge-ystack"
+y-script-lint "$YSTACK_HOME/bin/y-image-list-ystack"
+y-script-lint "$YSTACK_HOME/bin/kubectl-yconverge"
+
 # --- start kwok cluster ---
 
 echo "[cue itest] Starting kwok cluster ..."
