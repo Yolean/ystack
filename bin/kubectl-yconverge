@@ -267,7 +267,7 @@ if [ -z "$NS_GUESS" ]; then
   NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}')
 fi
 [ -z "$NS_GUESS" ] && NS_GUESS="default"
-export NS_GUESS
+export NAMESPACE="$NS_GUESS"
 
 # --- apply (skipped in checks-only mode) ---
 
@@ -336,7 +336,7 @@ if [ -n "$yconverge_dir" ]; then
       ns=$(echo "$checks_json" | y-yq ".[$i].namespace // \"\"" -)
       timeout=$(echo "$checks_json" | y-yq ".[$i].timeout // \"60s\"" -)
       command=$(echo "$checks_json" | y-yq ".[$i].command // \"\"" -)
-      [ -z "$ns" ] && ns="$NS_GUESS"
+      [ -z "$ns" ] && ns="$NAMESPACE"
       ns_flag=""
       [ -n "$ns" ] && ns_flag="-n $ns"
       case "$kind" in
