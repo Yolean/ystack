@@ -127,32 +127,18 @@ if [ "$MODE" = "diff" ]; then
   exit $?
 fi
 
-# --- yconverge.cue lookup: finds a yconverge.cue file, with 1-level indirection
-#     through a kustomization.yaml that references exactly one local directory. ---
+# --- yconverge.cue lookup via kustomize-traverse ---
+# Walks the full kustomization directory tree and returns all dirs
+# that contain a yconverge.cue file.
 
-_find_cue_dir() {
+_find_cue_dirs() {
   d="$1"
-  if [ -f "$d/yconverge.cue" ]; then
-    echo "$d"
-    return 0
-  fi
-  [ -f "$d/kustomization.yaml" ] || return 0
-  _resources=$(y-yq '.resources // [] | .[] | select(test("^[^h]") and test("^(http|github)") | not)' "$d/kustomization.yaml")
-  _base_dir=""
-  _dir_count=0
-  _old_ifs="$IFS"; IFS='
-'
-  for _r in $_resources; do
-    if [ -d "$d/$_r" ]; then
-      _dir_count=$((_dir_count + 1))
-      [ "$_dir_count" = "1" ] && _base_dir="$_r"
+  y-kustomize-traverse -q -o dirs "$d" | while read -r rel; do
+    abs="$d/$rel"
+    if [ -f "$abs/yconverge.cue" ]; then
+      echo "$abs"
     fi
   done
-  IFS="$_old_ifs"
-  if [ "$_dir_count" = "1" ] && [ -f "$d/$_base_dir/yconverge.cue" ]; then
-    echo "$d/$_base_dir"
-  fi
-  return 0
 }
 
 # --- dependency graph walk via CUE imports ---
@@ -179,7 +165,7 @@ $_DEP_VISITED
 ${1%/}
 "*) return 0 ;;
   esac
-  _cue_dir=$(_find_cue_dir "${1%/}")
+  _cue_dir=$(_find_cue_dirs "${1%/}" | tail -1)
   [ -z "$_cue_dir" ] && return 0
   for _dep in $(_find_imports "$_cue_dir/yconverge.cue"); do
     _resolve_deps "$_dep"
@@ -217,35 +203,27 @@ if [ -z "$_YCONVERGE_RESOLVING" ] && [ -n "$KUSTOMIZE_DIR" ]; then
   fi
 fi
 
-# --- single-step path: find yconverge.cue for this target, resolve namespace ---
+# --- single-step path: find yconverge.cue files and resolve namespace ---
 
-yconverge_dir=""
+yconverge_dirs=""
 if [ -n "$KUSTOMIZE_DIR" ]; then
   case "$MODE" in
     apply)
-      [ "$SKIP_CHECKS" = "false" ] && yconverge_dir=$(_find_cue_dir "$KUSTOMIZE_DIR")
+      [ "$SKIP_CHECKS" = "false" ] && yconverge_dirs=$(_find_cue_dirs "$KUSTOMIZE_DIR")
       ;;
     checks-only)
-      yconverge_dir=$(_find_cue_dir "$KUSTOMIZE_DIR")
-      [ -z "$yconverge_dir" ] && _die "--checks-only: no yconverge.cue found for $KUSTOMIZE_DIR"
+      yconverge_dirs=$(_find_cue_dirs "$KUSTOMIZE_DIR")
+      [ -z "$yconverge_dirs" ] && _die "--checks-only: no yconverge.cue found for $KUSTOMIZE_DIR"
       ;;
   esac
 fi
 
-if [ -n "$yconverge_dir" ]; then
-  echo "  [yconverge] found $yconverge_dir/yconverge.cue"
-  case "$yconverge_dir" in
-    ./*|/*) ;;
-    *) yconverge_dir="./$yconverge_dir" ;;
-  esac
-fi
+for _d in $yconverge_dirs; do
+  echo "  [yconverge] found $_d/yconverge.cue"
+done
 
-# --- resolve namespace guess ---
-# Priority: 1. -n CLI arg
-#           2. outer kustomization namespace: (the rendered namespace kustomize uses)
-#           3. referenced base namespace (fallback when indirection found yconverge.cue
-#              and the outer kustomization did not set its own namespace)
-#           4. context default
+# --- resolve namespace ---
+# Priority: 1. -n CLI arg  2. kustomize-traverse  3. context default
 NS_GUESS=""
 _prev=""
 for arg in "$@"; do
@@ -255,16 +233,11 @@ for arg in "$@"; do
   fi
   _prev="$arg"
 done
-if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ] && [ -f "$KUSTOMIZE_DIR/kustomization.yaml" ]; then
-  NS_GUESS=$(y-yq '.namespace // ""' "$KUSTOMIZE_DIR/kustomization.yaml")
-fi
-if [ -z "$NS_GUESS" ] && [ -n "$yconverge_dir" ] && [ -n "$KUSTOMIZE_DIR" ] && [ "$yconverge_dir" != "$KUSTOMIZE_DIR" ] && [ "$yconverge_dir" != "./$KUSTOMIZE_DIR" ]; then
-  _ref_kust="$yconverge_dir/kustomization.yaml"
-  [ ! -f "$_ref_kust" ] && _ref_kust="$yconverge_dir/kustomization.yml"
-  [ -f "$_ref_kust" ] && NS_GUESS=$(y-yq '.namespace // ""' "$_ref_kust")
+if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ]; then
+  NS_GUESS=$(y-kustomize-traverse -q -o namespace "$KUSTOMIZE_DIR")
 fi
 if [ -z "$NS_GUESS" ]; then
-  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}')
+  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null) || true # y-script-lint:disable=or-true # context may not exist in kubeconfig
 fi
 [ -z "$NS_GUESS" ] && NS_GUESS="default"
 export NAMESPACE="$NS_GUESS"
@@ -320,7 +293,7 @@ fi
 
 # --- yconverge.cue: post-apply checks ---
 
-if [ -n "$yconverge_dir" ]; then
+if [ -n "$yconverge_dirs" ]; then
   _run_checks() {
     checks_json="$1"
     label="$2"
@@ -371,9 +344,15 @@ if [ -n "$yconverge_dir" ]; then
     done
   }
 
-  CHECKS=$(y-cue export "$yconverge_dir" -e 'step.checks') || {
-    echo "  [yconverge] ERROR: failed to evaluate $yconverge_dir/yconverge.cue" >&2
-    exit 1
-  }
-  _run_checks "$CHECKS" "check:"
+  for yconverge_dir in $yconverge_dirs; do
+    case "$yconverge_dir" in
+      ./*|/*) ;;
+      *) yconverge_dir="./$yconverge_dir" ;;
+    esac
+    CHECKS=$(y-cue export "$yconverge_dir" -e 'step.checks') || {
+      echo "  [yconverge] ERROR: failed to evaluate $yconverge_dir/yconverge.cue" >&2
+      exit 1
+    }
+    _run_checks "$CHECKS" "check:"
+  done
 fi

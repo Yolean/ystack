@@ -165,6 +165,19 @@ contain:
     linux_amd64: 3ae1b2fa80c66ae113c23cbe5d5f31456eccaf37723cd2944a9cdd880ebd1b72
     linux_arm64: 4a920ec5956acfde430c2efdb5043a6aec65fb20eb5fc2b9f961b60c6505ce7c
 
+kustomize-traverse:
+  version: 0.1.0
+  templates:
+    download: https://github.com/Yolean/kustomize-traverse/releases/download/v${version}/kustomize-traverse-${os}-${arch}.tar.gz
+  sha256:
+    darwin_amd64: bdca1fe29afcbc9817557046a3de2661f9ce5044aec3086a263e2724200bb580
+    darwin_arm64: 67acdd588a37cb213afad319ef18b67090214ee1d3bad06a469137cb5ef2b2b8
+    linux_amd64: e643fe6a162ef22ef8ecffc960e0fc6c76741613098b3f583c16d9206a4f3628
+    linux_arm64: d5e564c54d043350e928fb366a4ab004b09381e1aa3f07c750b598bc2bf2b85c
+  archive:
+    tool: tar
+    path: kustomize-traverse
+
 npx:
   version: 0.2.1
   templates:
