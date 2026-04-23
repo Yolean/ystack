@@ -1,0 +1,26 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname "$0")"
+
+# Dev mode: use locally built binary
+DEV_BIN="$YBIN/y-cluster-dev"
+if [ -x "$DEV_BIN" ]; then
+  # Ensure kubectl-yconverge uses y-cluster when dev binary is available
+  PLUGIN="$YBIN/kubectl-yconverge"
+  if [ ! -L "$PLUGIN" ] || [ "$(readlink "$PLUGIN")" != "y-cluster" ]; then
+    [ -e "$PLUGIN" ] && mv "$PLUGIN" "$PLUGIN.bash-backup"
+    ln -s y-cluster "$PLUGIN"
+  fi
+
+  # Preserve invocation name so the binary can detect kubectl plugin mode
+  exec -a "$(basename "$0")" "$DEV_BIN" "$@"
+fi
+
+# TODO: release mode via y-bin-download
+# version=$(y-bin-download $YBIN/y-bin.runner.yaml y-cluster)
+# exec "y-cluster-v${version}-bin" "$@"
+
+echo "No y-cluster binary found. Build one:" >&2
+echo "  (cd ~/Yolean/y-cluster && go build -o $DEV_BIN ./cmd/y-cluster/)" >&2
+exit 1
