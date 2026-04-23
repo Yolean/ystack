@@ -37,12 +37,10 @@ done
 
 export OVERRIDE_IP
 
-cd "$YSTACK_HOME"
-
 _resolve_target() {
-  for d in k3s/*/; do
-    local base="${d#k3s/}"        # strip k3s/ prefix
-    base="${base%%/}"             # strip trailing /
+  for d in "$YSTACK_HOME"/k3s/*/; do
+    local base="${d%/}"
+    base="${base##*/}"            # strip path prefix
     base="${base#[0-9][0-9]-}"   # strip number prefix (e.g. 40-)
     if [ "$base" = "$1" ]; then
       echo "$d"

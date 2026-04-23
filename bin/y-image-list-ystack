@@ -20,10 +20,9 @@ for target in $(echo "$CONVERGE_TARGETS" | tr ',' ' '); do
     base="${base##*/}"
     base="${base#[0-9][0-9]-}"
     [ "$base" = "$target" ] || continue
-    kubectl kustomize "$d" 2>/dev/null \
+    kubectl kustomize "$d" \
       | grep -oE 'image:\s*\S+' \
-      | sed 's/image:[[:space:]]*//' \
-      || true # y-script-lint:disable=or-true # kustomize may fail for bases requiring y-kustomize HTTP
+      | sed 's/image:[[:space:]]*//'
     break
   done
 done | sort -u

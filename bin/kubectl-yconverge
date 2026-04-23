@@ -148,10 +148,11 @@ _find_cue_dirs() {
 _DEP_VISITED=""
 
 _find_imports() {
-  grep '"yolean.se/ystack/' "$1" 2>/dev/null \
+  [ -f "$1" ] || return 0
+  grep '"yolean.se/ystack/' "$1" \
     | grep -v '"yolean.se/ystack/yconverge/verify"' \
     | sed 's|.*"yolean.se/ystack/\([^":]*\).*|\1|' \
-    || true # y-script-lint:disable=or-true # no imports is valid
+    || :
 }
 
 _resolve_deps() {
@@ -182,14 +183,14 @@ ${1%/}"
 
 if [ -z "$_YCONVERGE_RESOLVING" ] && [ -n "$KUSTOMIZE_DIR" ]; then
   deps=$(_resolve_deps "$KUSTOMIZE_DIR")
-  dep_count=$(printf '%s\n' "$deps" | grep -c . 2>/dev/null) || true # y-script-lint:disable=or-true # grep -c . exit 1 = zero matches
+  dep_count=$(printf '%s\n' "$deps" | wc -l)
 
   if [ "$MODE" = "print-deps" ]; then
     printf '%s\n' "$deps"
     exit 0
   fi
 
-  if [ "$dep_count" -gt 1 ] 2>/dev/null; then
+  if [ "$dep_count" -gt 1 ]; then
     echo "=== Converge plan (context=$CONTEXT, mode=$MODE) ==="
     echo "Steps ($dep_count):"
     for d in $deps; do echo "  $d"; done
@@ -237,7 +238,7 @@ if [ -z "$NS_GUESS" ] && [ -n "$KUSTOMIZE_DIR" ]; then
   NS_GUESS=$(y-kustomize-traverse -q -o namespace "$KUSTOMIZE_DIR")
 fi
 if [ -z "$NS_GUESS" ]; then
-  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null) || true # y-script-lint:disable=or-true # context may not exist in kubeconfig
+  NS_GUESS=$(kubectl config view --minify --context="$CONTEXT" -o jsonpath='{.contexts[0].context.namespace}' 2>/dev/null) || :
 fi
 [ -z "$NS_GUESS" ] && NS_GUESS="default"
 export NAMESPACE="$NS_GUESS"

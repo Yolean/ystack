@@ -15,7 +15,6 @@ K3D_DOCKER_UPDATE="--cpuset-cpus=3 --cpus=3"
 SKIP_CONVERGE=false
 SKIP_IMAGE_LOAD=false
 CONVERGE_TARGETS="y-kustomize,blobs,builds-registry"
-DRY_RUN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -32,7 +31,6 @@ Flags:
   --converge=LIST       comma-separated k3s bases to converge (default: y-kustomize,blobs,builds-registry)
   --skip-converge       skip converge, validate, and post-provision steps
   --skip-image-load     skip image cache and load into containerd
-  --dry-run=MODE        forward to kubectl-yconverge (server|none)
   --teardown            delete existing cluster and exit
   -h, --help            show this help
 EOF
@@ -45,7 +43,6 @@ EOF
     --converge=*) CONVERGE_TARGETS="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
-    --dry-run=*) DRY_RUN="$1"; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
@@ -124,8 +121,8 @@ until kubectl --context=$CTX get nodes >/dev/null 2>&1; do sleep 2; done
 
 # Gateway API is always set up, even with --skip-converge.
 export OVERRIDE_IP=${YSTACK_PORTS_IP:-127.0.0.1}
-(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/10-gateway-api/)
-(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/20-gateway/)
+kubectl yconverge --context=$CTX -k "$YSTACK_HOME/k3s/10-gateway-api/"
+kubectl yconverge --context=$CTX -k "$YSTACK_HOME/k3s/20-gateway/"
 
 if [ "$SKIP_CONVERGE" = "true" ]; then
   echo "# --skip-converge: skipping converge, validate, and post-provision steps"
@@ -142,7 +139,7 @@ else
   y-image-cache-load-all </dev/null || true
 fi
 
-y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS $DRY_RUN --override-ip=${YSTACK_PORTS_IP:-127.0.0.1}
+y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS --override-ip=${YSTACK_PORTS_IP:-127.0.0.1}
 
 # Registry resolution uses magic ClusterIPs in registries.yaml — no /etc/hosts needed.
 # TODO: add containerd registry access verification (like qemu provisioner)

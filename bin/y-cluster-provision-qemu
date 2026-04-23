@@ -16,7 +16,6 @@ VM_SSH_PORT="2222"
 SKIP_CONVERGE=false
 SKIP_IMAGE_LOAD=false
 CONVERGE_TARGETS="y-kustomize,blobs,builds-registry"
-DRY_RUN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -37,7 +36,6 @@ Flags:
   --converge=LIST         comma-separated k3s bases to converge (default: y-kustomize,blobs,builds-registry)
   --skip-converge         skip converge and post-provision steps
   --skip-image-load       skip image cache and load into containerd
-  --dry-run=MODE          forward to kubectl-yconverge (server|none)
   --teardown              stop and delete the VM (removes disk by default)
   --keep-disk             preserve disk image on teardown for faster re-provision
   --export-vmdk=PATH      export disk as streamOptimized VMDK
@@ -55,7 +53,6 @@ EOF
     --converge=*) CONVERGE_TARGETS="${1#*=}"; shift ;;
     --skip-converge) SKIP_CONVERGE=true; shift ;;
     --skip-image-load) SKIP_IMAGE_LOAD=true; shift ;;
-    --dry-run=*) DRY_RUN="$1"; shift ;;
     --teardown) TEARDOWN=true; shift ;;
     --keep-disk) KEEP_DISK=true; shift ;;
     --export-vmdk=*) EXPORT_VMDK="${1#*=}"; shift ;;
@@ -127,10 +124,6 @@ if [ "$TEARDOWN" = "true" ]; then
     rm -f "$VM_DISK"
     echo "[y-cluster-provision-qemu] Teardown complete. Disk deleted."
   fi
-  # Fix kubectl writing null instead of [] when last item is removed
-  sed -i 's/^contexts: null$/contexts: []/' "$KUBECONFIG" 2>/dev/null
-  sed -i 's/^clusters: null$/clusters: []/' "$KUBECONFIG" 2>/dev/null
-  sed -i 's/^users: null$/users: []/' "$KUBECONFIG" 2>/dev/null
   exit 0
 fi
 
@@ -252,8 +245,8 @@ y-kubeconfig-import "$KUBECONFIG.tmp"
 # Gateway API is always set up, even with --skip-converge.
 # Services are reachable via port-forward at 127.0.0.1.
 export OVERRIDE_IP=127.0.0.1
-(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/10-gateway-api/)
-(cd "$YSTACK_HOME" && kubectl-yconverge --context=$CTX -k k3s/20-gateway/)
+kubectl yconverge --context=$CTX -k "$YSTACK_HOME/k3s/10-gateway-api/"
+kubectl yconverge --context=$CTX -k "$YSTACK_HOME/k3s/20-gateway/"
 
 if [ "$SKIP_CONVERGE" = "true" ]; then
   echo "[y-cluster-provision-qemu] --skip-converge: done"
@@ -270,7 +263,7 @@ fi
 
 # Converge ystack infrastructure (includes Gateway API and /etc/hosts via y-k8s-ingress-hosts)
 # Use 127.0.0.1 as override IP since services are reachable via port-forward
-y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS $DRY_RUN --override-ip=127.0.0.1
+y-cluster-converge-ystack --context=$CTX --converge=$CONVERGE_TARGETS --override-ip=127.0.0.1
 
 # Verify containerd can reach registries via mirror config (magic ClusterIPs)
 echo "[y-cluster-provision-qemu] Verifying containerd registry access ..."
