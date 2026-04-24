@@ -20,9 +20,11 @@ for target in $(echo "$CONVERGE_TARGETS" | tr ',' ' '); do
     base="${base##*/}"
     base="${base#[0-9][0-9]-}"
     [ "$base" = "$target" ] || continue
-    kubectl kustomize "$d" \
+    if ! kubectl kustomize "$d" 2>/dev/null \
       | grep -oE 'image:\s*\S+' \
-      | sed 's/image:[[:space:]]*//'
+      | sed 's/image:[[:space:]]*//'; then
+      >&2 echo "# $target: skipped (kustomize build failed, likely requires running cluster)"
+    fi
     break
   done
 done | sort -u
