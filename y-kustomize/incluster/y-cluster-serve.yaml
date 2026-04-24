@@ -1,0 +1,4 @@
+port: 8944
+type: y-kustomize-incluster
+inCluster:
+  labelSelector: yolean.se/module-part=y-kustomize

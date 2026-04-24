@@ -1,10 +1,3 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kafka-bootstrap
-stringData:
-  broker: y-bootstrap.kafka.svc.cluster.local:9092
----
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,7 +16,10 @@ spec:
           retention.ms=-1
         yolean.se/kafka-topic-partitions: "1"
         yolean.se/kafka-topic-replicas: "-1"
+        yolean.se/kafka-secret-name: ""
+        yolean.se/setup-job-version: "1"
     spec:
+      serviceAccountName: setup-topic
       restartPolicy: Never
       activeDeadlineSeconds: 3600
       containers:
@@ -44,6 +40,43 @@ spec:
             rpk topic --brokers $KAFKA_BOOTSTRAP alter-config "$TOPIC_NAME" $(config_args --set) | grep OK
           else
             rpk topic --brokers $KAFKA_BOOTSTRAP create "$TOPIC_NAME" --partitions "$TOPIC_PARTITIONS" --replicas "$TOPIC_REPLICAS" $(config_args --topic-config)
+          fi
+          # Create consumer-facing secret if yolean.se/kafka-secret-name is set
+          if [ -n "$SECRET_NAME" ]; then
+            KUBE=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
+            TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+            NS=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+            CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            SECRET_JSON=$(cat <<EOJSON
+          {
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "metadata": {
+              "name": "$SECRET_NAME",
+              "labels": {
+                "yolean.se/setup-job-type": "kafka",
+                "yolean.se/setup-job-version": "$SETUP_JOB_VERSION",
+                "yolean.se/setup-job-pod": "$HOSTNAME"
+              }
+            },
+            "stringData": {
+              "bootstrap": "$KAFKA_BOOTSTRAP",
+              "topicName": "$TOPIC_NAME"
+            }
+          }
+          EOJSON
+            )
+            # Try create, fall back to update if it exists
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$KUBE/api/v1/namespaces/$NS/secrets" \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --cacert "$CA" -d "$SECRET_JSON")
+            if [ "$STATUS" = "409" ]; then
+              curl -sf -X PUT "$KUBE/api/v1/namespaces/$NS/secrets/$SECRET_NAME" \
+                -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --cacert "$CA" -d "$SECRET_JSON"
+            elif [ "$STATUS" != "201" ]; then
+              echo "ERROR: failed to create secret $SECRET_NAME (HTTP $STATUS)" >&2
+              exit 1
+            fi
+            echo "Secret $SECRET_NAME created/updated with bootstrap=$KAFKA_BOOTSTRAP topicName=$TOPIC_NAME"
           fi
         command:
         - /bin/bash
@@ -69,6 +102,14 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.annotations['yolean.se/kafka-topic-replicas']
+        - name: SECRET_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/kafka-secret-name']
+        - name: SETUP_JOB_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/setup-job-version']
         resources:
           requests:
             cpu: 250m

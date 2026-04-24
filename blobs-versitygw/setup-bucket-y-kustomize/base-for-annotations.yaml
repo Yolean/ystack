@@ -1,3 +1,6 @@
+# This secret reflects the base default endpoint and placeholder credentials.
+# A future improvement is to have the inline job script create the secret
+# with the actual resolved values (endpoint, consumer credentials).
 apiVersion: v1
 kind: Secret
 metadata:

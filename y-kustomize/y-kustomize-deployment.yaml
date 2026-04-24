@@ -4,7 +4,6 @@ metadata:
   name: y-kustomize
   labels:
     app: y-kustomize
-    yolean.se/module-part: gateway
 spec:
   replicas: 1
   selector:

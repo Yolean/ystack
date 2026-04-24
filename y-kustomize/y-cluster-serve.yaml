@@ -1,0 +1,8 @@
+port: 8944
+# y-cluster serve runs `kustomize build` on each source dir, finds the
+# Secrets it produces, and serves their data keys at /v1/{group}/{name}/{key}
+# where the Secret name is y-kustomize.{group}.{name}.
+type: y-kustomize-local
+sources:
+- dir: ../kafka/setup-topic-y-kustomize
+- dir: ../blobs-versitygw/setup-bucket-y-kustomize

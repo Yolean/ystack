@@ -3,7 +3,18 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ystack
 resources:
-- rbac.yaml
-- deployment.yaml
-- service.yaml
-- httproute.yaml
+- y-kustomize-rbac.yaml
+- y-kustomize-deployment.yaml
+- y-kustomize-service.yaml
+- y-kustomize-httproute.yaml
+
+# In-cluster serve config. The current deployment image is the legacy
+# y-kustomize binary which doesn't read this ConfigMap. After the
+# migration documented in YSTACK_MIGRATION.md, the deployment will mount
+# this at /etc/y-cluster-serve.
+configMapGenerator:
+# Hash suffix kept on purpose: when the in-cluster serve config changes,
+# the new ConfigMap name causes a Deployment rollout that picks it up.
+- name: y-kustomize-serve
+  files:
+  - incluster/y-cluster-serve.yaml

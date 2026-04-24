@@ -1,8 +1,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: ystack
 
+# Produces a Secret y-kustomize.kafka.setup-topic-job whose data key
+# base-for-annotations.yaml is a Job spec for kafka topic setup.
+# y-cluster serve picks up this Secret and serves it at
+# /v1/kafka/setup-topic-job/base-for-annotations.yaml.
 secretGenerator:
 - name: y-kustomize.kafka.setup-topic-job
   options:
@@ -10,4 +13,4 @@ secretGenerator:
     labels:
       yolean.se/module-part: y-kustomize
   files:
-  - base-for-annotations.yaml=y-kustomize-bases/kafka/setup-topic-job/setup-topic-job.yaml
+  - base-for-annotations.yaml
