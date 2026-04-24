@@ -6,9 +6,10 @@ metadata:
     app: y-kustomize
     yolean.se/module-part: gateway
 spec:
+  type: LoadBalancer
   selector:
     app: y-kustomize
   ports:
   - name: http
-    port: 80
+    port: 8944
     targetPort: 8787

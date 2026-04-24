@@ -24,7 +24,7 @@ info:
     returns a Job with shared credentials.
 
 servers:
-- url: http://y-kustomize.ystack.svc.cluster.local
+- url: http://y-kustomize:8944
 
 paths:
   /v1/blobs/setup-bucket-job/base-for-annotations.yaml:

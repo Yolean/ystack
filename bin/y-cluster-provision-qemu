@@ -173,7 +173,7 @@ CLOUDINIT
 
 cloud-localds "$VM_SEED" "$CLOUD_INIT"
 
-# Port 80 must be bindable for kustomize to fetch resources from y-kustomize service
+# Port 80 must be bindable for the gateway (web services via HTTPRoutes)
 UNPRIV_PORT_START=$(cat /proc/sys/net/ipv4/ip_unprivileged_port_start 2>/dev/null || echo 1024)
 if [ "$UNPRIV_PORT_START" -gt 80 ]; then
   echo "ERROR: Cannot bind to port 80 (ip_unprivileged_port_start=$UNPRIV_PORT_START)" >&2
@@ -193,7 +193,7 @@ qemu-system-x86_64 \
   -m "$VM_MEMORY" \
   -drive file="$VM_DISK",format=qcow2,if=virtio \
   -drive file="$VM_SEED",format=raw,if=virtio \
-  -netdev user,id=net0,hostfwd=tcp::"$VM_SSH_PORT"-:22,hostfwd=tcp::6443-:6443,hostfwd=tcp::80-:80,hostfwd=tcp::443-:443 \
+  -netdev user,id=net0,hostfwd=tcp::"$VM_SSH_PORT"-:22,hostfwd=tcp::6443-:6443,hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::8944-:8944 \
   -device virtio-net-pci,netdev=net0 \
   -serial file:"$VM_DIR/$VM_NAME-console.log" \
   -display none \
