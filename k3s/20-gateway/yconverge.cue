@@ -19,7 +19,7 @@ step: verify.#Step & {
 		},
 		{
 			kind:      "wait"
-			resource:  "gateway/ystack"
+			resource:  "Gateway.gateway.networking.k8s.io/ystack"
 			namespace: "ystack"
 			for:       "condition=Programmed"
 			timeout:   "60s"

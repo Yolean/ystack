@@ -24,11 +24,15 @@ echo "$PATH"
 
 set -eo pipefail
 
+CONFIG=cluster-configs/local-qemu
+
+# qemu cluster is reachable from the host via 127.0.0.1; ystack's Gateway
+# /etc/hosts logic respects this annotation when set.
+export OVERRIDE_IP=127.0.0.1
+
 cleanup() {
-  local provisioner
-  provisioner=$(y-cluster-local-detect 2>/dev/null) || return 0
-  echo "# Cleaning up $provisioner cluster ..."
-  y-cluster-provision-$provisioner --teardown || true
+  echo "# Cleaning up cluster ..."
+  y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
 }
 trap cleanup EXIT
 
@@ -36,38 +40,52 @@ trap cleanup EXIT
 
 cleanup
 
-ss -tlnp 2>/dev/null | grep -qE ':80 |:443 ' && echo "port 80 and 443 must be available for local cluster to bind to" && exit 1
+# --- provision (no converge) ---
 
-y-cluster-provision --skip-converge
+y-cluster provision -c "$CONFIG"
+
+# Label nodes that don't yet have a cluster identity. Selector form
+# avoids overwriting an existing label on a misclaimed cluster.
+kubectl --context=local label nodes -l '!yolean.se/cluster' yolean.se/cluster=local
+
+# --- gateway api setup (until y-cluster provision installs Envoy Gateway, see specs/y-cluster/SPEC.md) ---
+
+echo ""
+echo "# Gateway API CRDs + traefik provider"
+y-cluster yconverge --context=local -k k3s/10-gateway-api/
+
+echo ""
+echo "# ystack Gateway resource"
+y-cluster yconverge --context=local -k k3s/20-gateway/
 
 # --- progressive convergence: proves DAG resolves deps without include/exclude ---
 
 echo ""
 echo "# Phase 1: base platform (registry + y-kustomize serving)"
-kubectl yconverge --context=local -k k3s/60-builds-registry/
+y-cluster yconverge --context=local -k k3s/60-builds-registry/
 
 echo ""
 echo "# Phase 2: kafka stack (transitive deps through y-kustomize)"
-kubectl yconverge --context=local -k k3s/40-kafka/
+y-cluster yconverge --context=local -k k3s/40-kafka/
 
 echo ""
 echo "# Phase 3: build infra"
-kubectl yconverge --context=local -k k3s/62-buildkit/
+y-cluster yconverge --context=local -k k3s/62-buildkit/
 
 echo ""
 echo "# Phase 4: prod registry"
-kubectl yconverge --context=local -k k3s/61-prod-registry/
+y-cluster yconverge --context=local -k k3s/61-prod-registry/
 
 echo ""
 echo "# Phase 5: monitoring (independent branch)"
-kubectl yconverge --context=local -k k3s/50-monitoring/
+y-cluster yconverge --context=local -k k3s/50-monitoring/
 
 echo ""
-echo "# Phase 6: idempotency proof — re-converge everything"
-kubectl yconverge --context=local -k k3s/62-buildkit/
-kubectl yconverge --context=local -k k3s/50-monitoring/
-kubectl yconverge --context=local -k k3s/61-prod-registry/
-kubectl yconverge --context=local -k k3s/40-kafka/
+echo "# Phase 6: idempotency proof -- re-converge everything"
+y-cluster yconverge --context=local -k k3s/62-buildkit/
+y-cluster yconverge --context=local -k k3s/50-monitoring/
+y-cluster yconverge --context=local -k k3s/61-prod-registry/
+y-cluster yconverge --context=local -k k3s/40-kafka/
 
 echo ""
 echo "# Phase 7: validate the complete stack"

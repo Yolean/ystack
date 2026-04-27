@@ -20,10 +20,14 @@ k() {
 }
 
 # HTTP requests to cluster services via the K8s API proxy (works regardless of provisioner)
-# Usage: kurl <namespace> <service> <path>
+# Usage: kurl <namespace> <service[:port]> <path>
+# Pass svc:port (e.g. y-kustomize:8944) when the service doesn't expose port 80.
 kurl() {
   local ns="$1" svc="$2" path="$3"
-  k get --raw "/api/v1/namespaces/$ns/services/$svc:80/proxy/$path"
+  case "$svc" in
+    *:*) k get --raw "/api/v1/namespaces/$ns/services/$svc/proxy/$path" ;;
+    *)   k get --raw "/api/v1/namespaces/$ns/services/$svc:80/proxy/$path" ;;
+  esac
 }
 
 PASS=0
@@ -111,10 +115,10 @@ run_pre_build_checks() {
     || report "registry v2 API ($phase)" "no response"
 
   echo "[y-cluster-validate-ystack] y-kustomize bases"
-  kurl ystack y-kustomize v1/blobs/setup-bucket-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
+  kurl ystack y-kustomize:8944 v1/blobs/setup-bucket-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
     && report "y-kustomize blobs base ($phase)" "ok" \
     || report "y-kustomize blobs base ($phase)" "not serving valid YAML"
-  kurl ystack y-kustomize v1/kafka/setup-topic-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
+  kurl ystack y-kustomize:8944 v1/kafka/setup-topic-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
     && report "y-kustomize kafka base ($phase)" "ok" \
     || report "y-kustomize kafka base ($phase)" "not serving valid YAML"
 }

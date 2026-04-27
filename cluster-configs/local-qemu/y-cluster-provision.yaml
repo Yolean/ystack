@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Yolean/y-cluster/main/pkg/provision/schema/qemu.schema.json
+#
+# Local development cluster on the qemu provider.
+# y-cluster's defaults forward 6443/80/443; we also need 8944 for the
+# y-kustomize service that converge-time checks hit from the host
+# (curl http://y-kustomize:8944/v1/...).
+provider: qemu
+context: local
+name: local
+portForwards:
+- {host: "6443", guest: "6443"}
+- {host: "80",   guest: "80"}
+- {host: "443",  guest: "443"}
+- {host: "8944", guest: "8944"}
