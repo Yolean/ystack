@@ -14,4 +14,4 @@ spec:
   rules:
   - backendRefs:
     - name: y-kustomize
-      port: 8944
+      port: 80
