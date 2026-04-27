@@ -37,6 +37,9 @@ done
 
 export OVERRIDE_IP
 
+# Label all nodes so jobs with nodeSelector yolean.se/cluster=local schedule.
+kubectl --context="$CONTEXT" label nodes --all yolean.se/cluster=local
+
 _resolve_target() {
   for d in "$YSTACK_HOME"/k3s/*/; do
     local base="${d%/}"

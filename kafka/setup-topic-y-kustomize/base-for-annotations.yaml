@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://github.com/yannh/kubernetes-json-schema/raw/master/v1.30.7/job.json
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -19,6 +20,8 @@ spec:
         yolean.se/kafka-secret-name: ""
         yolean.se/setup-job-version: "1"
     spec:
+      nodeSelector:
+        yolean.se/cluster: local
       serviceAccountName: setup-topic
       restartPolicy: Never
       activeDeadlineSeconds: 3600
