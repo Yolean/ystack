@@ -156,14 +156,14 @@ cue:
     path: cue
 
 contain:
-  version: 0.9.0
+  version: 0.9.1
   templates:
     download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
   sha256:
-    darwin_amd64: 7e4240f9a4571c8faf051331e331ae834a1ef0aeb0cdce03489dc7c87012ec9c
-    darwin_arm64: d5d7be3e2f3fefca943c14c8ee404d2094652aa124f062184beaa5cbfe0e7219
-    linux_amd64: e8c2bbaeb1ff3ddb4adb8a9a87c9a0f1f5b90e2a5899528980e03398c199450b
-    linux_arm64: 9d327a44965217064b314233c0882612ba4675be07d35d892fefdeda294f6af7
+    darwin_amd64: 514d8492f5daf2a406c0f5a835e5c8887aa20bea0be83b6096659215bd559d55
+    darwin_arm64: 04e907d9ad93f3b00bd028f60ababefd5edcdd25e39a4f1f9eb730454097caaf
+    linux_amd64: 38c070ca6e6057d8f8ff91f1d1ecc79f57ffd2338f19a0e6a48456c15e342429
+    linux_arm64: 2ad19485957456a08373b820ec7ba491befe27454f36a57ab420bb1de5b45781
 
 kustomize-traverse:
   version: 0.1.0
