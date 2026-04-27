@@ -2,7 +2,9 @@ package gateway
 
 import "yolean.se/ystack/yconverge/verify"
 
-// Gateway API CRDs are assumed installed by the provisioner.
+// Gateway API CRDs and GatewayClass `eg` come from y-cluster
+// provision (Envoy Gateway is bundled). This base only applies the
+// consumer Gateway resource.
 step: verify.#Step & {
 	checks: [
 		{

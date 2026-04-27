@@ -43,7 +43,6 @@ y-cluster provision -c "$CONFIG"
 
 kubectl --context=local label nodes -l '!yolean.se/cluster' yolean.se/cluster=local
 
-y-cluster yconverge --context=local -k k3s/10-gateway-api/
 y-cluster yconverge --context=local -k k3s/20-gateway/
 
 # Progressive convergence

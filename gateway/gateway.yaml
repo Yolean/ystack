@@ -5,12 +5,11 @@ metadata:
   labels:
     yolean.se/module-part: gateway
 spec:
-  gatewayClassName: traefik
+  gatewayClassName: eg
   listeners:
   - name: http
     protocol: HTTP
-    # Traefik helm chart's web entrypoint container port (exposed as 80 via Service)
-    port: 8000
+    port: 80
     allowedRoutes:
       namespaces:
         from: All

@@ -49,11 +49,7 @@ y-cluster provision -c "$CONFIG"
 # avoids overwriting an existing label on a misclaimed cluster.
 kubectl --context=local label nodes -l '!yolean.se/cluster' yolean.se/cluster=local
 
-# --- gateway api setup (until y-cluster provision installs Envoy Gateway, see specs/y-cluster/SPEC.md) ---
-
-echo ""
-echo "# Gateway API CRDs + traefik provider"
-y-cluster yconverge --context=local -k k3s/10-gateway-api/
+# --- gateway: just the consumer Gateway resource (CRDs + GatewayClass come from y-cluster provision) ---
 
 echo ""
 echo "# ystack Gateway resource"
