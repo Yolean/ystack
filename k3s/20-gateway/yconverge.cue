@@ -1,10 +1,16 @@
 package gateway
 
-import "yolean.se/ystack/yconverge/verify"
+import (
+	"yolean.se/ystack/yconverge/verify"
+	"yolean.se/ystack/k3s/00-namespace-ystack:namespace_ystack"
+)
 
 // Gateway API CRDs and GatewayClass `eg` come from y-cluster
 // provision (Envoy Gateway is bundled). This base only applies the
 // consumer Gateway resource.
+
+_dep_ns: namespace_ystack.step
+
 step: verify.#Step & {
 	checks: [
 		{
