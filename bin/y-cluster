@@ -3,17 +3,13 @@
 set -e
 YBIN="$(dirname "$0")"
 
-# Dev mode: use locally built binary
+# Dev mode: use locally built binary at bin/y-cluster-dev (often a
+# symlink to bin/y-cluster-<sha>). bin/kubectl-yconverge is a tracked
+# symlink to bin/y-cluster so `kubectl yconverge ...` resolves through
+# PATH plugin discovery. Use exec -a so the binary sees the invocation
+# name and can detect kubectl-plugin mode.
 DEV_BIN="$YBIN/y-cluster-dev"
 if [ -x "$DEV_BIN" ]; then
-  # Ensure kubectl-yconverge uses y-cluster when dev binary is available
-  PLUGIN="$YBIN/kubectl-yconverge"
-  if [ ! -L "$PLUGIN" ] || [ "$(readlink "$PLUGIN")" != "y-cluster" ]; then
-    [ -e "$PLUGIN" ] && mv "$PLUGIN" "$PLUGIN.bash-backup"
-    ln -s y-cluster "$PLUGIN"
-  fi
-
-  # Preserve invocation name so the binary can detect kubectl plugin mode
   exec -a "$(basename "$0")" "$DEV_BIN" "$@"
 fi
 

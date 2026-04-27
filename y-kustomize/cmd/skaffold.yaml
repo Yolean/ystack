@@ -14,7 +14,7 @@ build:
         set -e
         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o target/linux/amd64/y-kustomize . &&
         PLATFORMS=linux/amd64 IMAGE=$IMAGE y-contain build --push=false --tarball target-oci/y-kustomize.tar --platforms-env-require &&
-        cat target-oci/y-kustomize.tar | y-cluster-local-ctr -n k8s.io images import --digests -
+        cat target-oci/y-kustomize.tar | y-cluster ctr -- -n k8s.io images import --digests -
       dependencies:
         paths:
         - "**/*.go"
