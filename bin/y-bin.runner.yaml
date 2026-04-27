@@ -156,14 +156,14 @@ cue:
     path: cue
 
 cluster:
-  version: 0.2.0
+  version: 0.3.0
   templates:
     download: https://github.com/Yolean/y-cluster/releases/download/v${version}/y-cluster_v${version}_${os}_${arch}
   sha256:
-    darwin_amd64: e75f4e824e779f34b561fdc1e1be7b4c07169f4f4034b9fc91f8ed891ebfe5fc
-    darwin_arm64: 195bab2a7f62d3da7fa688aba6d1efce7ce65a47f9fbb7470c6d6f47a7dafd4f
-    linux_amd64: f50c502a6d73f2b79223832a22ad177315e777952874640091c3b7e9a62f5e00
-    linux_arm64: c29e9a796ca57375517b0f6d19dfc7c303d5339e097e87af40d21cddee2d6c26
+    darwin_amd64: 76262d6e29dabde5c148bdbb9d3e8ec00474b007cdd39ad6412449c9b57361fd
+    darwin_arm64: b2ee2cbabf962cd491dcfaf0c9ec0e394774302ebd89e0a61c3fdd4fbffa112d
+    linux_amd64: a8231cbea0113d96049b9ff52c63ca3426535fd05a2e200dc7828f333f87581d
+    linux_arm64: 19c2658dedf68687e3027b6c6d2f41f556b01238e8980e78e996cc2a7dfc92b0
 
 contain:
   version: 0.9.1

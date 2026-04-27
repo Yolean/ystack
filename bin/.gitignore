@@ -6,6 +6,7 @@ buildctl
 buildx
 bun
 bunyan
+cluster
 contain
 container-structure-test
 crane

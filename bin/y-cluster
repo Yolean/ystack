@@ -3,20 +3,9 @@
 set -e
 YBIN="$(dirname "$0")"
 
-# bin/kubectl-yconverge is a tracked symlink to bin/y-cluster so
-# `kubectl yconverge ...` resolves through PATH plugin discovery.
-# Use exec -a so the binary sees the invocation name.
+# bin/kubectl-yconverge is a tracked symlink to y-cluster so kubectl
+# plugin discovery picks it up. exec -a preserves the invocation
+# name so the binary detects which mode it's in.
 
-# Dev mode: use locally built binary at bin/y-cluster-dev (often a
-# symlink to bin/y-cluster-<sha>).
-DEV_BIN="$YBIN/y-cluster-dev"
-if [ -x "$DEV_BIN" ]; then
-  exec -a "$(basename "$0")" "$DEV_BIN" "$@"
-fi
-
-# Release mode: y-bin-download fetches the pinned release.
-# y-bin-download installs to $YSTACK_HOME/bin and prints the version.
-# It also creates a `cluster` symlink there pointing at the versioned binary;
-# we use the versioned name explicitly to avoid PATH collisions on `cluster`.
 version=$(y-bin-download "$YBIN/y-bin.runner.yaml" cluster)
 exec -a "$(basename "$0")" "$YBIN/y-cluster-v${version}-bin" "$@"
