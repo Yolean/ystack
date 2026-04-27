@@ -155,6 +155,16 @@ cue:
     tool: tar
     path: cue
 
+cluster:
+  version: 0.2.0
+  templates:
+    download: https://github.com/Yolean/y-cluster/releases/download/v${version}/y-cluster_v${version}_${os}_${arch}
+  sha256:
+    darwin_amd64: e75f4e824e779f34b561fdc1e1be7b4c07169f4f4034b9fc91f8ed891ebfe5fc
+    darwin_arm64: 195bab2a7f62d3da7fa688aba6d1efce7ce65a47f9fbb7470c6d6f47a7dafd4f
+    linux_amd64: f50c502a6d73f2b79223832a22ad177315e777952874640091c3b7e9a62f5e00
+    linux_arm64: c29e9a796ca57375517b0f6d19dfc7c303d5339e097e87af40d21cddee2d6c26
+
 contain:
   version: 0.9.1
   templates:
