@@ -115,12 +115,17 @@ run_pre_build_checks() {
     || report "registry v2 API ($phase)" "no response"
 
   echo "[y-cluster-validate-ystack] y-kustomize bases"
-  kurl ystack y-kustomize:8944 v1/blobs/setup-bucket-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
-    && report "y-kustomize blobs base ($phase)" "ok" \
-    || report "y-kustomize blobs base ($phase)" "not serving valid YAML"
-  kurl ystack y-kustomize:8944 v1/kafka/setup-topic-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
-    && report "y-kustomize kafka base ($phase)" "ok" \
-    || report "y-kustomize kafka base ($phase)" "not serving valid YAML"
+  if k -n ystack get deployment y-kustomize -o=jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q '^[1-9]'; then
+    kurl ystack y-kustomize:8944 v1/blobs/setup-bucket-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
+      && report "y-kustomize blobs base ($phase)" "ok" \
+      || report "y-kustomize blobs base ($phase)" "not serving valid YAML"
+    kurl ystack y-kustomize:8944 v1/kafka/setup-topic-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
+      && report "y-kustomize kafka base ($phase)" "ok" \
+      || report "y-kustomize kafka base ($phase)" "not serving valid YAML"
+  else
+    echo "[y-cluster-validate-ystack]   SKIP  y-kustomize blobs base ($phase) - deploy/y-kustomize not ready (likely host-side serve in use; v0.3.0 image not released)"
+    echo "[y-cluster-validate-ystack]   SKIP  y-kustomize kafka base ($phase) - deploy/y-kustomize not ready (likely host-side serve in use; v0.3.0 image not released)"
+  fi
 }
 
 echo "[y-cluster-validate-ystack] Dev cluster validation: context=$CONTEXT"

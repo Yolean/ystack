@@ -32,6 +32,7 @@ export OVERRIDE_IP=127.0.0.1
 
 cleanup() {
   echo "# Cleaning up cluster ..."
+  y-cluster serve stop || true # y-script-lint:disable=or-true # best-effort
   y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
 }
 trap cleanup EXIT
@@ -57,6 +58,21 @@ y-cluster yconverge --context=local -k k3s/10-gateway-api/
 echo ""
 echo "# ystack Gateway resource"
 y-cluster yconverge --context=local -k k3s/20-gateway/
+
+# --- y-cluster serve on the host, until the in-cluster v0.3.0 image ships ---
+#
+# k3s/29-y-kustomize/yconverge.cue probes http://y-kustomize:8944/health.
+# The probe resolves through /etc/hosts (y-kustomize -> 127.0.0.1) and
+# either the in-cluster Deployment OR a host-local `y-cluster serve`
+# answers. v0.3.0 isn't released yet, so the in-cluster Deployment will
+# ImagePullBackOff. We start serve here on the host so the same probe
+# passes against the same /v1/{group}/{name}/{key} URLs.
+#
+# When v0.3.0 ships and the in-cluster Deployment rolls out, this block
+# can be deleted without changes to bases or yconverge.cue files.
+echo ""
+echo "# Starting host-local y-cluster serve"
+y-cluster serve ensure -c y-kustomize/
 
 # --- progressive convergence: proves DAG resolves deps without include/exclude ---
 
