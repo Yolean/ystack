@@ -11,4 +11,4 @@ spec:
   ports:
   - name: http
     port: 8944
-    targetPort: 8787
+    targetPort: 8944
