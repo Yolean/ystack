@@ -1,9 +1,15 @@
 package y_kustomize
 
-import "yolean.se/ystack/yconverge/verify"
+import (
+	"yolean.se/ystack/yconverge/verify"
+	"yolean.se/ystack/k3s/20-gateway:gateway"
+)
 
-// No dependencies — y-kustomize watches secrets via API, doesn't
-// need them pre-created. Gateway API is assumed by provisioner.
+// HTTPRoute attaches to the ystack Gateway, so the Gateway must be
+// Programmed before /health can succeed. y-kustomize itself watches
+// secrets via API and doesn't need them pre-created.
+
+_dep_gateway: gateway.step
 
 step: verify.#Step & {
 	checks: [
@@ -15,15 +21,14 @@ step: verify.#Step & {
 			timeout:     "10s"
 			description: "update /etc/hosts for y-kustomize HTTPRoute"
 		},
-		// /health is reachable whether the in-cluster Deployment is running
-		// OR `y-cluster serve` runs on the host bound to 127.0.0.1:8944.
-		// When the y-cluster v0.3.0 image ships and the in-cluster Deployment
-		// rolls out, this probe still passes with no test changes.
+		// /health goes through the canonical Gateway:80 -> HTTPRoute -> Service:8944
+		// path. y-cluster's qemu provisioner forwards host:80 to guest:80; the
+		// EG-managed LoadBalancer Service on port 80 backs the Gateway listener.
 		{
 			kind:        "exec"
-			command:     "for i in $(seq 1 30); do curl -sSf --max-time 2 http://y-kustomize:8944/health >/dev/null && break; sleep 2; done && curl -sSf --max-time 5 http://y-kustomize:8944/health >/dev/null"
+			command:     "for i in $(seq 1 30); do curl -sSf --max-time 2 http://y-kustomize/health >/dev/null && break; sleep 2; done && curl -sSf --max-time 5 http://y-kustomize/health >/dev/null"
 			timeout:     "60s"
-			description: "y-kustomize /health responds (in-cluster Deployment or host-local y-cluster serve)"
+			description: "y-kustomize /health responds via Gateway"
 		},
 	]
 }
