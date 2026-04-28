@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Per-namespace prerequisites for the setup-bucket and setup-topic Jobs
+# in builds-bucket and builds-topic. Pulled into the ystack namespace
+# (via k3s/60-builds-registry/kustomization.yaml) once. Both prep URLs
+# carry ServiceAccount + Role + RoleBinding (and bucket-side a default
+# `bucket` Secret) that the per-Job kustomizations rely on but do not
+# carry themselves (avoids per-Job duplication of cluster-singleton SA
+# resources).
+
+namespace: ystack
+
+resources:
+- http://y-kustomize/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
+- http://y-kustomize/v1/kafka/setup-topic-prep/base-for-annotations.yaml
