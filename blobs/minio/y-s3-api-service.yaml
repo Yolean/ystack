@@ -7,5 +7,5 @@ spec:
     app: minio
   ports:
   - name: http
-    port: 80
+    port: 9000
     targetPort: 9000

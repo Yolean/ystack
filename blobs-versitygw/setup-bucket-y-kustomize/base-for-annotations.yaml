@@ -6,7 +6,7 @@ kind: Secret
 metadata:
   name: bucket
 stringData:
-  endpoint: http://y-s3-api.blobs.svc.cluster.local
+  endpoint: http://y-s3-api.blobs.svc.cluster.local:9000
   accesskey: YstackEXAMPLEKEY
   secretkey: github.com/Yolean/ystack-EXAMPLE
 ---
@@ -43,7 +43,7 @@ spec:
             fieldRef:
               fieldPath: metadata.annotations['yolean.se/bucket-name']
         - name: S3_ENDPOINT
-          value: http://y-s3-api.blobs.svc.cluster.local
+          value: http://y-s3-api.blobs.svc.cluster.local:9000
         command:
         - sh
         - -ce
