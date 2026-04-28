@@ -1,15 +1,13 @@
-# This secret reflects the base default endpoint and placeholder credentials.
-# A future improvement is to have the inline job script create the secret
-# with the actual resolved values (endpoint, consumer credentials).
-apiVersion: v1
-kind: Secret
-metadata:
-  name: bucket
-stringData:
-  endpoint: http://y-s3-api.blobs.svc.cluster.local:9000
-  accesskey: YstackEXAMPLEKEY
-  secretkey: github.com/Yolean/ystack-EXAMPLE
----
+# Job served at http://y-kustomize/v1/blobs/setup-bucket-job/base-for-annotations.yaml.
+# Per-namespace prerequisites (ServiceAccount setup-bucket, Role/RoleBinding,
+# Secret `bucket` carrying endpoint+credentials for the chosen impl) are
+# served separately at /v1/blobs/setup-bucket-prep/prep.yaml so that
+# per-bucket kustomizations can use `nameSuffix:` here without renaming the
+# RBAC objects.
+#
+# Consumer kustomization sets two pod-template annotations via patches:
+#   yolean.se/bucket-name   - shell template; ${NAMESPACE} expands at Job runtime
+#   yolean.se/secret-name   - the consumer-facing Secret this Job upserts
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -21,36 +19,112 @@ spec:
     metadata:
       annotations:
         yolean.se/bucket-name: ""
+        yolean.se/secret-name: ""
     spec:
-      nodeSelector:
-        yolean.se/cluster: local
-      containers:
+      serviceAccountName: setup-bucket
+      restartPolicy: Never
+      activeDeadlineSeconds: 300
+      initContainers:
+      # Impl: versitygw. Plain `mc mb` only -- versitygw does not implement
+      # bucket-event notifications (mc event add) or anonymous-policy
+      # operations. The annotation surface accepts those knobs but this
+      # impl's init body ignores them.
       - name: mc
         image: minio/mc:RELEASE.2025-08-13T08-35-41Z
         env:
-        - name: AWS_ACCESS_KEY_ID
+        - name: NAMESPACE
           valueFrom:
-            secretKeyRef:
-              name: versitygw-server
-              key: root-accesskey
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: versitygw-server
-              key: root-secretkey
-        - name: BUCKET_NAME
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: BUCKET_NAME_TEMPLATE
           valueFrom:
             fieldRef:
               fieldPath: metadata.annotations['yolean.se/bucket-name']
         - name: S3_ENDPOINT
-          value: http://y-s3-api.blobs.svc.cluster.local:9000
+          valueFrom:
+            secretKeyRef:
+              name: bucket
+              key: endpoint
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: bucket
+              key: accesskey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bucket
+              key: secretkey
         command:
         - sh
         - -ce
         - |
-          until mc alias set s3 $S3_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY 2>/dev/null; do
+          BUCKET_NAME=$(eval "echo \"$BUCKET_NAME_TEMPLATE\"")
+          [ -n "$BUCKET_NAME" ] || { echo "yolean.se/bucket-name annotation is required" >&2; exit 1; }
+          echo "[mc] versitygw bucket $BUCKET_NAME"
+          until mc alias set s3 "$S3_ENDPOINT" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" 2>/dev/null; do
             sleep 2
           done
-          mc mb --ignore-existing s3/$BUCKET_NAME
-      restartPolicy: Never
+          mc mb --ignore-existing "s3/$BUCKET_NAME"
+      # Impl-agnostic: SSA-upserts a consumer-facing Secret (named via
+      # yolean.se/secret-name) carrying endpoint + bucket + credentials so
+      # downstream Deployments can mount one Secret instead of resolving
+      # endpoint and bucket name independently.
+      containers:
+      - name: secret
+        image: ghcr.io/yolean/curl:8.18.0@sha256:d94d07ba9e7d6de898b6d96c1a072f6f8266c687af78a74f380087a0addf5d17
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: BUCKET_NAME_TEMPLATE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/bucket-name']
+        - name: SECRET_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['yolean.se/secret-name']
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: bucket
+              key: endpoint
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: bucket
+              key: accesskey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bucket
+              key: secretkey
+        command:
+        - sh
+        - -ce
+        - |
+          BUCKET_NAME=$(eval "echo \"$BUCKET_NAME_TEMPLATE\"")
+          [ -n "$SECRET_NAME" ] || { echo "yolean.se/secret-name annotation is required" >&2; exit 1; }
+          TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          curl -fsS \
+            --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/apply-patch+yaml" \
+            -X PATCH \
+            "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}?fieldManager=setup-bucket&force=true" \
+            --data-binary @- <<EOF
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: ${SECRET_NAME}
+            namespace: ${NAMESPACE}
+          type: Opaque
+          stringData:
+            endpoint: "${S3_ENDPOINT}"
+            bucket: "${BUCKET_NAME}"
+            accesskey: "${AWS_ACCESS_KEY_ID}"
+            secretkey: "${AWS_SECRET_ACCESS_KEY}"
+          EOF
   backoffLimit: 10

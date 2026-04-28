@@ -3,4 +3,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ystack
 resources:
+- ../../blobs-versitygw/setup-bucket-prep-y-kustomize
 - ../../blobs-versitygw/setup-bucket-y-kustomize

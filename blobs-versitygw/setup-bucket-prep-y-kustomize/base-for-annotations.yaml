@@ -1,0 +1,46 @@
+# Per-namespace prerequisites for the setup-bucket Job. Pulled by site-apply
+# bases at http://y-kustomize/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
+# once per consumer namespace. The Job served at .../setup-bucket-job/ then
+# uses the ServiceAccount + the `bucket` Secret from this base.
+#
+# Splitting prep from the Job avoids per-bucket renaming (consumers fetch
+# the Job URL with `nameSuffix:` for each bucket; if the prep objects were
+# in the same fetch they would be renamed and duplicated).
+#
+# Impl: versitygw. The bucket Secret carries versitygw's default endpoint
+# and EXAMPLE credentials. The minio variant of this prep base will live at
+# blobs-minio/setup-bucket-prep-y-kustomize/ (later iteration).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: setup-bucket
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: setup-bucket
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: setup-bucket
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: setup-bucket
+subjects:
+- kind: ServiceAccount
+  name: setup-bucket
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bucket
+stringData:
+  endpoint: http://y-s3-api.blobs.svc.cluster.local:9000
+  accesskey: YstackEXAMPLEKEY
+  secretkey: github.com/Yolean/ystack-EXAMPLE
