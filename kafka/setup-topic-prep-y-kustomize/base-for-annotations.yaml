@@ -1,0 +1,35 @@
+# Per-namespace prerequisites for the setup-topic Job served at
+# /v1/kafka/setup-topic-job/. Pulled by site-apply bases at
+# http://y-kustomize/v1/kafka/setup-topic-prep/base-for-annotations.yaml
+# once per consumer namespace.
+#
+# Mirrors blobs-versitygw/setup-bucket-prep-y-kustomize/. We don't ship a
+# `bootstrap` Secret here -- topics in sitevalues already carry their
+# bootstrap address via site-chart's settings-sitevalues template, and
+# topics not in sitevalues can pass bootstrap via the
+# yolean.se/kafka-bootstrap annotation on their per-topic kustomization.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: setup-topic
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: setup-topic
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "get", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: setup-topic
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: setup-topic
+subjects:
+- kind: ServiceAccount
+  name: setup-topic
