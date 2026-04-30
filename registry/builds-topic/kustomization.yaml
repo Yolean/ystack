@@ -6,3 +6,4 @@ resources:
 - http://y-kustomize:8944/v1/kafka/setup-topic-job/base-for-annotations.yaml
 commonAnnotations:
   yolean.se/kafka-topic-name: ystack.builds-registry.stream.json
+  yolean.se/kafka-secret-name: topic-builds-registry

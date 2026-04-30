@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Yolean/y-cluster/main/pkg/provision/schema/docker.schema.json
+#
+# Local development cluster on the docker provider.
+# - host:6443 -> guest:6443 (kubectl)
+# - no host:80/443 mapping today; the docker schema does not expose
+#   additional port forwards. ystack's acceptance test reaches services
+#   via the kubectl proxy API (see y-cluster-validate-ystack:kurl()), so
+#   this is fine for ystack itself. checkit's acceptance test needs 80
+#   reachable from the host -- see cluster-configs/local-qemu for that
+#   path until the docker schema gains port forwards.
+provider: docker
+context: local
+name: local
+
+# See cluster-configs/local-qemu/y-cluster-provision.yaml for the
+# rationale; mirror endpoints are a node-side concern, not a
+# provider-side one, so the same magic ClusterIPs apply here.
+registries:
+  mirrors:
+    builds-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.50
+    prod-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.51

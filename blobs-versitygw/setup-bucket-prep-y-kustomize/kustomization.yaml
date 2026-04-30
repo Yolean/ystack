@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Produces a Secret y-kustomize.blobs.setup-bucket-prep whose data key
+# base-for-annotations.yaml is a manifest list (ServiceAccount + Role +
+# RoleBinding + bucket Secret) for the setup-bucket Job's per-namespace
+# prerequisites. y-cluster serve picks up this Secret and serves it at
+# /v1/blobs/setup-bucket-prep/base-for-annotations.yaml.
+secretGenerator:
+- name: y-kustomize.blobs.setup-bucket-prep
+  options:
+    disableNameSuffixHash: true
+    labels:
+      yolean.se/module-part: y-kustomize
+  files:
+  - base-for-annotations.yaml

@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
+
+YHELP='acceptance-y-kustomize-local - standalone test for y-kustomize/y-cluster-serve.yaml
+
+Usage: acceptance-y-kustomize-local
+
+Boots `y-cluster serve -c y-kustomize/` against a temp state dir,
+probes the four routes the host-local serve is expected to expose,
+and stops the serve. No qemu, no docker, no kubectl -- exercises
+only the host-local kustomize-build + HTTP serve pipeline.
+
+The four routes mirror the source list in y-kustomize/y-cluster-serve.yaml:
+  /v1/blobs/setup-bucket-job/base-for-annotations.yaml
+  /v1/blobs/setup-bucket-prep/base-for-annotations.yaml
+  /v1/kafka/setup-topic-job/base-for-annotations.yaml
+  /v1/kafka/setup-topic-prep/base-for-annotations.yaml
+
+Exit codes:
+  0    All four routes serve valid YAML
+  1    One or more routes failed (404, malformed YAML, serve crash)
+
+Dependencies:
+  y-cluster (in PATH; auto-resolved via bin/y-cluster wrapper)
+  curl
+'
+
+case "${1:-}" in
+  help|--help|-h) echo "$YHELP"; exit 0 ;;
+  "") ;;
+  *) echo "ERROR: unknown argument '$1'" >&2; exit 1 ;;
+esac
+
+YBIN="$(cd "$(dirname "$0")" && pwd)"
+YSTACK_HOME="$(cd "$YBIN/.." && pwd)"
+SERVE_DIR="$YSTACK_HOME/y-kustomize"
+PORT=8944
+
+[ -f "$SERVE_DIR/y-cluster-serve.yaml" ] || { echo "ERROR: $SERVE_DIR/y-cluster-serve.yaml not found" >&2; exit 1; }
+
+STATE_DIR=$(mktemp -d -t acceptance-y-kustomize-local.XXXXXX)
+LOG_FILE="$STATE_DIR/serve.log"
+
+cleanup() {
+  local rc=$?
+  echo "# Stopping y-cluster serve ..."
+  y-cluster serve stop --state-dir "$STATE_DIR" >/dev/null 2>&1 || true # y-script-lint:disable=or-true # best-effort
+  rm -rf "$STATE_DIR"
+  exit $rc
+}
+trap cleanup EXIT INT TERM
+
+echo "# Starting y-cluster serve (state-dir=$STATE_DIR)"
+y-cluster serve ensure -c "$SERVE_DIR" --state-dir "$STATE_DIR" >"$LOG_FILE" 2>&1
+
+echo "# Probing /health"
+HEALTH=$(curl -fsS --max-time 5 "http://127.0.0.1:$PORT/health")
+echo "  $HEALTH"
+echo "$HEALTH" | grep -q '"routes":4' \
+  || { echo "ERROR: expected routes=4 in /health, got: $HEALTH" >&2; exit 1; }
+
+PASS=0
+FAIL=0
+for route in \
+  v1/blobs/setup-bucket-job/base-for-annotations.yaml \
+  v1/blobs/setup-bucket-prep/base-for-annotations.yaml \
+  v1/kafka/setup-topic-job/base-for-annotations.yaml \
+  v1/kafka/setup-topic-prep/base-for-annotations.yaml
+do
+  if curl -fsS --max-time 5 "http://127.0.0.1:$PORT/$route" 2>/dev/null | grep -q '^apiVersion:'; then
+    echo "  PASS  /$route"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL  /$route" >&2
+    FAIL=$((FAIL + 1))
+  fi
+done
+
+echo "# Results: $PASS passed, $FAIL failed"
+[ "$FAIL" -eq 0 ]

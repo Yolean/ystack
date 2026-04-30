@@ -155,15 +155,25 @@ cue:
     tool: tar
     path: cue
 
+cluster:
+  version: 0.3.3
+  templates:
+    download: https://github.com/Yolean/y-cluster/releases/download/v${version}/y-cluster_v${version}_${os}_${arch}
+  sha256:
+    darwin_amd64: 28b1059ba2757e530dd5909820e5acb212dc0769873e94cdcdfdbce710c3a639
+    darwin_arm64: ccf3c8c2251ff8fda33db76d7ef4c76d06122ad34f0a20902e2d79ca2817840a
+    linux_amd64: 652711a28b9e74e4590d1e7f5bee5a592ed7f0d2617cffb67a58cb15baa9db6a
+    linux_arm64: a504471dd37d8bba17e94529d67389cf3895f1e13a13507e26c4c03a37ee697c
+
 contain:
-  version: 0.8.0
+  version: 0.9.1
   templates:
     download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
   sha256:
-    darwin_amd64: f1bf0e8a8ac055a57d7db3db847de2f375cb1bceeecbb3e3a17bda2c8ef227df
-    darwin_arm64: 0de02c17ed5bd013ff3f0335f51a41a2ab7d1ae2e14f2c4d94f8ee85943a2495
-    linux_amd64: 3ae1b2fa80c66ae113c23cbe5d5f31456eccaf37723cd2944a9cdd880ebd1b72
-    linux_arm64: 4a920ec5956acfde430c2efdb5043a6aec65fb20eb5fc2b9f961b60c6505ce7c
+    darwin_amd64: 514d8492f5daf2a406c0f5a835e5c8887aa20bea0be83b6096659215bd559d55
+    darwin_arm64: 04e907d9ad93f3b00bd028f60ababefd5edcdd25e39a4f1f9eb730454097caaf
+    linux_amd64: 38c070ca6e6057d8f8ff91f1d1ecc79f57ffd2338f19a0e6a48456c15e342429
+    linux_arm64: 2ad19485957456a08373b820ec7ba491befe27454f36a57ab420bb1de5b45781
 
 kustomize-traverse:
   version: 0.1.0

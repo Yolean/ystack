@@ -10,7 +10,7 @@ Flags:
   --keep      keep the kwok cluster running after tests
   --teardown  remove a kept cluster and exit
 
-Requires: docker, kubectl, y-cue, kubectl-yconverge
+Requires: docker, kubectl, y-cue, y-cluster
 ' && exit 0
 
 KEEP=false
@@ -72,9 +72,6 @@ echo "[cue itest] yconverge framework integration tests"
 # --- lint (zero failures required) ---
 
 echo "[cue itest] Linting scripts ..."
-y-script-lint "$YSTACK_HOME/bin/y-cluster-converge-ystack"
-y-script-lint "$YSTACK_HOME/bin/y-image-list-ystack"
-y-script-lint "$YSTACK_HOME/bin/kubectl-yconverge"
 
 # --- start kwok cluster ---
 
@@ -139,22 +136,22 @@ y-cue vet ./yconverge/itest/example-db/distributed/
 
 echo ""
 echo "[cue itest] Apply with auto-checks (namespace)"
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-namespace/
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-namespace/
 
 echo ""
 echo "[cue itest] Apply with checks (configmap depends on namespace)"
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-configmap/
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-configmap/
 
 echo ""
 echo "[cue itest] Transitive dependency (depends on configmap which depends on namespace)"
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/
 
 # --- dependency ordering: checks must complete before downstream steps start ---
 
 echo ""
 echo "[cue itest] Verify dependency checks serialize before downstream steps"
 _DEP_OUT=$(mktemp /tmp/yconverge-itest-deps.XXXXXX)
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/ 2>&1 | tee "$_DEP_OUT"
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/ 2>&1 | tee "$_DEP_OUT"
 # namespace check must complete before configmap step begins
 _ns_check=$(grep -n 'condition met' "$_DEP_OUT" | head -1 | cut -d: -f1)
 _cm_step=$(grep -n '>>> .*example-configmap' "$_DEP_OUT" | cut -d: -f1)
@@ -171,28 +168,28 @@ rm -f "$_DEP_OUT"
 
 echo ""
 echo "[cue itest] Indirection: yconverge.cue and namespace from referenced base"
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-indirect/
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-indirect/
 
 # --- idempotent re-converge ---
 
 echo ""
 echo "[cue itest] Idempotent re-apply"
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-namespace/
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-configmap/
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-namespace/
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-configmap/
 
 # --- converge-mode labels ---
 
 echo ""
 echo "[cue itest] Serverside-force label (other selectors match nothing)"
-kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
-kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
+y-cluster yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
+y-cluster yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-serverside/
 
 echo ""
 echo "[cue itest] replace-mode under --dry-run=server must not delete anything"
-kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-replace/
+y-cluster yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-replace/
 _REPLACE_UID_BEFORE=$(kubectl --context="$CTX" -n default get job example-replace-job -o jsonpath='{.metadata.uid}')
 _REPLACE_DRY_OUT=$(mktemp /tmp/yconverge-itest-replace.XXXXXX)
-kubectl-yconverge --context="$CTX" --skip-checks --dry-run=server -k yconverge/itest/example-replace/ 2>&1 | tee "$_REPLACE_DRY_OUT"
+y-cluster yconverge --context="$CTX" --skip-checks --dry-run=server -k yconverge/itest/example-replace/ 2>&1 | tee "$_REPLACE_DRY_OUT"
 grep -q '(server dry run)' "$_REPLACE_DRY_OUT"
 _REPLACE_UID_AFTER=$(kubectl --context="$CTX" -n default get job example-replace-job -o jsonpath='{.metadata.uid}')
 [ "$_REPLACE_UID_BEFORE" = "$_REPLACE_UID_AFTER" ] \
@@ -206,14 +203,14 @@ _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
 echo ""
 echo "[cue itest] Indirection output must reference the base directory"
-kubectl-yconverge --context="$CTX" -k yconverge/itest/example-indirect/ 2>&1 | tee "$_OUT"
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-indirect/ 2>&1 | tee "$_OUT"
 grep -q "example-configmap/yconverge.cue" "$_OUT"
 
 # --- negative: --skip-checks suppresses check invocation ---
 
 echo ""
 echo "[cue itest] --skip-checks must not produce [yconverge] output"
-kubectl-yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-namespace/ 2>&1 | tee "$_OUT"
+y-cluster yconverge --context="$CTX" --skip-checks -k yconverge/itest/example-namespace/ 2>&1 | tee "$_OUT"
 ! grep -q "\[yconverge\]" "$_OUT"
 
 # --- negative: broken yconverge.cue must fail ---
@@ -239,7 +236,7 @@ cat > /tmp/yconverge-itest-broken/yconverge.cue << 'CUE'
 package broken
 this_is_not_valid_cue: !!!
 CUE
-! kubectl-yconverge --context="$CTX" -k /tmp/yconverge-itest-broken/ 2>&1 | tee "$_OUT"
+! y-cluster yconverge --context="$CTX" -k /tmp/yconverge-itest-broken/ 2>&1 | tee "$_OUT"
 grep -q "ERROR" "$_OUT"
 rm -rf /tmp/yconverge-itest-broken
 

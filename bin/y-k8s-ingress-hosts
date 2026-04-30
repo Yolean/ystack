@@ -8,7 +8,7 @@ YBIN="$(dirname $0)"
 CTX=""
 CHECK=false
 ENSURE=false
-EXPLICIT_OVERRIDE_IP=""
+EXPLICIT_HOST_IP=""
 PASSTHROUGH=()
 
 while [ $# -gt 0 ]; do
@@ -22,19 +22,32 @@ Flags:
   -write                rewrite host file
   -check|--check        check if /etc/hosts includes required entries (no sudo)
   --ensure              check, then write if needed (combines -check and -write)
-  -override-ip=IP       use this IP for all entries (overrides gateway annotation)
-  -override-ip IP       use this IP for all entries (overrides gateway annotation)
+  --host-ip=IP          override IP for all entries (otherwise resolved from
+                        the GatewayClass yolean.se/dns-hint-ip annotation)
   -h, --help            show this help
 
-If no -override-ip is given, reads yolean.se/override-ip annotation from
-the ystack gateway in ystack namespace.
+If --host-ip is not given, resolution walks
+  Gateway/ystack.ystack -> spec.gatewayClassName -> GatewayClass
+  -> metadata.annotations[yolean.se/dns-hint-ip]
+which y-cluster provision stamps when the host forwards guest:80.
+The legacy yolean.se/override-ip annotation on Gateway/ystack.ystack
+is consulted as a fallback for clusters provisioned before that
+contract landed.
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
     -check|--check) CHECK=true; shift ;;
     --ensure) ENSURE=true; shift ;;
-    -override-ip=*) EXPLICIT_OVERRIDE_IP="${1#*=}"; shift ;;
-    -override-ip) EXPLICIT_OVERRIDE_IP="$2"; shift; shift ;;
+    --host-ip=*) EXPLICIT_HOST_IP="${1#*=}"; shift ;;
+    --host-ip) EXPLICIT_HOST_IP="$2"; shift; shift ;;
+    -override-ip=*|--override-ip=*)
+      EXPLICIT_HOST_IP="${1#*=}"
+      echo "# warn: -override-ip is deprecated; use --host-ip" >&2
+      shift ;;
+    -override-ip|--override-ip)
+      EXPLICIT_HOST_IP="$2"
+      echo "# warn: -override-ip is deprecated; use --host-ip" >&2
+      shift; shift ;;
     *) PASSTHROUGH+=("$1"); shift ;;
   esac
 done
@@ -45,17 +58,35 @@ CONTEXT_KUBECONFIG=$(mktemp)
 trap "rm -f $CONTEXT_KUBECONFIG" EXIT
 kubectl config view --raw --minify --context="$CTX" --request-timeout=5s > "$CONTEXT_KUBECONFIG"
 
-# Resolve override IP: explicit flag > gateway annotation
-OVERRIDE_IP="$EXPLICIT_OVERRIDE_IP"
-if [ -z "$OVERRIDE_IP" ]; then
-  OVERRIDE_IP=$(kubectl --context="$CTX" --request-timeout=5s -n ystack get gateway ystack \
-    -o jsonpath='{.metadata.annotations.yolean\.se/override-ip}' 2>/dev/null || true)
-  if [ -n "$OVERRIDE_IP" ]; then
-    echo "# Using override-ip=$OVERRIDE_IP from gateway annotation"
+# Resolve the host-side dial IP, in priority order:
+#   1. --host-ip flag (or Y_HOST_IP env)
+#   2. Provisioner-published annotation on the GatewayClass (per
+#      specs/ystack/CHANGE_REQUEST_HINT_IP.md)
+#   3. Legacy yolean.se/override-ip annotation on the consumer Gateway
+# The resolved value is fed to the underlying Go binary as
+# `-override-ip <IP>`, which still names the override flag in the
+# k8s-ingress-hosts v0.5.x release.
+HOST_IP="${EXPLICIT_HOST_IP:-${Y_HOST_IP:-}}"
+if [ -z "$HOST_IP" ]; then
+  GATEWAY_CLASS=$(kubectl --context="$CTX" --request-timeout=5s -n ystack get gateway ystack \
+    -o jsonpath='{.spec.gatewayClassName}' 2>/dev/null || true) # y-script-lint:disable=or-true # missing Gateway is a normal pre-converge state
+  if [ -n "$GATEWAY_CLASS" ]; then
+    HOST_IP=$(kubectl --context="$CTX" --request-timeout=5s get gatewayclass "$GATEWAY_CLASS" \
+      -o jsonpath='{.metadata.annotations.yolean\.se/dns-hint-ip}' 2>/dev/null || true) # y-script-lint:disable=or-true # GatewayClass may exist without the annotation
+    if [ -n "$HOST_IP" ]; then
+      echo "# Using host-ip=$HOST_IP from GatewayClass/$GATEWAY_CLASS yolean.se/dns-hint-ip"
+    fi
   fi
 fi
-if [ -n "$OVERRIDE_IP" ]; then
-  PASSTHROUGH+=("-override-ip" "$OVERRIDE_IP")
+if [ -z "$HOST_IP" ]; then
+  HOST_IP=$(kubectl --context="$CTX" --request-timeout=5s -n ystack get gateway ystack \
+    -o jsonpath='{.metadata.annotations.yolean\.se/override-ip}' 2>/dev/null || true) # y-script-lint:disable=or-true # legacy annotation is best-effort
+  if [ -n "$HOST_IP" ]; then
+    echo "# Using host-ip=$HOST_IP from Gateway/ystack yolean.se/override-ip (legacy)"
+  fi
+fi
+if [ -n "$HOST_IP" ]; then
+  PASSTHROUGH+=("-override-ip" "$HOST_IP")
 fi
 
 version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
@@ -67,11 +98,11 @@ if $CHECK || $ENSURE; then
     [ -z "$line" ] && continue
     EXPECTED_IP=$(echo "$line" | awk '{print $1}')
     HOST=$(echo "$line" | awk '{print $2}')
-    ACTUAL=$(grep -E "^[^#]*[[:space:]]$HOST([[:space:]]|$)" /etc/hosts 2>/dev/null || true)
+    ACTUAL=$(grep -E "^[^#]*[[:space:]]$HOST([[:space:]]|$)" /etc/hosts 2>/dev/null || true) # y-script-lint:disable=or-true # grep exits 1 on no match -- expected for a missing-host check
     if [ -z "$ACTUAL" ]; then
       echo "Missing: $line"
       STALE=1
-    elif ! echo "$ACTUAL" | grep -qE "^[[:space:]]*$EXPECTED_IP[[:space:]]"; then
+    elif ! echo "$ACTUAL" | grep -qE "^[[:space:]]*${EXPECTED_IP}[[:space:]]"; then
       ACTUAL_IP=$(echo "$ACTUAL" | awk '{print $1}')
       echo "Stale: $HOST has $ACTUAL_IP, expected $EXPECTED_IP"
       STALE=1
@@ -100,6 +131,20 @@ _PREVIEW=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBEC
 if [ -z "$_PREVIEW" ]; then
   echo "# no ingress/gateway entries found, skipping write to preserve existing /etc/hosts"
   exit 0
+fi
+
+# One-line stdout log when this invocation will actually mutate
+# /etc/hosts (i.e. -write is in PASSTHROUGH, set either explicitly
+# by the caller or appended above by --ensure on detected drift).
+# Useful as a converge-trace breadcrumb so a yconverge exec check
+# that ran y-k8s-ingress-hosts is visibly attributable.
+WRITE_MODE=false
+for _a in "${PASSTHROUGH[@]}"; do
+  [ "$_a" = "-write" ] && WRITE_MODE=true
+done
+if $WRITE_MODE; then
+  HOST_COUNT=$(echo "$_PREVIEW" | wc -l | tr -d ' ')
+  echo "y-k8s-ingress-hosts: writing $HOST_COUNT host entries to /etc/hosts"
 fi
 
 [ $(id -u) -ne 0 ] && exec sudo $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"

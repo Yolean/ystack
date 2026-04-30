@@ -49,10 +49,6 @@ jobs:
       continue-on-error: false
       timeout-minutes: 45
     -
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22
-    -
       uses: imjasonh/setup-crane@v0.3
     -
       name: Get registry image tag
@@ -132,6 +128,17 @@ jobs:
       run: |
         TAG_REDPANDA=${{ steps.imageRedpandaTag.outputs.result }}
         crane cp docker.redpanda.com/redpandadata/redpanda:$TAG_REDPANDA ghcr.io/yolean/redpanda:$TAG_REDPANDA
+    -
+      name: Get versitygw image tag
+      id: imageVersitygwTag
+      uses: mikefarah/yq@v4.44.1
+      with:
+        cmd: yq '.spec.template.spec.containers[0].image | sub("[^:]+:(.+)@.*", "${1}")' blobs-versitygw/standalone/deployment.yaml
+    -
+      name: Mirror versitygw image from hub
+      run: |
+        TAG_VERSITYGW=${{ steps.imageVersitygwTag.outputs.result }}
+        crane cp docker.io/versity/versitygw:$TAG_VERSITYGW ghcr.io/yolean/versitygw:$TAG_VERSITYGW
     -
       name: Get static-web-server image tag
       id: imageStaticWebServerTag

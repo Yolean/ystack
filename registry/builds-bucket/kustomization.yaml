@@ -7,3 +7,4 @@ resources:
 - http://y-kustomize:8944/v1/blobs/setup-bucket-job/base-for-annotations.yaml
 commonAnnotations:
   yolean.se/bucket-name: ystack-builds-registry
+  yolean.se/secret-name: builds-registry-bucket

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: y-kustomize
+  labels:
+    app: y-kustomize
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: y-kustomize
+  template:
+    metadata:
+      labels:
+        app: y-kustomize
+    spec:
+      serviceAccountName: y-kustomize
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+      - name: y-kustomize
+        image: ghcr.io/yolean/y-cluster:v0.3.3@sha256:34b95376d1aecbfa08020aacc61d3f25d9c7cafe1e5b6c3321f9ce9ee59b54d2
+        command: ["/usr/local/bin/y-cluster"]
+        args:
+        - serve
+        - --foreground
+        - --state-dir=/tmp/y-cluster-state
+        - -c
+        - /etc/y-cluster-serve
+        ports:
+        - containerPort: 8944
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8944
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8944
+        volumeMounts:
+        - name: cfg
+          mountPath: /etc/y-cluster-serve
+          readOnly: true
+        resources:
+          requests:
+            cpu: 5m
+            memory: 16Mi
+          limits:
+            memory: 32Mi
+      volumes:
+      - name: cfg
+        configMap:
+          name: y-kustomize-serve
