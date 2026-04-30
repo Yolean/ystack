@@ -76,27 +76,49 @@ cleanup
 
 # --- provision (no converge) ---
 #
-# y-cluster v0.3.3's docker provider does NOT auto-pull the k3s
-# image; it calls `docker create` directly and errors with "No
-# such image" when the image isn't already on the host. Until
-# y-cluster ships auto-pull, parse the image ref out of a
-# verbose-mode `provision --print-image`-style invocation isn't
-# available either, so we fall back to running provision once,
-# scraping the image from its progress log on failure, pulling
-# it, and retrying. Harmless when the image is already cached.
+# y-cluster v0.3.3's docker provider has two known races (filed
+# against y-cluster as ISSUE_DOCKER_PROVIDER_NO_AUTO_PULL.md and
+# ISSUE_DOCKER_K3S_READY_BEFORE_APISERVER.md):
+#
+#   1. ContainerCreate is called without a prior `docker pull`,
+#      so a fresh host errors with "No such image". Workaround:
+#      scrape the image ref from the failed log, pull, retry.
+#   2. The "k3s ready" signal fires when /etc/rancher/k3s/k3s.yaml
+#      exists in the container, but the host's :6443 port forward
+#      isn't always reachable yet -- the next step
+#      (envoy-gateway install via kubectl apply) fails with
+#      "dial tcp 127.0.0.1:6443: connect: connection refused".
+#      Workaround: detect the connect-refused error, sleep, retry.
+#
+# Both branches reduce to a single `y-cluster provision -c "$CONFIG"`
+# once y-cluster ships fixes.
 if [ "$(grep -E '^provider:' "$CONFIG/y-cluster-provision.yaml" | awk '{print $2}')" = "docker" ]; then
-  _PRE_OUT=$(mktemp -t ystack-acceptance-image-probe.XXXXXX)
-  if ! y-cluster provision -c "$CONFIG" 2>&1 | tee "$_PRE_OUT"; then
-    _IMG=$(grep -oE 'ghcr\.io/yolean/k3s:[a-zA-Z0-9._-]+' "$_PRE_OUT" | head -1)
-    if [ -n "$_IMG" ]; then
-      echo "# Pre-pulling $_IMG (y-cluster v0.3.3 docker provider does not auto-pull)"
-      docker pull "$_IMG"
-      y-cluster provision -c "$CONFIG"
+  _PRE_OUT=$(mktemp -t ystack-acceptance-provision.XXXXXX)
+  _attempt=1
+  while [ "$_attempt" -le 4 ]; do
+    if y-cluster provision -c "$CONFIG" 2>&1 | tee "$_PRE_OUT"; then
+      break
+    fi
+    if grep -q 'No such image' "$_PRE_OUT"; then
+      _IMG=$(grep -oE 'ghcr\.io/yolean/k3s:[a-zA-Z0-9._-]+' "$_PRE_OUT" | head -1)
+      if [ -n "$_IMG" ]; then
+        echo "# Pre-pulling $_IMG (y-cluster v0.3.3 docker provider does not auto-pull)"
+        docker pull "$_IMG"
+      fi
+    elif grep -q 'dial tcp 127.0.0.1:6443: connect: connection refused' "$_PRE_OUT"; then
+      echo "# k3s apiserver host port not reachable yet (y-cluster v0.3.3 readiness race); sleeping 10s before retry"
+      sleep 10
     else
       cat "$_PRE_OUT" >&2
       rm -f "$_PRE_OUT"
       exit 1
     fi
+    _attempt=$((_attempt + 1))
+  done
+  if [ "$_attempt" -gt 4 ]; then
+    echo "# Provision failed after 4 attempts" >&2
+    rm -f "$_PRE_OUT"
+    exit 1
   fi
   rm -f "$_PRE_OUT"
 else
