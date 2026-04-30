@@ -5,7 +5,7 @@ metadata:
   labels:
     yolean.se/module-part: gateway
 spec:
-  gatewayClassName: eg
+  gatewayClassName: y-cluster
   listeners:
   - name: http
     protocol: HTTP

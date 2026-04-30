@@ -26,9 +26,11 @@ set -eo pipefail
 
 CONFIG=cluster-configs/local-qemu
 
-# qemu cluster is reachable from the host via 127.0.0.1; ystack's Gateway
-# /etc/hosts logic respects this annotation when set.
-export OVERRIDE_IP=127.0.0.1
+# Host reachability flows from y-cluster's --node-external-ip: when
+# guest:80 is forwarded (qemu and docker default), provision passes
+# --node-external-ip=127.0.0.1 to k3s, ServiceLB writes it into the
+# Gateway Service .status.loadBalancer.ingress[].ip, and
+# y-k8s-ingress-hosts reads it from there. No env var needed.
 
 cleanup() {
   echo "# Cleaning up cluster ..."

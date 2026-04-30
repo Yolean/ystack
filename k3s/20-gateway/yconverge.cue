@@ -5,20 +5,14 @@ import (
 	"yolean.se/ystack/k3s/00-namespace-ystack:namespace_ystack"
 )
 
-// Gateway API CRDs and GatewayClass `eg` come from y-cluster
-// provision (Envoy Gateway is bundled). This base only applies the
-// consumer Gateway resource.
+// Gateway API CRDs and the `y-cluster` GatewayClass come from
+// y-cluster provision (Envoy Gateway is bundled). This base only
+// applies the consumer Gateway resource that references the class.
 
 _dep_ns: namespace_ystack.step
 
 step: verify.#Step & {
 	checks: [
-		{
-			kind:        "exec"
-			command:     "[ -z \"$OVERRIDE_IP\" ] || kubectl --context=$CONTEXT -n ystack annotate gateway ystack yolean.se/override-ip=$OVERRIDE_IP --overwrite"
-			timeout:     "10s"
-			description: "annotate gateway with override-ip (if set)"
-		},
 		{
 			kind:        "exec"
 			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write || echo 'WARNING: /etc/hosts update failed (may need manual sudo)'"
