@@ -24,7 +24,7 @@ echo "$PATH"
 
 set -eo pipefail
 
-CONFIG=cluster-configs/local-qemu
+CONFIG=cluster-configs/local-docker
 
 # Host reachability flows from y-cluster's yolean.se/dns-hint-ip
 # annotation on the installed GatewayClass: when guest:80 is in
@@ -75,8 +75,33 @@ trap cleanup EXIT
 cleanup
 
 # --- provision (no converge) ---
-
-y-cluster provision -c "$CONFIG"
+#
+# y-cluster v0.3.3's docker provider does NOT auto-pull the k3s
+# image; it calls `docker create` directly and errors with "No
+# such image" when the image isn't already on the host. Until
+# y-cluster ships auto-pull, parse the image ref out of a
+# verbose-mode `provision --print-image`-style invocation isn't
+# available either, so we fall back to running provision once,
+# scraping the image from its progress log on failure, pulling
+# it, and retrying. Harmless when the image is already cached.
+if [ "$(grep -E '^provider:' "$CONFIG/y-cluster-provision.yaml" | awk '{print $2}')" = "docker" ]; then
+  _PRE_OUT=$(mktemp -t ystack-acceptance-image-probe.XXXXXX)
+  if ! y-cluster provision -c "$CONFIG" 2>&1 | tee "$_PRE_OUT"; then
+    _IMG=$(grep -oE 'ghcr\.io/yolean/k3s:[a-zA-Z0-9._-]+' "$_PRE_OUT" | head -1)
+    if [ -n "$_IMG" ]; then
+      echo "# Pre-pulling $_IMG (y-cluster v0.3.3 docker provider does not auto-pull)"
+      docker pull "$_IMG"
+      y-cluster provision -c "$CONFIG"
+    else
+      cat "$_PRE_OUT" >&2
+      rm -f "$_PRE_OUT"
+      exit 1
+    fi
+  fi
+  rm -f "$_PRE_OUT"
+else
+  y-cluster provision -c "$CONFIG"
+fi
 
 # Label nodes that don't yet have a cluster identity. Selector form
 # avoids overwriting an existing label on a misclaimed cluster.
