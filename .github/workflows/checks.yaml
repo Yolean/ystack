@@ -46,3 +46,34 @@ jobs:
       with:
         key: itest-${{ github.ref_name }}-${{ github.run_id }}
         path: ~/.cache/ystack
+
+  e2e-cluster:
+    # Opt-in via the `e2e-cluster` label on the PR -- runs the full
+    # qemu-based acceptance test (provision a real k3s cluster,
+    # converge ystack, validate). Heavyweight (~10-15 min); gates
+    # behind script-lint + itest so it only fires when the cheaper
+    # checks have passed.
+    needs: [script-lint, itest]
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-cluster')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5.0.0
+    - name: Pre-flight (KVM, disk, qemu)
+      run: |
+        ls -l /dev/kvm
+        df -h /
+        qemu-system-x86_64 --version | head -1
+    - name: Run cluster acceptance
+      env:
+        # The script's first action is `exec env -i ...` which wipes
+        # the env to "mirror a fresh interactive terminal" on a dev
+        # laptop. CI's environment is already minimal; setting
+        # ENV_IS_CLEAN=true skips the trampoline so PATH / YSTACK_HOME
+        # below take effect.
+        ENV_IS_CLEAN: "true"
+        YSTACK_HOME: ${{ github.workspace }}
+        PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+      run: e2e/agents-clusterautomation-acceptance-linux-amd64.sh
