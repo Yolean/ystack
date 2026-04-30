@@ -1,4 +1,4 @@
-# Job served at http://y-kustomize/v1/blobs/setup-bucket-job/base-for-annotations.yaml.
+# Job served at http://y-kustomize:8944/v1/blobs/setup-bucket-job/base-for-annotations.yaml.
 # Per-namespace prerequisites (ServiceAccount setup-bucket, Role/RoleBinding,
 # Secret `bucket` carrying endpoint+credentials for the chosen impl) are
 # served separately at /v1/blobs/setup-bucket-prep/prep.yaml so that

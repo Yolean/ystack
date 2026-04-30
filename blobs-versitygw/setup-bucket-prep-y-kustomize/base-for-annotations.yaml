@@ -1,5 +1,5 @@
 # Per-namespace prerequisites for the setup-bucket Job. Pulled by site-apply
-# bases at http://y-kustomize/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
+# bases at http://y-kustomize:8944/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
 # once per consumer namespace. The Job served at .../setup-bucket-job/ then
 # uses the ServiceAccount + the `bucket` Secret from this base.
 #

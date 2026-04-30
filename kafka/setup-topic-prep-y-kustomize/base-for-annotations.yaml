@@ -1,6 +1,6 @@
 # Per-namespace prerequisites for the setup-topic Job served at
 # /v1/kafka/setup-topic-job/. Pulled by site-apply bases at
-# http://y-kustomize/v1/kafka/setup-topic-prep/base-for-annotations.yaml
+# http://y-kustomize:8944/v1/kafka/setup-topic-prep/base-for-annotations.yaml
 # once per consumer namespace.
 #
 # Mirrors blobs-versitygw/setup-bucket-prep-y-kustomize/. We don't ship a

@@ -13,5 +13,5 @@ kind: Kustomization
 namespace: ystack
 
 resources:
-- http://y-kustomize/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
-- http://y-kustomize/v1/kafka/setup-topic-prep/base-for-annotations.yaml
+- http://y-kustomize:8944/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
+- http://y-kustomize:8944/v1/kafka/setup-topic-prep/base-for-annotations.yaml

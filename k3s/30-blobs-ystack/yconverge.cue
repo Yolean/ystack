@@ -13,7 +13,7 @@ step: verify.#Step & {
 	// y-kustomize watches secrets via API — no restart needed.
 	checks: [{
 		kind:        "exec"
-		command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null"
+		command:     "curl -sSf --connect-timeout 2 --max-time 5 http://y-kustomize:8944/v1/blobs/setup-bucket-job/base-for-annotations.yaml >/dev/null"
 		timeout:     "30s"
 		description: "y-kustomize serving blobs bases"
 	}]
