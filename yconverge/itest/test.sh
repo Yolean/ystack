@@ -154,12 +154,12 @@ _DEP_OUT=$(mktemp /tmp/yconverge-itest-deps.XXXXXX)
 y-cluster yconverge --context="$CTX" -k yconverge/itest/example-with-dependency/ 2>&1 | tee "$_DEP_OUT"
 # namespace check must complete before configmap step begins
 _ns_check=$(grep -n 'condition met' "$_DEP_OUT" | head -1 | cut -d: -f1)
-_cm_step=$(grep -n '>>> .*example-configmap' "$_DEP_OUT" | cut -d: -f1)
+_cm_step=$(grep -n 'yconverge dependency .*example-configmap' "$_DEP_OUT" | cut -d: -f1)
 [ "$_ns_check" -lt "$_cm_step" ] \
   || { echo "[cue itest] FAIL: namespace check (line $_ns_check) must complete before configmap step (line $_cm_step)"; exit 1; }
 # configmap check must complete before with-dependency step begins
 _cm_check=$(grep -n 'configmap exists' "$_DEP_OUT" | head -1 | cut -d: -f1)
-_wd_step=$(grep -n '>>> .*example-with-dependency' "$_DEP_OUT" | cut -d: -f1)
+_wd_step=$(grep -n 'yconverge target .*example-with-dependency' "$_DEP_OUT" | cut -d: -f1)
 [ "$_cm_check" -lt "$_wd_step" ] \
   || { echo "[cue itest] FAIL: configmap check (line $_cm_check) must complete before with-dependency step (line $_wd_step)"; exit 1; }
 rm -f "$_DEP_OUT"
@@ -196,6 +196,24 @@ _REPLACE_UID_AFTER=$(kubectl --context="$CTX" -n default get job example-replace
   || { echo "[cue itest] FAIL: dry-run deleted/recreated the replace-mode Job (uid $_REPLACE_UID_BEFORE -> $_REPLACE_UID_AFTER)"; exit 1; }
 kubectl --context="$CTX" -n default delete job example-replace-job >/dev/null
 rm -f "$_REPLACE_DRY_OUT"
+
+# --- dep edge through a replace-mode resource ---
+#
+# example-replace-dependent imports example-replace as a CUE dep, so a run
+# of `yconverge -k example-replace-dependent/` must walk into example-replace
+# (a yolean.se/converge-mode=replace Job) BEFORE applying the dependent
+# ConfigMap. Two consecutive runs must yield different Job UIDs -- the
+# replace path is delete+apply, not SSA, so the second run re-creates.
+echo ""
+echo "[cue itest] Dep edge through a replace-mode resource"
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-replace-dependent/
+_DEPREP_UID_1=$(kubectl --context="$CTX" -n default get job example-replace-job -o jsonpath='{.metadata.uid}')
+y-cluster yconverge --context="$CTX" -k yconverge/itest/example-replace-dependent/
+_DEPREP_UID_2=$(kubectl --context="$CTX" -n default get job example-replace-job -o jsonpath='{.metadata.uid}')
+[ "$_DEPREP_UID_1" != "$_DEPREP_UID_2" ] \
+  || { echo "[cue itest] FAIL: replace-mode dep edge did not re-create the Job (uid $_DEPREP_UID_1 unchanged)"; exit 1; }
+kubectl --context="$CTX" -n default delete job example-replace-job >/dev/null
+kubectl --context="$CTX" -n default delete configmap example-replace-dependent >/dev/null
 
 _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
