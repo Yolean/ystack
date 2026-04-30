@@ -26,13 +26,34 @@ set -eo pipefail
 
 CONFIG=cluster-configs/local-qemu
 
-# Host reachability flows from y-cluster's --node-external-ip: when
-# guest:80 is forwarded (qemu and docker default), provision passes
-# --node-external-ip=127.0.0.1 to k3s, ServiceLB writes it into the
-# Gateway Service .status.loadBalancer.ingress[].ip, and
-# y-k8s-ingress-hosts reads it from there. No env var needed.
+# Host reachability flows from y-cluster's yolean.se/dns-hint-ip
+# annotation on the installed GatewayClass: when guest:80 is in
+# PortForwards (qemu and docker default), provision stamps
+# 127.0.0.1 there, and y-k8s-ingress-hosts walks
+# Gateway -> gatewayClassName -> GatewayClass annotation to find
+# it. No env var, no per-cluster operator setup.
+
+KEEP_ON_FAILURE=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --keep-on-failure) KEEP_ON_FAILURE=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
 
 cleanup() {
+  local rc=$?
+  if [ "$KEEP_ON_FAILURE" = "true" ] && [ "$rc" -ne 0 ]; then
+    echo "# Acceptance failed (rc=$rc); cluster left up for inspection."
+    echo "# Manual cleanup: y-cluster teardown -c $CONFIG"
+    return
+  fi
+  # Default: teardown on every EXIT (success or failure).
+  # FUTURE: the default is intended to become "keep cluster on
+  # failure for a configurable number of minutes, then teardown" --
+  # a window for post-mortem inspection without leaving stale VMs
+  # around forever. --keep-on-failure is the manual opt-in until
+  # that timed-keep mode lands.
   echo "# Cleaning up cluster ..."
   y-cluster serve stop || true # y-script-lint:disable=or-true # best-effort
   y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
