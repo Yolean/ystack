@@ -61,18 +61,21 @@ jobs:
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v5.0.0
-    - name: Pre-flight (KVM, disk, qemu)
+    - name: Pre-flight (disk, docker)
       run: |
-        ls -l /dev/kvm
         df -h /
-        qemu-system-x86_64 --version | head -1
+        docker info | head -10
+    - name: Set KUBECONFIG (ystack convention)
+      run: |
+        mkdir -p "$HOME/.kube"
+        echo "KUBECONFIG=$HOME/.kube/yolean" >> "$GITHUB_ENV"
     - name: Run cluster acceptance
       env:
         # The script's first action is `exec env -i ...` which wipes
         # the env to "mirror a fresh interactive terminal" on a dev
         # laptop. CI's environment is already minimal; setting
-        # ENV_IS_CLEAN=true skips the trampoline so PATH / YSTACK_HOME
-        # below take effect.
+        # ENV_IS_CLEAN=true skips the trampoline so KUBECONFIG /
+        # PATH / YSTACK_HOME below take effect.
         ENV_IS_CLEAN: "true"
         YSTACK_HOME: ${{ github.workspace }}
         PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
