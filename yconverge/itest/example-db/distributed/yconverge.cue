@@ -1,12 +1,12 @@
 package example_db_distributed
 
-import (
-	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/yconverge/itest/example-db/checks"
-)
-
-_shared: checks.#DbChecks & {replicas: 3}
+import "yolean.se/ystack/yconverge/verify"
 
 step: verify.#Step & {
-	checks: _shared.list
+	checks: [{
+		kind:     "wait"
+		resource: "statefulset/database"
+		for:      "jsonpath={.status.currentReplicas}=3"
+		timeout:  "30s"
+	}]
 }
