@@ -11,3 +11,15 @@
 provider: docker
 context: local
 name: local
+
+# See cluster-configs/local-qemu/y-cluster-provision.yaml for the
+# rationale; mirror endpoints are a node-side concern, not a
+# provider-side one, so the same magic ClusterIPs apply here.
+registries:
+  mirrors:
+    builds-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.50
+    prod-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.51

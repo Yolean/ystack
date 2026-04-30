@@ -8,3 +8,21 @@
 provider: qemu
 context: local
 name: local
+
+# Mirror in-cluster registry hostnames at the magic ClusterIPs that
+# k3s/{60-builds-registry,61-prod-registry}/*-magic-numbers.yaml pin
+# (and that y-cluster-validate-ystack asserts as `*-registry clusterIP`
+# checks). Without these mirrors, containerd on the node can't resolve
+# *.svc.cluster.local at image-pull time -- pods that reference
+# prod-registry.ystack.svc.cluster.local/yolean/... would hit
+# ImagePullBackOff. ystack's own acceptance pulls only via the kubectl
+# API proxy and via in-cluster buildkit, so the gap is invisible here;
+# checkit and any real-workload consumer needs this.
+registries:
+  mirrors:
+    builds-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.50
+    prod-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.51
