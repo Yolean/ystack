@@ -157,8 +157,11 @@ _ns_check=$(grep -n 'condition met' "$_DEP_OUT" | head -1 | cut -d: -f1)
 _cm_step=$(grep -n 'yconverge dependency .*example-configmap' "$_DEP_OUT" | cut -d: -f1)
 [ "$_ns_check" -lt "$_cm_step" ] \
   || { echo "[cue itest] FAIL: namespace check (line $_ns_check) must complete before configmap step (line $_cm_step)"; exit 1; }
-# configmap check must complete before with-dependency step begins
-_cm_check=$(grep -n 'configmap exists' "$_DEP_OUT" | head -1 | cut -d: -f1)
+# configmap check must complete before with-dependency step begins.
+# yconverge no longer echoes check descriptions; the first
+# "yconverge check ... exec" line in the output is example-configmap's
+# (example-namespace's check is kind=wait, not exec).
+_cm_check=$(grep -n 'yconverge check.*exec' "$_DEP_OUT" | head -1 | cut -d: -f1)
 _wd_step=$(grep -n 'yconverge target .*example-with-dependency' "$_DEP_OUT" | cut -d: -f1)
 [ "$_cm_check" -lt "$_wd_step" ] \
   || { echo "[cue itest] FAIL: configmap check (line $_cm_check) must complete before with-dependency step (line $_wd_step)"; exit 1; }
