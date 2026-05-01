@@ -1,12 +1,12 @@
-package kafka_ystack
+package kafka_y_kustomize
 
 import (
 	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/k3s/02-namespace-kafka:namespace_kafka"
+	"yolean.se/ystack/k3s/40-kafka:kafka"
 	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"
 )
 
-_dep_ns:        namespace_kafka.step
+_dep_kafka:     kafka.step
 _dep_kustomize: y_kustomize.step
 
 step: verify.#Step & {

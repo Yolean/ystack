@@ -2,10 +2,10 @@ package kafka
 
 import (
 	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/k3s/40-kafka-ystack:kafka_ystack"
+	"yolean.se/ystack/k3s/02-namespace-kafka:namespace_kafka"
 )
 
-_dep_ystack: kafka_ystack.step
+_dep_ns: namespace_kafka.step
 
 step: verify.#Step & {
 	checks: [

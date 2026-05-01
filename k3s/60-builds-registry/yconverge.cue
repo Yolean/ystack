@@ -2,13 +2,13 @@ package builds_registry
 
 import (
 	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/k3s/30-blobs:blobs"
-	"yolean.se/ystack/k3s/40-kafka-ystack:kafka_ystack"
+	"yolean.se/ystack/k3s/31-blobs-y-kustomize:blobs_y_kustomize"
+	"yolean.se/ystack/k3s/41-kafka-y-kustomize:kafka_y_kustomize"
 	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"
 )
 
-_dep_blobs:     blobs.step
-_dep_kafka:     kafka_ystack.step
+_dep_blobs:     blobs_y_kustomize.step
+_dep_kafka:     kafka_y_kustomize.step
 _dep_kustomize: y_kustomize.step
 
 step: verify.#Step & {
