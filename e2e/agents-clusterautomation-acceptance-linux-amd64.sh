@@ -76,42 +76,16 @@ cleanup
 
 # --- provision (no converge) ---
 #
-# y-cluster v0.3.4 fixed the docker auto-pull issue
-# (ISSUE_DOCKER_PROVIDER_NO_AUTO_PULL.md, fix in commit a959eb0).
-# One known race remains -- ISSUE_DOCKER_K3S_READY_BEFORE_APISERVER.md:
-# the "k3s ready" signal fires when /etc/rancher/k3s/k3s.yaml
-# exists in the container, but the host's :6443 port forward
-# isn't always reachable yet, and the next step (envoy-gateway
-# install via kubectl apply) fails with "dial tcp 127.0.0.1:6443:
-# connect: connection refused". Workaround: detect the
-# connect-refused error, sleep, retry. Becomes dead code once
-# y-cluster strengthens the readiness check on the host port.
-if [ "$(grep -E '^provider:' "$CONFIG/y-cluster-provision.yaml" | awk '{print $2}')" = "docker" ]; then
-  _PRE_OUT=$(mktemp -t ystack-acceptance-provision.XXXXXX)
-  _attempt=1
-  while [ "$_attempt" -le 4 ]; do
-    if y-cluster provision -c "$CONFIG" 2>&1 | tee "$_PRE_OUT"; then
-      break
-    fi
-    if grep -q 'dial tcp 127.0.0.1:6443: connect: connection refused' "$_PRE_OUT"; then
-      echo "# k3s apiserver host port not reachable yet (y-cluster readiness race); sleeping 10s before retry"
-      sleep 10
-    else
-      cat "$_PRE_OUT" >&2
-      rm -f "$_PRE_OUT"
-      exit 1
-    fi
-    _attempt=$((_attempt + 1))
-  done
-  if [ "$_attempt" -gt 4 ]; then
-    echo "# Provision failed after 4 attempts" >&2
-    rm -f "$_PRE_OUT"
-    exit 1
-  fi
-  rm -f "$_PRE_OUT"
-else
-  y-cluster provision -c "$CONFIG"
-fi
+# y-cluster v0.3.5 added a host-side /readyz probe between the
+# in-container kubeconfig appearing and "k3s ready" being declared,
+# closing the docker port-forward race that made the next step
+# (envoy-gateway install via kubectl apply) fail with "dial tcp
+# 127.0.0.1:6443: connect: connection refused" (Yolean/y-cluster#12).
+# v0.3.6 fixed a separate silent-drop in the docker provider where
+# moby v1.54+ sent every PortBinding's HostIp as the empty string
+# (zero netip.Addr) and Docker Engine 28 dropped them all, so
+# NetworkSettings.Ports came back empty (Yolean/y-cluster#15).
+y-cluster provision -c "$CONFIG"
 
 # Label nodes that don't yet have a cluster identity. Selector form
 # avoids overwriting an existing label on a misclaimed cluster.
