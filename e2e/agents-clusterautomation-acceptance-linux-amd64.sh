@@ -85,6 +85,10 @@ cleanup
 # moby v1.54+ sent every PortBinding's HostIp as the empty string
 # (zero netip.Addr) and Docker Engine 28 dropped them all, so
 # NetworkSettings.Ports came back empty (Yolean/y-cluster#15).
+# v0.3.7 mirrors PortBindings into Config.ExposedPorts to match
+# `docker run -p` semantics (Yolean/y-cluster#17), addressing the
+# remaining ubuntu-latest case where Engine 28 still dropped
+# bindings even after the HostIP fix (Yolean/y-cluster#16).
 y-cluster provision -c "$CONFIG"
 
 # Label nodes that don't yet have a cluster identity. Selector form
