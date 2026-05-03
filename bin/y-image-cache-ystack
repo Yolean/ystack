@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-[ -z "$DEBUG" ] || set -x
-set -eo pipefail
-
-y-image-list-ystack | while read -r image; do
-  [ -z "$image" ] && continue
-  y-image-cache-save "$image"
-done

@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Yolean/y-cluster/main/pkg/provision/schema/docker.schema.json
+#
+# Local development cluster on the docker provider.
+# y-cluster v0.3.3 docker provider takes the same PortForwards shape
+# as qemu (each entry binds the host port via Docker port mapping).
+# We list the four ystack acceptance ports explicitly because
+# PortForwards replaces the y-cluster default wholesale when set:
+# 6443 (kubectl API), 80/443 (Gateway/HTTPS), 8944 (in-cluster
+# y-kustomize via ServiceLB; see cluster-configs/local-qemu for the
+# canonical hostname rationale).
+provider: docker
+context: local
+name: local
+
+portForwards:
+- {host: "6443", guest: "6443"}
+- {host: "80",   guest: "80"}
+- {host: "443",  guest: "443"}
+- {host: "8944", guest: "8944"}
+
+# Mirror in-cluster registry hostnames at the magic ClusterIPs that
+# k3s/{60-builds-registry,61-prod-registry}/*-magic-numbers.yaml pin
+# (and that y-cluster-validate-ystack asserts as `*-registry clusterIP`
+# checks). Without these mirrors, containerd on the node can't resolve
+# *.svc.cluster.local at image-pull time -- pods that reference
+# prod-registry.ystack.svc.cluster.local/yolean/... would hit
+# ImagePullBackOff. Same magic IPs as local-qemu (the mirror is a
+# node-side concern, not a provider-side one).
+registries:
+  mirrors:
+    builds-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.50
+    prod-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.51

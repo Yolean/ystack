@@ -3,6 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kafka
 resources:
-- http://y-kustomize.ystack.svc.cluster.local/v1/kafka/setup-topic-job/base-for-annotations.yaml
+- http://y-kustomize:8944/v1/kafka/setup-topic-job/base-for-annotations.yaml
 commonAnnotations:
   yolean.se/kafka-topic-name: y-cluster-validate-ystack
+  yolean.se/kafka-secret-name: topic-validate-ystack

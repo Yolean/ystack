@@ -1,0 +1,82 @@
+name: checks
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  workflow_call:
+
+jobs:
+  script-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5.0.0
+    - uses: actions/cache/restore@v5.0.5
+      with:
+        key: script-lint-${{ github.ref_name }}-
+        restore-keys: |
+          script-lint-main-
+        path: ~/.cache/ystack
+    - name: Script lint
+      run: bin/y-script-lint --fail=degrade bin/
+      env:
+        Y_SCRIPT_LINT_BRANCH: ${{ github.ref_name }}
+    - uses: actions/cache/save@v5.0.5
+      with:
+        key: script-lint-${{ github.ref_name }}-${{ github.run_id }}
+        path: ~/.cache/ystack
+
+  itest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5.0.0
+    - uses: actions/cache/restore@v5.0.5
+      with:
+        key: itest-${{ github.ref_name }}-
+        restore-keys: |
+          itest-main-
+        path: ~/.cache/ystack
+    - name: Integration tests (yconverge framework)
+      run: yconverge/itest/test.sh
+      env:
+        YSTACK_HOME: ${{ github.workspace }}
+        PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin
+    - uses: actions/cache/save@v5.0.5
+      with:
+        key: itest-${{ github.ref_name }}-${{ github.run_id }}
+        path: ~/.cache/ystack
+
+  e2e-cluster:
+    # Opt-in via the `e2e-cluster` label on the PR -- runs the full
+    # qemu-based acceptance test (provision a real k3s cluster,
+    # converge ystack, validate). Heavyweight (~10-15 min); gates
+    # behind script-lint + itest so it only fires when the cheaper
+    # checks have passed.
+    needs: [script-lint, itest]
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-cluster')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5.0.0
+    - name: Pre-flight (disk, docker)
+      run: |
+        df -h /
+        docker info | head -10
+    - name: Set KUBECONFIG (ystack convention)
+      run: |
+        mkdir -p "$HOME/.kube"
+        echo "KUBECONFIG=$HOME/.kube/yolean" >> "$GITHUB_ENV"
+    - name: Run cluster acceptance
+      env:
+        # The script's first action is `exec env -i ...` which wipes
+        # the env to "mirror a fresh interactive terminal" on a dev
+        # laptop. CI's environment is already minimal; setting
+        # ENV_IS_CLEAN=true skips the trampoline so KUBECONFIG /
+        # PATH / YSTACK_HOME below take effect.
+        ENV_IS_CLEAN: "true"
+        YSTACK_HOME: ${{ github.workspace }}
+        PATH: ${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+      run: e2e/agents-clusterautomation-acceptance-linux-amd64.sh

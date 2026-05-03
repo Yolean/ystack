@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: y-kustomize
+  labels:
+    app: y-kustomize
+spec:
+  type: LoadBalancer
+  selector:
+    app: y-kustomize
+  ports:
+  - name: http
+    port: 8944
+    targetPort: 8944

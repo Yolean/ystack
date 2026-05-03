@@ -9,8 +9,9 @@ Converge principles:
   `1*` bases use `--server-side=true --force-conflicts` (required for large CRDs).
 - Between digit groups (0→1, 1→2, etc.), wait for all deployment rollouts.
 - After `1*`, validate that CRDs are registered and served.
-- Before `6*`, verify [y-kustomize api](../y-kustomize/openapi/openapi.yaml) serves real content
-  (secrets from `3*` and `4*` need time to propagate to mounted volumes).
+- Before `6*`, verify y-kustomize serves real content via
+  `curl http://y-kustomize:8944/openapi.yaml` (live spec from y-cluster serve;
+  secrets from `3*` and `4*` need time to propagate to the watch).
 
 Each base is applied with `kubectl apply -k` — no label selectors, no multi-pass.
 

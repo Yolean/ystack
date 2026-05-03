@@ -1,0 +1,16 @@
+port: 8944
+# y-cluster serve runs `kustomize build` on each source dir, finds the
+# Secrets it produces, and serves their data keys at /v1/{group}/{name}/{key}
+# where the Secret name is y-kustomize.{group}.{name}.
+#
+# This config exists for downstream users running
+# `y-cluster serve -c y-kustomize/` locally (developer laptops without
+# a cluster, etc.). The ystack acceptance flow now uses the in-cluster
+# y-kustomize Deployment exclusively; bin/acceptance-y-kustomize-local
+# is the standalone test that verifies this config independently.
+type: y-kustomize-local
+sources:
+- dir: ../kafka/setup-topic-y-kustomize
+- dir: ../kafka/setup-topic-prep-y-kustomize
+- dir: ../blobs-versitygw/setup-bucket-y-kustomize
+- dir: ../blobs-versitygw/setup-bucket-prep-y-kustomize

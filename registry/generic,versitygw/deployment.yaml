@@ -21,7 +21,7 @@ spec:
               name: minio
               key: secretkey
         - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
-          value: http://y-s3-api.blobs.svc.cluster.local
+          value: http://y-s3-api.blobs.svc.cluster.local:9000
         - name: REGISTRY_STORAGE_S3_REGION
           value: us-east-1
         - name: REGISTRY_STORAGE_S3_BUCKET

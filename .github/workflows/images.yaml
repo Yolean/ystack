@@ -16,23 +16,23 @@ jobs:
     steps:
     -
       name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5.0.0
     -
       name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4.0.0
     -
       name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4.0.0
     -
       name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4.1.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
     -
       name: Build and push runner
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7.1.0
       env:
         SOURCE_DATE_EPOCH: 0
         BUILDKIT_PROGRESS: plain
@@ -49,15 +49,11 @@ jobs:
       continue-on-error: false
       timeout-minutes: 45
     -
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22
-    -
-      uses: imjasonh/setup-crane@v0.3
+      uses: imjasonh/setup-crane@v0.5
     -
       name: Get registry image tag
       id: imageRegistryTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' registry/images/kustomization.yaml
     -
@@ -68,7 +64,7 @@ jobs:
     -
       name: Get buildkit image tag
       id: imageBuildkitTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' buildkit/kustomization.yaml
     -
@@ -79,7 +75,7 @@ jobs:
     -
       name: Get dockerd image tag
       id: imageDockerdTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' docker/kustomization.yaml
     -
@@ -91,7 +87,7 @@ jobs:
     -
       name: Get gitea image tag
       id: imageGiteaTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' git-source/base/kustomization.yaml
     -
@@ -102,7 +98,7 @@ jobs:
     -
       name: Get grafana image tag
       id: imageGrafanaTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' monitoring/grafana/kustomization.yaml
     -
@@ -113,7 +109,7 @@ jobs:
     -
       name: Get grafana-image-renderer image tag
       id: imageGrafanaImageRendererTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[1].newTag | sub("(.*)@.*", "${1}")' monitoring/grafana/kustomization.yaml
     -
@@ -124,7 +120,7 @@ jobs:
     -
       name: Get redpanda image tag
       id: imageRedpandaTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' kafka/redpanda-image/kustomization.yaml
     -
@@ -133,9 +129,20 @@ jobs:
         TAG_REDPANDA=${{ steps.imageRedpandaTag.outputs.result }}
         crane cp docker.redpanda.com/redpandadata/redpanda:$TAG_REDPANDA ghcr.io/yolean/redpanda:$TAG_REDPANDA
     -
+      name: Get versitygw image tag
+      id: imageVersitygwTag
+      uses: mikefarah/yq@v4.53.2
+      with:
+        cmd: yq '.spec.template.spec.containers[0].image | sub("[^:]+:(.+)@.*", "${1}")' blobs-versitygw/standalone/deployment.yaml
+    -
+      name: Mirror versitygw image from hub
+      run: |
+        TAG_VERSITYGW=${{ steps.imageVersitygwTag.outputs.result }}
+        crane cp docker.io/versity/versitygw:$TAG_VERSITYGW ghcr.io/yolean/versitygw:$TAG_VERSITYGW
+    -
       name: Get static-web-server image tag
       id: imageStaticWebServerTag
-      uses: mikefarah/yq@v4.44.1
+      uses: mikefarah/yq@v4.53.2
       with:
         cmd: yq '."static-web-server".version' bin/y-bin.optional.yaml
     -

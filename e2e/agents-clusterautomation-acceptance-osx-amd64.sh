@@ -20,7 +20,7 @@ if [[ "$ENV_IS_CLEAN" != "true" ]]; then
     PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
     ENV_IS_CLEAN=true \
     /bin/zsh -ilc "$SCRIPT_PATH $*"
-  
+
   exit 0
 fi
 
@@ -29,11 +29,15 @@ echo "$PATH"
 
 set -eo pipefail
 
+# macOS path uses the docker provider via Docker Desktop (no KVM).
+# Multipass and Lima provisioners aren't supported by y-cluster yet; once
+# they ship in the binary we can either add cluster-configs/local-{lima,multipass}
+# or run them through the same docker config here.
+CONFIG=cluster-configs/local-docker
+
 cleanup() {
-  local provisioner
-  provisioner=$(y-cluster-local-detect 2>/dev/null) || return 0
-  echo "# Cleaning up $provisioner cluster ..."
-  y-cluster-provision-$provisioner --teardown || true
+  echo "# Cleaning up cluster ..."
+  y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
 }
 trap cleanup EXIT
 
@@ -43,15 +47,13 @@ cleanup
 
 lsof -iTCP:80 -iTCP:443 -sTCP:LISTEN -P -n >/dev/null 2>&1 && echo "port 80 and 443 must be available for local cluster vm to bind to" && exit 1
 
-y-cluster-provision-k3d
-y-cluster-validate-ystack --context=local
+y-cluster provision -c "$CONFIG"
 
-cleanup
-y-cluster-provision-lima
-y-cluster-validate-ystack --context=local
+# Label nodes that don't yet have a cluster identity.
+kubectl --context=local label nodes -l '!yolean.se/cluster' yolean.se/cluster=local
 
-cleanup
-y-cluster-provision-multipass
+y-cluster yconverge --context=local -k k3s/20-gateway/
+
 y-cluster-validate-ystack --context=local
 
 echo "Acceptance tests completed"

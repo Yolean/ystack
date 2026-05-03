@@ -1,0 +1,11 @@
+#!/bin/bash
+[ -z "$DEBUG" ] || set -x
+set -e
+YBIN="$(dirname "$0")"
+
+# bin/kubectl-yconverge is a tracked symlink to y-cluster so kubectl
+# plugin discovery picks it up. exec -a preserves the invocation
+# name so the binary detects which mode it's in.
+
+version=$(y-bin-download "$YBIN/y-bin.runner.yaml" cluster)
+exec -a "$(basename "$0")" "$YBIN/y-cluster-v${version}-bin" "$@"

@@ -25,14 +25,20 @@ YSTACK_PROD_REGISTRY=europe-west3-docker.pkg.dev YSTACK_PROD_REGISTRY_TEST_IMAGE
 YSTACK_PROD_REGISTRY_PROTOCOL="https"
 [ "$YSTACK_PROD_REGISTRY" != prod-registry.ystack.svc.cluster.local ] || [ "$YSTACK_PROD_REGISTRY_INSECURE" = "false" ] || YSTACK_PROD_REGISTRY_PROTOCOL="http"
 
+# ClusterIPs are fixed via builds-registry-magic-numbers.yaml and prod-registry-magic-numbers.yaml.
+# Using IPs instead of hostnames avoids needing /etc/hosts hacks on the node.
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+BUILDS_REGISTRY_IP=$(y-yq '.spec.clusterIP' "$YSTACK_HOME/k3s/60-builds-registry/builds-registry-magic-numbers.yaml")
+PROD_REGISTRY_IP=$(y-yq '.spec.clusterIP' "$YSTACK_HOME/k3s/61-prod-registry/prod-registry-magic-numbers.yaml")
+
 cat <<EOF
 mirrors:
   "builds-registry.ystack.svc.cluster.local":
     endpoint:
-    - http://builds-registry.ystack.svc.cluster.local
+    - http://$BUILDS_REGISTRY_IP
   "prod-registry.ystack.svc.cluster.local":
     endpoint:
-    - $YSTACK_PROD_REGISTRY_PROTOCOL://$YSTACK_PROD_REGISTRY
+    - $YSTACK_PROD_REGISTRY_PROTOCOL://${YSTACK_PROD_REGISTRY/prod-registry.ystack.svc.cluster.local/$PROD_REGISTRY_IP}
 EOF
 
 [ -z "$YSTACK_PROD_REGISTRY_REWRITE" ] || {

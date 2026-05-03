@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Yolean/y-cluster/main/pkg/provision/schema/qemu.schema.json
+#
+# Local development cluster on the qemu provider.
+# Adds 8944 to the y-cluster default 6443/80/443 forwards so the
+# in-cluster y-kustomize LoadBalancer Service is reachable from the
+# host: ServiceLB binds 0.0.0.0:8944 on the node, qemu hostfwd routes
+# the host's 127.0.0.1:8944 to it. /etc/hosts maps
+# `y-kustomize -> 127.0.0.1` (via the y-kustomize HTTPRoute hostname,
+# discovered by y-k8s-ingress-hosts), so kustomize-build's fetches of
+# http://y-kustomize:8944/v1/... resolve to the in-cluster Deployment.
+provider: qemu
+context: local
+name: local
+
+# y-cluster default is 6443/80/443; this list replaces it wholesale.
+portForwards:
+- {host: "6443", guest: "6443"}
+- {host: "80",   guest: "80"}
+- {host: "443",  guest: "443"}
+- {host: "8944", guest: "8944"}
+
+# Mirror in-cluster registry hostnames at the magic ClusterIPs that
+# k3s/{60-builds-registry,61-prod-registry}/*-magic-numbers.yaml pin
+# (and that y-cluster-validate-ystack asserts as `*-registry clusterIP`
+# checks). Without these mirrors, containerd on the node can't resolve
+# *.svc.cluster.local at image-pull time -- pods that reference
+# prod-registry.ystack.svc.cluster.local/yolean/... would hit
+# ImagePullBackOff. ystack's own acceptance pulls only via the kubectl
+# API proxy and via in-cluster buildkit, so the gap is invisible here;
+# checkit and any real-workload consumer needs this.
+registries:
+  mirrors:
+    builds-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.50
+    prod-registry.ystack.svc.cluster.local:
+      endpoint:
+      - http://10.43.0.51

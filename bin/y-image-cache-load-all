@@ -2,8 +2,82 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-IMAGES=$(y-image-list-ystack)
-while IFS= read -r image; do
-  [ -z "$image" ] && continue
-  y-image-cache-load "$image" </dev/null
-done <<< "$IMAGES"
+[ "$1" = "help" ] && echo '
+Pre-cache and load every image referenced by ystack k3s/ bases into the
+local cluster, so a fresh provision can pull from the shared cache
+instead of public registries. Idempotent on repeat runs.
+
+Calls y-cluster images cache <ref> to fetch each image into the shared
+cache (XDG_CACHE_HOME/y-cluster/images/<digest>/), then y-cluster images
+load to import that layout into the cluster node containerd.
+
+Usage: y-image-cache-load-all [--context=NAME] [--converge=LIST]
+  --context=NAME    kubeconfig context (default: local)
+  --converge=LIST   comma-separated k3s/ base names to cache + load
+                    (default: every k3s/* base with non-empty image list)
+
+Requires y-cluster on PATH (provides images list/cache/load + cache info).
+' && exit 0
+
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+CONTEXT=local
+CONVERGE_TARGETS=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --context=*) CONTEXT="${1#*=}"; shift ;;
+    --converge=*) CONVERGE_TARGETS="${1#*=}"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+# Build the list of k3s/ bases to scan.
+BASES=()
+if [ -n "$CONVERGE_TARGETS" ]; then
+  for t in ${CONVERGE_TARGETS//,/ }; do
+    for d in "$YSTACK_HOME"/k3s/*/; do
+      base="${d%/}"
+      base="${base##*/}"
+      base="${base#[0-9][0-9]-}"
+      if [ "$base" = "$t" ]; then
+        BASES+=("$d")
+        break
+      fi
+    done
+  done
+else
+  for d in "$YSTACK_HOME"/k3s/*/; do
+    [ -f "$d/kustomization.yaml" ] || continue
+    BASES+=("$d")
+  done
+fi
+
+# Collect unique image refs across all bases.
+REFS=$(
+  for d in "${BASES[@]}"; do
+    if ! kubectl kustomize "$d" 2>/dev/null | y-cluster images list - 2>/dev/null; then
+      >&2 echo "# skip: $d (kustomize build failed; likely depends on a running cluster)"
+    fi
+  done | sort -u
+)
+
+[ -z "$REFS" ] && { echo "# no images found"; exit 0; }
+
+CACHE_ROOT=$(y-cluster cache info -p)
+
+while IFS= read -r ref; do
+  [ -z "$ref" ] && continue
+
+  echo "# cache: $ref"
+  digest_ref=$(y-cluster images cache "$ref")
+  digest="${digest_ref#*@}"
+  digest_dir="$CACHE_ROOT/images/$digest"
+
+  if [ ! -d "$digest_dir" ]; then
+    echo "# WARN: no cache layout at $digest_dir, skipping load" >&2
+    continue
+  fi
+
+  echo "# load: $ref"
+  tar -cf - -C "$digest_dir" . | y-cluster images load --context="$CONTEXT" -
+done <<< "$REFS"

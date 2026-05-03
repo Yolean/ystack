@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: versitygw
-        image: versity/versitygw:v1.3.0@sha256:035ca86a38033c92c31a2a3dd54aa37581737c03e872154130306dac50580ad2
+        image: versity/versitygw:v1.4.1@sha256:0400cb59f59da0f1cf9f7fd49505191abc348dfadf54509bf1988caaff4eb96f
         args:
         - posix
         - /data

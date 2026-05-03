@@ -1,0 +1,17 @@
+# This HTTPRoute registers the y-kustomize hostname with y-k8s-ingress-hosts
+# for /etc/hosts generation. Traffic uses ServiceLB on port 8944 directly.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: y-kustomize
+  labels:
+    yolean.se/module-part: gateway
+spec:
+  parentRefs:
+  - name: ystack
+  hostnames:
+  - y-kustomize
+  rules:
+  - backendRefs:
+    - name: y-kustomize
+      port: 8944
