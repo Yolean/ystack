@@ -13,6 +13,7 @@ _dep_ns: namespace_ystack.step
 
 step: verify.#Step & {
 	checks: [
+		// TODO pending https://github.com/Yolean/y-cluster/issues/11
 		{
 			kind:        "exec"
 			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write || echo 'WARNING: /etc/hosts update failed (may need manual sudo)'"
