@@ -123,14 +123,14 @@ esbuild:
     path: package/bin/esbuild
 
 turbo:
-  version: 2.9.5-hashdepends.1
+  version: 2.9.10-hashdepends.2
   templates:
     download: https://github.com/solsson/turbo/releases/download/v${version}/turbo-${os}-${arch}
   sha256:
-    darwin_amd64: 45ca441c683ec728d35056406de588b3d40dfbee0d2c6f2e1b5cf36c9b826843
-    darwin_arm64: c866d3f6ac4dc89233775cab233bdf886c0bc8f027cdeba96a897b0f90c7a5f8
-    linux_amd64: ac3b3ea6db7bf1b59ae7ac0024a0af649fc5543fac70aae2e4785ed8a4f0a27b
-    linux_arm64: c5f746d9a1a1628900ac464bb4af989c60a0e888898f68474ee58548fce4b690
+    darwin_amd64: dc40b453579a7944d440b7dba6f1a47f1c15751713e860a49221bb45f845058a
+    darwin_arm64: e0e6ff9ff079757325b73e80ce9722ab728d07113b423e477db04052d5040581
+    linux_amd64: f173eaea91b52d5eeeaaf7c384383a2aabad456ee660c2882af64760d2a0adf0
+    linux_arm64: 2e846b20575759ce2833167b09e35caf5ce216587e52c297cd2774f81efd5f87
 
 yarn:
   version: 0.2.1
