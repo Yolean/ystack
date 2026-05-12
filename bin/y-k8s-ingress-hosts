@@ -26,13 +26,16 @@ Flags:
                         the GatewayClass yolean.se/dns-hint-ip annotation)
   -h, --help            show this help
 
-If --host-ip is not given, resolution walks
-  Gateway/ystack.ystack -> spec.gatewayClassName -> GatewayClass
-  -> metadata.annotations[yolean.se/dns-hint-ip]
-which y-cluster provision stamps when the host forwards guest:80.
-The legacy yolean.se/override-ip annotation on Gateway/ystack.ystack
-is consulted as a fallback for clusters provisioned before that
-contract landed.
+If --host-ip is not given, resolution walks (in order):
+  1. Gateway/ystack.ystack -> spec.gatewayClassName -> GatewayClass
+     metadata.annotations[yolean.se/dns-hint-ip]
+  2. Any GatewayClass carrying yolean.se/dns-hint-ip (used when no
+     consumer Gateway/ystack.ystack exists, e.g. y-cluster's
+     appliance flow where the GatewayClass is the only artefact).
+  3. Gateway/ystack.ystack metadata.annotations[yolean.se/override-ip]
+     (legacy, pre-dates the dns-hint-ip contract).
+y-cluster provision stamps the dns-hint-ip annotation when the
+host forwards guest:80.
 EOF
       exit 0 ;;
     --context=*) CTX="${1#*=}"; shift ;;
@@ -60,9 +63,14 @@ kubectl config view --raw --minify --context="$CTX" --request-timeout=5s > "$CON
 
 # Resolve the host-side dial IP, in priority order:
 #   1. --host-ip flag (or Y_HOST_IP env)
-#   2. Provisioner-published annotation on the GatewayClass (per
-#      specs/ystack/CHANGE_REQUEST_HINT_IP.md)
-#   3. Legacy yolean.se/override-ip annotation on the consumer Gateway
+#   2. Gateway/ystack.ystack -> GatewayClass -> yolean.se/dns-hint-ip
+#      (per specs/ystack/CHANGE_REQUEST_HINT_IP.md; this is the
+#      consumer-installs-ystack-Gateway shape, e.g. checkit)
+#   3. Any GatewayClass carrying yolean.se/dns-hint-ip directly.
+#      Picks up the y-cluster appliance shape, where the
+#      provisioner stamps the annotation on the GatewayClass it
+#      installs but no consumer Gateway/ystack.ystack exists yet.
+#   4. Legacy yolean.se/override-ip annotation on the consumer Gateway
 # The resolved value is fed to the underlying Go binary as
 # `-override-ip <IP>`, which still names the override flag in the
 # k8s-ingress-hosts v0.5.x release.
@@ -76,6 +84,27 @@ if [ -z "$HOST_IP" ]; then
     if [ -n "$HOST_IP" ]; then
       echo "# Using host-ip=$HOST_IP from GatewayClass/$GATEWAY_CLASS yolean.se/dns-hint-ip"
     fi
+  fi
+fi
+# Direct GatewayClass walk: emit `<name>=<ip>` for every
+# GatewayClass that carries the annotation, then dedupe IPs. Any
+# count !=1 of distinct IPs is treated as ambiguous -- the operator
+# disambiguates with --host-ip. Single-cluster setups (the common
+# case) collapse to one line and one IP.
+if [ -z "$HOST_IP" ]; then
+  HINT_LIST=$(kubectl --context="$CTX" --request-timeout=5s get gatewayclass \
+    -o go-template='{{range .items}}{{$ip := index .metadata.annotations "yolean.se/dns-hint-ip"}}{{if $ip}}{{.metadata.name}}={{$ip}}{{"\n"}}{{end}}{{end}}' \
+    2>/dev/null || true) # y-script-lint:disable=or-true # no GatewayClasses is a normal pre-install state
+  DISTINCT_IPS=$(echo "$HINT_LIST" | awk -F= 'NF==2 && $2!="" {print $2}' | sort -u)
+  IP_COUNT=$(echo "$DISTINCT_IPS" | grep -c .)
+  if [ "$IP_COUNT" = "1" ]; then
+    HOST_IP="$DISTINCT_IPS"
+    GC_NAME=$(echo "$HINT_LIST" | awk -F= 'NF==2 && $2!="" {print $1; exit}')
+    echo "# Using host-ip=$HOST_IP from GatewayClass/$GC_NAME yolean.se/dns-hint-ip (direct)"
+  elif [ "$IP_COUNT" -gt 1 ]; then
+    echo "# warn: multiple GatewayClasses carry yolean.se/dns-hint-ip with different values:" >&2
+    echo "$HINT_LIST" | sed 's/^/#   /' >&2
+    echo "# pass --host-ip to disambiguate; falling through to legacy resolution" >&2
   fi
 fi
 if [ -z "$HOST_IP" ]; then

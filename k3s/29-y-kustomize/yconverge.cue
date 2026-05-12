@@ -12,6 +12,7 @@ step: verify.#Step & {
 	checks: [
 		// /etc/hosts must be updated before the /health probe -- the probe
 		// resolves "y-kustomize" via the file we just wrote.
+		// TODO pending https://github.com/Yolean/y-cluster/issues/11
 		{
 			kind:        "exec"
 			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write || echo 'WARNING: /etc/hosts update failed (may need manual sudo)'"
