@@ -150,3 +150,14 @@ jobs:
       run: |
         TAG_SWS=${{ steps.imageStaticWebServerTag.outputs.result }}
         crane cp docker.io/joseluisq/static-web-server:$TAG_SWS ghcr.io/yolean/static-web-server:$TAG_SWS
+    -
+      name: Get velero image tag
+      id: imageVeleroTag
+      uses: mikefarah/yq@v4.53.2
+      with:
+        cmd: yq '.images[0].newTag | sub("(.*)@.*", "${1}")' backup/images/kustomization.yaml
+    -
+      name: Mirror velero image from hub
+      run: |
+        TAG_VELERO=${{ steps.imageVeleroTag.outputs.result }}
+        crane cp docker.io/velero/velero:$TAG_VELERO ghcr.io/yolean/velero:$TAG_VELERO

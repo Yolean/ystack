@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Mirror of velero/velero (Apache 2.0, https://github.com/vmware-tanzu/velero).
+# ~75 MiB compressed (linux/amd64), distroless-style Paketo jammy-tiny base,
+# single static binary, runs as non-root cnb:cnb. Multi-arch (amd64/arm64).
+#
+# Tracking the v1.18.1-rc.2 pre-release; bump to v1.18.1 once it ships GA.
+images:
+- name: velero/velero
+  newName: ghcr.io/yolean/velero
+  newTag: v1.18.1-rc.2@sha256:d488c79bf0af3ee7035c310d50bf2ef96ea82ef67e81f79e863623c7ec4216fe
