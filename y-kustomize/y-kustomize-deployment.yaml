@@ -20,7 +20,7 @@ spec:
         runAsUser: 65532
       containers:
       - name: y-kustomize
-        image: ghcr.io/yolean/y-cluster:v0.4.5@sha256:ba5052b1d884447d0ba8d0869447d9e874442c79d7eccfbe12621ac091678650
+        image: ghcr.io/yolean/y-cluster:v0.4.6@sha256:e3f71cb36549c75ce78593ee096a37ffa427dac050a7712fffb89cedfabb518b
         command: ["/usr/local/bin/y-cluster"]
         args:
         - serve
