@@ -83,6 +83,11 @@ RUN y-turbo --version
 COPY bin/y-cue /usr/local/src/ystack/bin/
 RUN y-cue version
 
+COPY bin/y-cluster /usr/local/src/ystack/bin/
+RUN y-cluster --version \
+  && ln -s /usr/local/src/ystack/bin/cluster /usr/local/src/ystack/bin/kubectl-yconverge \
+  && kubectl yconverge --version
+
 FROM --platform=$TARGETPLATFORM base
 
 COPY --from=node --link /usr/local/lib/node_modules /usr/local/lib/node_modules
