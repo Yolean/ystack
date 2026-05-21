@@ -82,29 +82,29 @@ helm:
     path: ${os}-${arch}/helm
 
 buildctl:
-  version: 0.28.1
+  version: 0.30.0
   templates:
     download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: 50bfde863b3c6feb30476f6f5e8ae8c56776a12c7b4a7a66ec61d87c676c61f1
-    darwin_arm64: d153bfd5d64455b21910bcc2d1593eb049b3a16c26e0e2e79ccbc9e724af7f75
-    linux_amd64: 2e84057b941488c54575aee57015681f08c71042bd20c739b23879dfad3f2449
-    linux_arm64: 40caf32b10cb0766f7440a53fea9cfe15c8116d64f9365c53ff417958a136332
+    darwin_amd64: 1e57293debc7ae15e405212bbef2f0086092f71df612631a30c7aa8f74b8f37c
+    darwin_arm64: 0ceb020e2e38bc54348230faa1f281b29cb78588552b8820f453deb3784f3acb
+    linux_amd64: 2da148c50540409988c837e62b72176e4a9ad7855548a2dd6ea1cd0c0d2d360d
+    linux_arm64: d0c9601e49f441dcc5c6493c884275a5470dcc9c188c96573c4dd503f2fde97d
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
     path: bin/buildctl
 
 crane:
-  version: 0.21.5
+  version: 0.21.6
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: d5ad8d97d7c5407f761b4fd37801044473f58b79a033f6a64e84ce6d010c1b2c
-    darwin_arm64: a41938cdbd8becc59e90f4bb491a557d52dce5681f9812c961854cab706f5f59
-    linux_amd64: 9f823ae5ee25803161110f957b5fd4538f714d40cdf25dacb4914fefafd246bf
-    linux_arm64: 3a47c6da5a0ba1ca7a93def41036d8f262a2160799e5d4ca25dba3cfa47dab41
+    darwin_amd64: f1e653737a1d6e8a412734d0ac25009e04eccec98853be2eb59b8c744dede834
+    darwin_arm64: a124f297d1e63e8b6c63c2463e43565290d2fd074c1dadb5ca73d737bc7b2484
+    linux_amd64: 7ebbdcd05b652345c1f5105f8475e518534b90d66f3bdb50017be63f426ea435
+    linux_arm64: 6f61571ca0c2a5da27c2927fcb143255ccb2b74b8977dfcb44645b372ab0f951
   archive:
     tool: tar
     path: crane
