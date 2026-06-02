@@ -1,3 +1,4 @@
+
 ---
 # Copyright 2022 The Tekton Authors
 #
@@ -427,6 +428,7 @@ metadata:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
 data:
+  metrics-protocol: prometheus
   _example: |
     ################################
     #                              #
@@ -443,27 +445,44 @@ data:
     # this example block and unindented to be in the data block
     # to actually change the configuration.
 
-    # metrics.backend-destination field specifies the system metrics destination.
-    # It supports either prometheus (the default) or stackdriver.
-    # Note: Using stackdriver will incur additional charges
-    metrics.backend-destination: prometheus
+    # OpenTelemetry Metrics Configuration
+    # Protocol for metrics export (prometheus, grpc, http/protobuf, none)
+    # Default if not specified: "none"
+    metrics-protocol: prometheus
 
-    # metrics.request-metrics-backend-destination specifies the request metrics
-    # destination. If non-empty, it enables queue proxy to send request metrics.
-    # Currently supported values: prometheus, stackdriver.
-    metrics.request-metrics-backend-destination: prometheus
+    # Metrics endpoint (for grpc/http protocols)
+    # Default: empty (uses default OTLP endpoint)
+    metrics-endpoint: ""
 
-    # metrics.stackdriver-project-id field specifies the stackdriver project ID. This
-    # field is optional. When running on GCE, application default credentials will be
-    # used if this field is not provided.
-    metrics.stackdriver-project-id: "<your stackdriver project id>"
+    # Metrics export interval (e.g., "30s", "1m")
+    # Default: empty (uses default interval)
+    metrics-export-interval: ""
 
-    # metrics.allow-stackdriver-custom-metrics indicates whether it is allowed to send metrics to
-    # Stackdriver using "global" resource type and custom metric type if the
-    # metrics are not supported by "knative_revision" resource type. Setting this
-    # flag to "true" could cause extra Stackdriver charge.
-    # If metrics.backend-destination is not Stackdriver, this is ignored.
-    metrics.allow-stackdriver-custom-metrics: "false"
+    # OpenTelemetry Tracing Configuration
+    # Protocol for tracing export (grpc, http/protobuf, none, stdout)
+    # Default: none
+    tracing-protocol: none
+
+    # Tracing endpoint (for grpc/http protocols)
+    # Default: empty
+    tracing-endpoint: ""
+
+    # Tracing sampling rate (0.0 to 1.0)
+    # Default: 1.0 (100% sampling)
+    tracing-sampling-rate: "1.0"
+
+    # Runtime Configuration
+    # Enable profiling (enabled, disabled)
+    # Default: disabled
+    runtime-profiling: disabled
+
+    # Runtime export interval (e.g., "15s")
+    # Default: 15s
+    runtime-export-interval: "15s"
+
+    # Note: Legacy OpenCensus configuration (metrics.backend-destination, etc.) has been
+    # removed as OpenCensus support is no longer provided by the underlying infrastructure.
+    # Please use the OpenTelemetry configuration options above.
 
 ---
 # Copyright 2022 The Tekton Authors
@@ -578,6 +597,17 @@ data:
   default-kind: "task"
   # the default hub source to pull the resource from.
   default-type: "artifact"
+  # Ordered list of Artifact Hub API URLs to try. First successful response wins.
+  # If not set, the ARTIFACT_HUB_API env var or default (https://artifacthub.io) is used.
+  # URLs must use http or https scheme.
+  # artifact-hub-urls: |
+  #   - https://internal-hub.example.com/
+  #   - https://artifacthub.io/
+  # Ordered list of Tekton Hub API URLs to try. First successful response wins.
+  # If not set, the TEKTON_HUB_API env var is used.
+  # URLs must use http or https scheme.
+  # tekton-hub-urls: |
+  #   - https://api.hub.tekton.dev/
 
 ---
 # Copyright 2025 The Tekton Authors
@@ -632,12 +662,12 @@ metadata:
     app.kubernetes.io/name: resolvers
     app.kubernetes.io/component: resolvers
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v1.9.0"
+    app.kubernetes.io/version: "v1.13.0"
     app.kubernetes.io/part-of: tekton-pipelines
     # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-    pipeline.tekton.dev/release: "v1.9.0"
+    pipeline.tekton.dev/release: "v1.13.0"
     # labels below are related to istio and should not be used for resource lookup
-    version: "v1.9.0"
+    version: "v1.13.0"
 spec:
   replicas: 1
   selector:
@@ -652,13 +682,13 @@ spec:
         app.kubernetes.io/name: resolvers
         app.kubernetes.io/component: resolvers
         app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "v1.9.0"
+        app.kubernetes.io/version: "v1.13.0"
         app.kubernetes.io/part-of: tekton-pipelines
         # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-        pipeline.tekton.dev/release: "v1.9.0"
+        pipeline.tekton.dev/release: "v1.13.0"
         # labels below are related to istio and should not be used for resource lookup
         app: tekton-pipelines-resolvers
-        version: "v1.9.0"
+        version: "v1.13.0"
     spec:
       affinity:
         nodeAffinity:
@@ -683,7 +713,7 @@ spec:
       serviceAccountName: tekton-pipelines-resolvers
       containers:
         - name: controller
-          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.9.0@sha256:1f3e346ba5b9b2a702cff5224713d0bbd7b31372614f3a5441a3df3df7a17e1e
+          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.13.0@sha256:6baeb2aa990387ed4afed4fa095845ed137b35c2471dffdc95ea8d32142775fa
           command:
             - /sbin/tini
             - --
@@ -769,13 +799,13 @@ metadata:
     app.kubernetes.io/name: resolvers
     app.kubernetes.io/component: resolvers
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "v1.9.0"
+    app.kubernetes.io/version: "v1.13.0"
     app.kubernetes.io/part-of: tekton-pipelines
     # tekton.dev/release value replaced with inputs.params.versionTag in pipeline/tekton/publish.yaml
-    pipeline.tekton.dev/release: "v1.9.0"
+    pipeline.tekton.dev/release: "v1.13.0"
     # labels below are related to istio and should not be used for resource lookup
     app: tekton-pipelines-remote-resolvers
-    version: "v1.9.0"
+    version: "v1.13.0"
   name: tekton-pipelines-remote-resolvers
   namespace: tekton-pipelines-resolvers
 spec:
