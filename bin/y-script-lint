@@ -141,7 +141,7 @@ is_node() { [ "$1" = "node" ] || [ "$1" = "typescript" ]; }
 # --- Static checks ---
 
 check_header_pipefail() { grep -qE '^set -e(u?o pipefail)?$' "$1" 2>/dev/null; }
-check_header_debug() { grep -qE '^\[ -z "\$DEBUG" \] \|\| set -x' "$1" 2>/dev/null; }
+check_header_debug() { grep -qE '^\[ -z "\$(DEBUG|\{DEBUG:-\})" \] \|\| set -x' "$1" 2>/dev/null; }
 
 check_help_handler() {
   local file="$1" lang="$2"
