@@ -39,7 +39,7 @@ esac
 
 ```bash
 #!/usr/bin/env bash
-[ -z "$DEBUG" ] || set -x
+[ -z "${DEBUG:-}" ] || set -x
 set -eo pipefail
 
 YHELP='y-example - Bump image tags in kustomization files
@@ -123,7 +123,7 @@ if (process.argv[2] === 'help' || process.argv[2] === '--help') {
 |-------|-------------|-------|---------|-------------|
 | Shebang | FAIL | `#!/usr/bin/env bash` or `#!/bin/sh` | `#!/usr/bin/env node` or `*-strip-types` | First line |
 | `set -eo pipefail` | FAIL | Required | n/a | Second or third line |
-| DEBUG pattern | WARN | `[ -z "$DEBUG" ] \|\| set -x` | n/a | Second line |
+| DEBUG pattern | WARN | `[ -z "${DEBUG:-}" ] \|\| set -x` (bare `$DEBUG` also tolerated) | n/a | Second line |
 | Help handler | WARN | `"$1" = "help"` in case/if | `process.argv` includes `help` | See templates above |
 | No `npx` | FAIL | Not in non-comment lines | Not in non-comment lines | Use project deps |
 | No `eval` | FAIL | Not in non-comment lines | No `eval(` calls | Avoid eval |
@@ -212,7 +212,7 @@ Every shell script must start with a shebang and standard preamble:
 
 ```bash
 #!/usr/bin/env bash
-[ -z "$DEBUG" ] || set -x
+[ -z "${DEBUG:-}" ] || set -x
 set -eo pipefail
 ```
 
@@ -295,7 +295,7 @@ Validate required arguments early with clear error messages:
 
 - Document all env vars in help text
 - Provide sensible defaults: `[ -z "$REGISTRY" ] && REGISTRY="docker.io"`
-- Use `DEBUG` for `set -x` tracing (convention: `[ -z "$DEBUG" ] || set -x`)
+- Use `DEBUG` for `set -x` tracing (convention: `[ -z "${DEBUG:-}" ] || set -x`; the guard keeps it safe under `set -u`)
 - Never require secrets as positional args; use env vars or files
 
 ## Shell Practices
