@@ -1,0 +1,144 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: bucketies.buckety.yolean.se
+spec:
+  group: buckety.yolean.se
+  scope: Namespaced
+  names:
+    kind: Buckety
+    listKind: BucketyList
+    singular: buckety
+    plural: bucketies
+    shortNames:
+    - bky
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Backend
+      type: string
+      jsonPath: .status.backend
+    - name: Driver
+      type: string
+      jsonPath: .status.driver
+    - name: Resource
+      type: string
+      jsonPath: .status.backendResourceName
+    - name: Ready
+      type: string
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    schema:
+      openAPIV3Schema:
+        type: object
+        required: [spec]
+        properties:
+          spec:
+            type: object
+            required: [backend]
+            x-kubernetes-validations:
+            - rule: "self.backend == oldSelf.backend"
+              message: "spec.backend is immutable"
+            - rule: "(has(oldSelf.name) == has(self.name)) && (!has(oldSelf.name) || self.name == oldSelf.name)"
+              message: "spec.name is immutable; can be neither added nor changed after creation"
+            properties:
+              backend:
+                type: string
+                description: |
+                  Name of a backend defined in the controller's config
+                  file. Immutable after creation.
+                minLength: 1
+              name:
+                type: string
+                description: |
+                  Optional name template. Resolved once at first
+                  reconcile and frozen in status.backendResourceName.
+                  Defaults to metadata.name if omitted. See SPEC.md
+                  section "Naming templates" for the grammar.
+              parameters:
+                type: object
+                description: |
+                  Driver-validated parameters. Per-driver schema is
+                  enforced by the controller's admission webhook.
+                  Mutable per-key per driver.
+                additionalProperties:
+                  type: string
+                x-kubernetes-preserve-unknown-fields: true
+              retentionPolicy:
+                type: string
+                description: |
+                  What happens to the backend resource when this
+                  Buckety is deleted.
+                enum: [Retain, Delete]
+                default: Retain
+              defaultAccess:
+                type: object
+                description: |
+                  Single-consumer shortcut. Materialises an implicit
+                  BucketyAccess of the same name; reclaimed via
+                  owner-ref when an explicit BucketyAccess arrives or
+                  this field is removed. See SPEC.md.
+                required: [credentialsSecretName]
+                properties:
+                  role:
+                    type: string
+                    enum: [Reader, Writer, ReadWrite]
+                    default: ReadWrite
+                  credentialsSecretName:
+                    type: string
+                    minLength: 1
+          status:
+            type: object
+            properties:
+              observedGeneration:
+                type: integer
+                format: int64
+              backend:
+                type: string
+                description: Sticky. Stamped at first reconcile.
+              driver:
+                type: string
+                description: Sticky. Stamped at first reconcile.
+              driverMajor:
+                type: integer
+                description: |
+                  Sticky. Gates driver-version compatibility. See
+                  SPEC.md "Driver versioning".
+              driverBuildVersion:
+                type: string
+                description: |
+                  Full SemVer of the binary that most recently
+                  reconciled this resource. Informational.
+              backendResourceName:
+                type: string
+                description: |
+                  Resolved name template. Sticky from first reconcile.
+              conditions:
+                type: array
+                items:
+                  type: object
+                  required: [type, status, lastTransitionTime, reason, message]
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                      enum: ["True", "False", "Unknown"]
+                    lastTransitionTime:
+                      type: string
+                      format: date-time
+                    observedGeneration:
+                      type: integer
+                      format: int64
+                    reason:
+                      type: string
+                    message:
+                      type: string
+                x-kubernetes-list-type: map
+                x-kubernetes-list-map-keys: [type]

@@ -1,0 +1,116 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: bucketyaccesses.buckety.yolean.se
+spec:
+  group: buckety.yolean.se
+  scope: Namespaced
+  names:
+    kind: BucketyAccess
+    listKind: BucketyAccessList
+    singular: bucketyaccess
+    plural: bucketyaccesses
+    shortNames:
+    - bka
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Buckety
+      type: string
+      jsonPath: .spec.bucketyRef.name
+    - name: Role
+      type: string
+      jsonPath: .spec.role
+    - name: Secret
+      type: string
+      jsonPath: .spec.credentialsSecretName
+    - name: Ready
+      type: string
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    schema:
+      openAPIV3Schema:
+        type: object
+        required: [spec]
+        properties:
+          spec:
+            type: object
+            required: [bucketyRef, credentialsSecretName]
+            x-kubernetes-validations:
+            - rule: "self.bucketyRef == oldSelf.bucketyRef"
+              message: "spec.bucketyRef is immutable"
+            - rule: "self.credentialsSecretName == oldSelf.credentialsSecretName"
+              message: "spec.credentialsSecretName is immutable"
+            properties:
+              bucketyRef:
+                type: object
+                required: [name]
+                description: |
+                  Reference to a Buckety in the same namespace.
+                  Cross-namespace references are not supported in
+                  v1alpha1.
+                properties:
+                  name:
+                    type: string
+                    minLength: 1
+              credentialsSecretName:
+                type: string
+                description: |
+                  Name of the Secret to mint in this namespace.
+                  Immutable.
+                minLength: 1
+              role:
+                type: string
+                enum: [Reader, Writer, ReadWrite]
+                default: ReadWrite
+                description: |
+                  In v1alpha1 all roles receive identical credentials
+                  (no per-consumer scoping). Drivers surface a
+                  ScopingNotImplemented condition rather than silently
+                  treating Reader as ReadWrite.
+              parameters:
+                type: object
+                additionalProperties:
+                  type: string
+                x-kubernetes-preserve-unknown-fields: true
+          status:
+            type: object
+            properties:
+              observedGeneration:
+                type: integer
+                format: int64
+              principal:
+                type: string
+                description: |
+                  Backend-side identity granted access. In v1alpha1
+                  with no per-consumer scoping this is typically
+                  the backend's root principal.
+              conditions:
+                type: array
+                items:
+                  type: object
+                  required: [type, status, lastTransitionTime, reason, message]
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                      enum: ["True", "False", "Unknown"]
+                    lastTransitionTime:
+                      type: string
+                      format: date-time
+                    observedGeneration:
+                      type: integer
+                      format: int64
+                    reason:
+                      type: string
+                    message:
+                      type: string
+                x-kubernetes-list-type: map
+                x-kubernetes-list-map-keys: [type]

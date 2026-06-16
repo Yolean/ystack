@@ -95,6 +95,21 @@ y-cluster provision -c "$CONFIG"
 # avoids overwriting an existing label on a misclaimed cluster.
 kubectl --context=local label nodes -l '!yolean.se/cluster' yolean.se/cluster=local
 
+# buckety-controller image is built locally (contain) and not yet
+# pushed to a registry. Sideload the OCI layout into the cluster's
+# containerd so kubelet finds it by tag at IfNotPresent.
+# Override with $BUCKETY_CONTROLLER_OCI if the repo lives elsewhere.
+BUCKETY_CONTROLLER_OCI="${BUCKETY_CONTROLLER_OCI:-$HOME/Yolean/buckety-controller/oci}"
+if [ -d "$BUCKETY_CONTROLLER_OCI" ]; then
+  echo ""
+  echo "# Sideload buckety-controller from $BUCKETY_CONTROLLER_OCI"
+  y-cluster images load "$BUCKETY_CONTROLLER_OCI" --context=local
+else
+  echo "ERROR: buckety-controller OCI layout not found at $BUCKETY_CONTROLLER_OCI;" >&2
+  echo "       build it with (in that repo): contain build --output ./oci --push=false" >&2
+  exit 1
+fi
+
 # --- gateway: just the consumer Gateway resource (CRDs + GatewayClass come from y-cluster provision) ---
 
 echo ""

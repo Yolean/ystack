@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: buckety
+resources:
+- namespace.yaml
+- upstream/crd
+- upstream/controller
+secretGenerator:
+- name: buckety-controller-config
+  files:
+  - buckety-controller.yaml
+patches:
+- path: clusterrolebinding-patch.yaml
+- path: deployment-patch.yaml

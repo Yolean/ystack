@@ -1,0 +1,16 @@
+apiVersion: buckety.yolean.se/v1alpha1
+kind: Buckety
+metadata:
+  name: builds-registry
+spec:
+  backend: cluster-kafka
+  # Friendly, operator-chosen topic name on the broker — the COSI
+  # blocker that motivated buckety. Resolves verbatim.
+  name: ystack.builds-registry.stream.json
+  parameters:
+    partitions: "1"
+    # replicationFactor omitted -> broker default applies.
+  retentionPolicy: Retain
+  defaultAccess:
+    role: ReadWrite
+    credentialsSecretName: topic-builds-registry

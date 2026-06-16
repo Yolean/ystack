@@ -1,0 +1,10 @@
+backends:
+
+- name: cluster-kafka
+  driver: kadm
+  config:
+    seedBrokers:
+    - y-bootstrap.kafka.svc.cluster.local:9092
+    clientID: buckety-controller
+  defaults:
+    zone: local
