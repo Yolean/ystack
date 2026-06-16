@@ -1,7 +1,7 @@
 apiVersion: buckety.yolean.se/v1alpha1
 kind: Buckety
 metadata:
-  name: builds-registry
+  name: builds-registry-topic
 spec:
   backend: cluster-kafka
   # Friendly, operator-chosen topic name on the broker — the COSI

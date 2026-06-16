@@ -2,14 +2,16 @@ package builds_registry
 
 import (
 	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/k3s/31-blobs-y-kustomize:blobs_y_kustomize"
 	"yolean.se/ystack/k3s/15-buckety:buckety"
-	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"
+	"yolean.se/ystack/k3s/30-blobs:blobs"
 )
 
-_dep_blobs:     blobs_y_kustomize.step
-_dep_buckety:   buckety.step
-_dep_kustomize: y_kustomize.step
+// y-kustomize is retired from this dep chain: kafka topic and
+// blobs bucket are both provisioned via Buckety. blobs (the
+// versitygw Deployment + Service) is still needed because the
+// s3 buckety driver talks to its admin/data endpoint.
+_dep_buckety: buckety.step
+_dep_blobs:   blobs.step
 
 step: verify.#Step & {
 	checks: [

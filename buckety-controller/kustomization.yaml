@@ -10,6 +10,15 @@ secretGenerator:
 - name: buckety-controller-config
   files:
   - buckety-controller.yaml
+# Local copy of versitygw root creds for the s3 backend. Same
+# example values as blobs-versitygw/defaultsecret/ — the
+# versitygw-server Secret is in the blobs namespace and Secrets
+# don't cross namespaces; the controller Pod needs these as env
+# vars at startup for envsubst on the s3 backend config.
+- name: versitygw-creds
+  literals:
+  - root-accesskey=YstackEXAMPLEKEY
+  - root-secretkey=github.com/Yolean/ystack-EXAMPLE
 patches:
 - path: clusterrolebinding-patch.yaml
 - path: deployment-patch.yaml

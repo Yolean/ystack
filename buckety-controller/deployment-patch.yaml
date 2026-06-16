@@ -15,3 +15,13 @@ spec:
         - "-c"
         - "/etc/buckety"
         - "--enable-webhook=false"
+        env:
+        # Sourced for the s3 backend's envsubst:"true" fields in
+        # buckety-controller.yaml. See secretGenerator
+        # versitygw-creds in kustomization.yaml.
+        - name: VERSITYGW_ROOT_ACCESSKEY
+          valueFrom:
+            secretKeyRef: {name: versitygw-creds, key: root-accesskey}
+        - name: VERSITYGW_ROOT_SECRETKEY
+          valueFrom:
+            secretKeyRef: {name: versitygw-creds, key: root-secretkey}
