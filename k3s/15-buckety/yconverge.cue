@@ -2,11 +2,15 @@ package buckety
 
 import (
 	"yolean.se/ystack/yconverge/verify"
+	"yolean.se/ystack/k3s/30-blobs:blobs"
 	"yolean.se/ystack/k3s/40-kafka:kafka"
 )
 
-// Buckety-controller talks to the kafka cluster on first reconcile;
-// staging it after 40-kafka avoids early-reconcile noise.
+// Buckety-controller talks to both backends on first reconcile;
+// staging it after the backing services come up avoids early
+// connection failures and lets the controller's first status
+// stamp succeed.
+_dep_blobs: blobs.step
 _dep_kafka: kafka.step
 
 step: verify.#Step & {
