@@ -1,0 +1,16 @@
+apiVersion: buckety.yolean.se/v1alpha1
+kind: Buckety
+metadata:
+  name: validate-ystack
+spec:
+  backend: cluster-kafka
+  # Topic name is operator-chosen; the validate-ystack script
+  # hardcodes "y-cluster-validate-ystack", so the Buckety pins
+  # it explicitly here rather than defaulting to metadata.name.
+  name: y-cluster-validate-ystack
+  parameters:
+    partitions: "1"
+  retentionPolicy: Delete
+  defaultAccess:
+    role: ReadWrite
+    credentialsSecretName: topic-validate-ystack

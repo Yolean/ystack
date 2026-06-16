@@ -115,16 +115,14 @@ run_pre_build_checks() {
     || report "registry v2 API ($phase)" "no response"
 
   echo "[y-cluster-validate-ystack] y-kustomize bases"
+  # The kafka topic side moved to buckety; only the blobs side
+  # still uses y-kustomize until the s3 driver lands.
   if k -n ystack get deployment y-kustomize -o=jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q '^[1-9]'; then
     kurl ystack y-kustomize:8944 v1/blobs/setup-bucket-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
       && report "y-kustomize blobs base ($phase)" "ok" \
       || report "y-kustomize blobs base ($phase)" "not serving valid YAML"
-    kurl ystack y-kustomize:8944 v1/kafka/setup-topic-job/base-for-annotations.yaml | k apply --dry-run=client -f - >/dev/null 2>&1 \
-      && report "y-kustomize kafka base ($phase)" "ok" \
-      || report "y-kustomize kafka base ($phase)" "not serving valid YAML"
   else
-    echo "[y-cluster-validate-ystack]   SKIP  y-kustomize blobs base ($phase) - deploy/y-kustomize not ready (likely host-side serve in use; v0.3.0 image not released)"
-    echo "[y-cluster-validate-ystack]   SKIP  y-kustomize kafka base ($phase) - deploy/y-kustomize not ready (likely host-side serve in use; v0.3.0 image not released)"
+    echo "[y-cluster-validate-ystack]   SKIP  y-kustomize blobs base ($phase) - deploy/y-kustomize not ready"
   fi
 }
 
@@ -155,12 +153,13 @@ echo "[y-cluster-validate-ystack] Kafka topic create + produce + consume"
 if k get ns kafka >/dev/null 2>&1; then
   TOPIC_NAME="y-cluster-validate-ystack"
 
-  # Create topic via y-kustomize setup job
-  k -n kafka delete job setup-topic 2>/dev/null || true # y-script-lint:disable=or-true # best-effort: previous-run leftover may not exist
+  # Create topic via buckety. The Buckety pins spec.name to
+  # the operator-chosen TOPIC_NAME above; the kadm driver
+  # creates the topic with that exact name on the broker.
   k apply -k "$YSTACK_HOME/kafka/validate-topic/" 2>&1 | head -5
-  k -n kafka wait --for=condition=complete job/setup-topic --timeout=60s 2>&1 \
+  k -n kafka wait --for=condition=Ready buckety/validate-ystack --timeout=60s 2>&1 \
     && report "kafka topic create" "ok" \
-    || report "kafka topic create" "job did not complete"
+    || report "kafka topic create" "Buckety not Ready"
 
   # Verify topic exists
   y-cluster-kafka --context="$CONTEXT" topic list 2>&1 | grep -q "$TOPIC_NAME" \

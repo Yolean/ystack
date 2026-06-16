@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: buckety-controller
+rules:
+- apiGroups: [buckety.yolean.se]
+  resources: [bucketies, bucketyaccesses]
+  verbs: [get, list, watch, create, update, patch, delete]
+- apiGroups: [buckety.yolean.se]
+  resources: [bucketies/status, bucketyaccesses/status]
+  verbs: [get, update, patch]
+- apiGroups: [buckety.yolean.se]
+  resources: [bucketies/finalizers, bucketyaccesses/finalizers]
+  verbs: [update]
+- apiGroups: [""]
+  resources: [secrets]
+  verbs: [get, list, watch, create, update, patch, delete]
+- apiGroups: [""]
+  resources: [events]
+  verbs: [create, patch]
+- apiGroups: [coordination.k8s.io]
+  resources: [leases]
+  verbs: [get, list, watch, create, update, patch, delete]

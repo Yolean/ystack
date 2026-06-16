@@ -14,4 +14,7 @@ namespace: ystack
 
 resources:
 - http://y-kustomize:8944/v1/blobs/setup-bucket-prep/base-for-annotations.yaml
-- http://y-kustomize:8944/v1/kafka/setup-topic-prep/base-for-annotations.yaml
+# setup-topic-prep URL retired: the kafka topic side is provisioned via
+# Buckety (see ../builds-topic/buckety.yaml) which needs no per-namespace
+# RBAC. Blobs side still uses the y-kustomize-served setup-bucket Job
+# until the s3 buckety driver lands (currently a stub).

@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Controller-side resources: RBAC, Service, Deployment, webhook
+# configuration. Apply against a cluster where ../crd/ is
+# already installed. ../base/ composes both.
+resources:
+- serviceaccount.yaml
+- clusterrole.yaml
+- clusterrolebinding.yaml
+- service.yaml
+- deployment.yaml
