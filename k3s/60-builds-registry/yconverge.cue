@@ -27,5 +27,11 @@ step: verify.#Step & {
 			timeout:     "30s"
 			description: "registry v2 API responds"
 		},
+		{
+			kind:        "exec"
+			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write"
+			timeout:     "10s"
+			description: "update /etc/hosts for gateway routes"
+		},
 	]
 }
