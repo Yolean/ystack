@@ -14,6 +14,7 @@ if [[ "$ENV_IS_CLEAN" != "true" ]]; then
     TERM="$TERM" \
     PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
     ENV_IS_CLEAN=true \
+    BLOBSTORE="${BLOBSTORE:-}" \
     /bin/bash -lic "$SCRIPT_PATH $*"
 
   exit 0
@@ -25,6 +26,29 @@ echo "$PATH"
 set -eo pipefail
 
 CONFIG=cluster-configs/local-docker
+
+# Blobstore selection. Default versitygw (ystack's default); set
+# BLOBSTORE=minio to swap in the parallel minio bases. Picked up
+# below to choose the registry/buildkit converge entry points and
+# is exported so y-cluster-validate-ystack swaps its deploy/<x>
+# checks in lockstep.
+BLOBSTORE="${BLOBSTORE:-versitygw}"
+case "$BLOBSTORE" in
+  versitygw)
+    REGISTRY_BASE=k3s/60-builds-registry
+    BUILDKIT_BASE=k3s/62-buildkit
+    ;;
+  minio)
+    REGISTRY_BASE=k3s/60-builds-registry-minio-disabled
+    BUILDKIT_BASE=k3s/62-buildkit-minio-disabled
+    ;;
+  *)
+    echo "Unknown BLOBSTORE: $BLOBSTORE (expected: versitygw | minio)" >&2
+    exit 1
+    ;;
+esac
+export BLOBSTORE
+echo "# BLOBSTORE=$BLOBSTORE -> registry=$REGISTRY_BASE buildkit=$BUILDKIT_BASE"
 
 # Host reachability flows from y-cluster's yolean.se/dns-hint-ip
 # annotation on the installed GatewayClass: when guest:80 is in
@@ -109,7 +133,7 @@ y-cluster yconverge --context=local -k k3s/20-gateway/
 
 echo ""
 echo "# Phase 1: base platform (registry + buckety-provisioned kafka topic and S3 bucket)"
-y-cluster yconverge --context=local -k k3s/60-builds-registry/
+y-cluster yconverge --context=local -k "$REGISTRY_BASE/"
 
 echo ""
 echo "# Phase 2: kafka stack"
@@ -117,7 +141,7 @@ y-cluster yconverge --context=local -k k3s/40-kafka/
 
 echo ""
 echo "# Phase 3: build infra"
-y-cluster yconverge --context=local -k k3s/62-buildkit/
+y-cluster yconverge --context=local -k "$BUILDKIT_BASE/"
 
 echo ""
 echo "# Phase 4: prod registry"
@@ -129,7 +153,7 @@ y-cluster yconverge --context=local -k k3s/50-monitoring/
 
 echo ""
 echo "# Phase 6: idempotency proof -- re-converge everything"
-y-cluster yconverge --context=local -k k3s/62-buildkit/
+y-cluster yconverge --context=local -k "$BUILDKIT_BASE/"
 y-cluster yconverge --context=local -k k3s/50-monitoring/
 y-cluster yconverge --context=local -k k3s/61-prod-registry/
 y-cluster yconverge --context=local -k k3s/40-kafka/
