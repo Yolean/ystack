@@ -22,19 +22,25 @@ spec:
         - --path.procfs=/host/proc
         - --path.sysfs=/host/sys
         - --path.rootfs=/host/root
-        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containerd/.+|run/containerd/.*|home/kubernetes/.*|var/lib/kubelet/pods/.+)($|/)
+        # renamed from the deprecated --collector.filesystem.ignored-mount-points
+        - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containerd/.+|run/containerd/.*|home/kubernetes/.*|var/lib/kubelet/pods/.+)($|/)
         - --collector.disable-defaults
         - --collector.cpu
         - --collector.meminfo
         - --collector.filesystem
         - --collector.processes
+        - --collector.stat
+        # node saturation, absent from CPU utilization: pressure = PSI (cpu/io/memory
+        # stall, a cumulative counter that survives coarse scrapes); loadavg = node_load1/5/15
+        - --collector.pressure
+        - --collector.loadavg
         env:
         # is there any way to get node name into metrics' labels ("instance" is only the IP)?
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: quay.io/prometheus/node-exporter:v1.8.1@sha256:fa7fa12a57eff607176d5c363d8bb08dfbf636b36ac3cb5613a202f3c61a6631
+        image: quay.io/prometheus/node-exporter:v1.11.1@sha256:0f422f62c15f154af8d8572b23d623aebfb10cec73a5c654d18f911f3f9df241
         name: node-exporter
         ports:
         - name: web
