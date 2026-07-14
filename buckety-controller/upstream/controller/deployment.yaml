@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: controller
-        image: ghcr.io/yolean/buckety-controller:dev
+        image: ghcr.io/yolean/buckety-controller:20260710T113351Z
         imagePullPolicy: IfNotPresent
         args:
         - "-c"

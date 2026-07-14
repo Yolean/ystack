@@ -1,7 +1,10 @@
 # buckety-controller upstream (vendored)
 
 Source: https://github.com/Yolean/buckety-controller
-Ref: pull/3 head (`fe702dd`) — initial-impl branch, pre-v0.1.0.
+Ref: `ccfb662` on branch `secret-safety-and-events` (YoleanAgents
+fork), pre-v0.1.0. The controller image is pinned to the
+per-commit CI tag `ghcr.io/yolean/buckety-controller:20260710T113351Z`
+(built by the agents-fork e2e workflow for this commit).
 
 Copied verbatim from upstream's `deploy/kustomize/crd/` and
 `deploy/kustomize/controller/`, with one local edit: the
