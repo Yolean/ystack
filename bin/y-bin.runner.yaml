@@ -96,15 +96,20 @@ buildctl:
     path: bin/buildctl
 
 crane:
-  version: 0.21.7
+  # Pinned below v0.21.6: google/go-containerregistry#2281 narrowed the
+  # insecure-registry heuristic from *.local to *.localhost only, which broke
+  # http access to our *.svc.cluster.local registries (no TLS listener there).
+  # Revisit once builds-registry/prod-registry terminate TLS, or once callers
+  # pass --insecure explicitly.
+  version: 0.21.5
   templates:
     download: https://github.com/google/go-containerregistry/releases/download/v${version}/go-containerregistry_${Os}_${xarch}.tar.gz
     sha256: https://github.com/google/go-containerregistry/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: 63a7dd15168d4dcac37933c7f6745438f2943d5898a1cf7896ad3341d8519bf2
-    darwin_arm64: 1858c55dcd6053fe869bcb0c4ec20666383ddce445ad0f7e15e1e506b1f7fe52
-    linux_amd64: 1a57bc98207fa1c0d04bf760699099e26f8383499bfd55b99c1b919a928a7230
-    linux_arm64: b6ee979d9411dfb05ce35ab9e156fe5de7def11a230764a7856ffa2eb971fa88
+    darwin_amd64: d5ad8d97d7c5407f761b4fd37801044473f58b79a033f6a64e84ce6d010c1b2c
+    darwin_arm64: a41938cdbd8becc59e90f4bb491a557d52dce5681f9812c961854cab706f5f59
+    linux_amd64: 9f823ae5ee25803161110f957b5fd4538f714d40cdf25dacb4914fefafd246bf
+    linux_arm64: 3a47c6da5a0ba1ca7a93def41036d8f262a2160799e5d4ca25dba3cfa47dab41
   archive:
     tool: tar
     path: crane
