@@ -112,19 +112,6 @@ promtool:
     tool: tar
     path: prometheus-${version}.${os}-${arch}/promtool
 
-cue:
-  version: 0.5.0
-  templates:
-    download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
-  sha256:
-    darwin_amd64: e2cede1965afa66dc52de7c1cd461227f4ff924f7a2adc9791cf1a699485409f
-    darwin_arm64: 00fc991977232240893ae36dc852366af859214d6e1b2b9e03e93b8f9f0991a7
-    linux_amd64: 38c9a2f484076aeafd9f522efdee40538c31337539bd8c80a29f5c4077314e53
-    linux_arm64: 735fa1b9bb02ef0ee79dd40c418760687776b44747f43f2e26c3bca4e1fd96f6
-  archive:
-    tool: tar
-    path: cue
-
 git-remote-iap:
   version: 0.5.7
   templates:
