@@ -33,3 +33,15 @@ configMapGenerator:
       app.kubernetes.io/part-of: tekton-pipelines
   namespace: tekton-pipelines
   behavior: merge
+- name: config-defaults
+  literals:
+  # build-checkit's events task alone now takes ~30min; 1h default was getting tight, see
+  # ci-node-half-serial-heavy-tasks
+  - default-timeout-minutes="115"
+  options:
+    disableNameSuffixHash: true
+    labels:
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+  namespace: tekton-pipelines
+  behavior: merge
