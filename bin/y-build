@@ -3,24 +3,69 @@
 set -eo pipefail
 
 # For example: --opt filename=test.Dockerfile
-# --file-output <path> is handled here (not passed to buildctl) and produces
-# a builds JSON like Skaffold and contain do
+# The following flags are handled here like contain build does, not passed verbatim to buildctl:
+#   --file-output <path>   produce a builds JSON like Skaffold does
+#   --output <path>        write image to this path (--output type=... passes through to buildctl)
+#   --format <oci|tarball> format for --output, as in crane pull --format (default oci)
+#   --tarball <path>       shorthand for --output <path> --format tarball
+#   --push=false           skip push to registry
 BUILDCTL_OPTS=""
 FILE_OUTPUT=""
+OUTPUT_PATH=""
+OUTPUT_FORMAT=oci
+PUSH=true
 
 FILENAME=""
+expect=""
 for arg in "$@"; do
-  if [ "$file_output" = "next" ]; then
-    FILE_OUTPUT="$arg"
-    file_output=""
-    continue
-  fi
+  case "$expect" in
+    file-output)
+      FILE_OUTPUT="$arg"; expect=""; continue ;;
+    output)
+      case "$arg" in
+        type=*) BUILDCTL_OPTS="$BUILDCTL_OPTS --output $arg" ;;
+        *) OUTPUT_PATH="$arg" ;;
+      esac
+      expect=""; continue ;;
+    format)
+      OUTPUT_FORMAT="$arg"; expect=""; continue ;;
+    tarball)
+      OUTPUT_PATH="$arg"; OUTPUT_FORMAT=tarball; expect=""; continue ;;
+  esac
   case "$arg" in
     --file-output)
-      file_output=next
+      expect=file-output
       continue ;;
     --file-output=*)
       FILE_OUTPUT="${arg#--file-output=}"
+      continue ;;
+    --output)
+      expect=output
+      continue ;;
+    --output=type=*)
+      BUILDCTL_OPTS="$BUILDCTL_OPTS --output ${arg#--output=}"
+      continue ;;
+    --output=*)
+      OUTPUT_PATH="${arg#--output=}"
+      continue ;;
+    --format)
+      expect=format
+      continue ;;
+    --format=*)
+      OUTPUT_FORMAT="${arg#--format=}"
+      continue ;;
+    --tarball)
+      expect=tarball
+      continue ;;
+    --tarball=*)
+      OUTPUT_PATH="${arg#--tarball=}"
+      OUTPUT_FORMAT=tarball
+      continue ;;
+    --push)
+      PUSH=true
+      continue ;;
+    --push=*)
+      PUSH="${arg#--push=}"
       continue ;;
     --opt)
       opt=true ;;
@@ -34,7 +79,19 @@ for arg in "$@"; do
   esac
   BUILDCTL_OPTS="$BUILDCTL_OPTS $arg"
 done
-[ "$file_output" != "next" ] || (echo "--file-output requires a path argument" && exit 1)
+[ -z "$expect" ] || (echo "--$expect requires a value argument" && exit 1)
+
+case "$OUTPUT_FORMAT" in
+  oci|tarball) ;;
+  *) echo "--format must be oci or tarball, got: $OUTPUT_FORMAT" && exit 1 ;;
+esac
+case "$PUSH" in
+  true|false) ;;
+  *) echo "--push must be true or false, got: $PUSH" && exit 1 ;;
+esac
+if [ "$PUSH" != "true" ] && [ -z "$OUTPUT_PATH" ]; then
+  echo "--push=false requires --output or --tarball" && exit 1
+fi
 
 METADATA_FILE=""
 [ -z "$FILE_OUTPUT" ] || METADATA_FILE=$(mktemp)
@@ -109,7 +166,7 @@ if [ -z "$BUILDKIT_HOST" ]; then
 fi
 [ -z "$REGISTRY_PROBE_CONNECT_TIMEOUT" ] && REGISTRY_PROBE_CONNECT_TIMEOUT=10
 
-if [ "$(curl -s --connect-timeout "$REGISTRY_PROBE_CONNECT_TIMEOUT" http://$BUILDS_REGISTRY/v2/)" != "{}" ]
+if [ "$PUSH" = "true" ] && [ "$(curl -s --connect-timeout "$REGISTRY_PROBE_CONNECT_TIMEOUT" http://$BUILDS_REGISTRY/v2/)" != "{}" ]
 then
   echo "ERROR Skaffold need local access to the builds registry for digest lookup"
   echo "Registry: $BUILDS_REGISTRY"
@@ -136,7 +193,7 @@ fi
 command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
 
 IMAGE=$IMAGE
-case "$IMAGE" in
+[ "$PUSH" != "true" ] || case "$IMAGE" in
   $BUILDS_REGISTRY/* ) ;;
   $BUILDS_REGISTRY:80/* ) ;;
   $PUSH_REGISTRY/* ) ;;
@@ -146,10 +203,19 @@ esac
 
 [ -n "$SOURCE_DATE_EPOCH" ] || SOURCE_DATE_EPOCH=0
 
-OUTPUT="type=image,name=$IMAGE,push=true"
-
-[ "$REWRITE_TIMESTAMP" != "true" ] || OUTPUT="$OUTPUT,rewrite-timestamp=true"
+OUTPUT_ATTRS=""
+[ "$REWRITE_TIMESTAMP" != "true" ] || OUTPUT_ATTRS=",rewrite-timestamp=true"
 [ "$SOURCE_DATE_EPOCH" != "-1" ] || SOURCE_DATE_EPOCH=""
+
+OUTPUTS=""
+[ "$PUSH" != "true" ] || OUTPUTS="--output type=image,name=$IMAGE,push=true$OUTPUT_ATTRS"
+if [ -n "$OUTPUT_PATH" ]; then
+  case "$OUTPUT_FORMAT" in
+    # tar=false to get a layout directory like crane pull --format oci, not a tar of it
+    oci) OUTPUTS="$OUTPUTS --output type=oci,tar=false,name=$IMAGE,dest=$OUTPUT_PATH$OUTPUT_ATTRS" ;;
+    tarball) OUTPUTS="$OUTPUTS --output type=docker,name=$IMAGE,dest=$OUTPUT_PATH$OUTPUT_ATTRS" ;;
+  esac
+fi
 
 BUILD_TAG="$(echo $IMAGE | awk -F/ '{print $NF}' | awk -F@ '{print $1}' | awk -F: '{print $2}')"
 
@@ -190,7 +256,7 @@ SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" y-buildctl \
     $EXPORT_CACHE \
     $BUILDCTL_OPTS \
     $OPT_METADATA_FILE \
-    --output "$OUTPUT"
+    $OUTPUTS
 { set +x; } 2>/dev/null
 
 if [ -n "$FILE_OUTPUT" ]; then
@@ -201,12 +267,20 @@ if [ -n "$FILE_OUTPUT" ]; then
   case "${IMAGE_UNTAGGED##*/}" in
     *:*) IMAGE_NAME="${IMAGE_UNTAGGED%:*}" ;;
   esac
-  jq -c --arg imageName "$IMAGE_NAME" --arg image "$IMAGE_UNTAGGED" --arg platforms "$PLATFORMS" '{
+  # Absolute path because contain resolves relative to the file-output location, we don't
+  OUTPUT_PATH_ABS="$OUTPUT_PATH"
+  case "$OUTPUT_PATH" in
+    ""|/*) ;;
+    *) OUTPUT_PATH_ABS="$PWD/${OUTPUT_PATH#./}" ;;
+  esac
+  jq -c --arg imageName "$IMAGE_NAME" --arg image "$IMAGE_UNTAGGED" --arg platforms "$PLATFORMS" \
+    --arg outputPath "$OUTPUT_PATH_ABS" --arg outputFormat "$OUTPUT_FORMAT" '{
     builds: [{
       imageName: $imageName,
       tag: ($image + "@" + ."containerimage.digest"),
       mediaType: ."containerimage.descriptor".mediaType
-    } + (if $platforms != "" then {platforms: ($platforms | split(","))} else {} end)]
+    } + (if $platforms != "" then {platforms: ($platforms | split(","))} else {} end)
+      + (if $outputPath != "" then {output: {path: $outputPath, format: $outputFormat}} else {} end)]
   }' "$METADATA_FILE" > "$FILE_OUTPUT"
   echo "Build output written to $FILE_OUTPUT:"
   cat "$FILE_OUTPUT"
