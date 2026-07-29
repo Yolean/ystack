@@ -129,7 +129,7 @@ if [ -n "$DOCKERFILE_BASE" ]; then
     stat $DOCKERFILE_BASE >/dev/null;
     stat $DOCKERFILE_BASE.dockerignore >/dev/null || (echo "Missing .dockerignore for $DOCKERFILE_BASE" && exit 1)
     )
-  head -n 1 $FILENAME.dockerignore | grep '*' >/dev/null || (echo "$FILNEAME.dockerignore must start with a * line when using a base" && exit 1)
+  head -n 1 $FILENAME.dockerignore | grep -F '*' >/dev/null || (echo "$FILENAME.dockerignore must start with a * line when using a base" && exit 1)
   DOCKERFILE_TMP=$(mktemp)
   (cd $DOCKERFILE_DIR;
     cat $DOCKERFILE_BASE > $DOCKERFILE_TMP;
@@ -192,7 +192,6 @@ fi
 # Hooks, evaluating reliance on PATH for that
 command -v y-hook-build-pre && cd $BUILD_CONTEXT && y-hook-build-pre
 
-IMAGE=$IMAGE
 [ "$PUSH" != "true" ] || case "$IMAGE" in
   $BUILDS_REGISTRY/* ) ;;
   $BUILDS_REGISTRY:80/* ) ;;
