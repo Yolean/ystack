@@ -3,11 +3,25 @@
 set -eo pipefail
 
 # For example: --opt filename=test.Dockerfile
-BUILDCTL_OPTS="$@"
+# --file-output <path> is handled here (not passed to buildctl) and produces
+# a builds JSON like Skaffold and contain do
+BUILDCTL_OPTS=""
+FILE_OUTPUT=""
 
 FILENAME=""
-for arg in $BUILDCTL_OPTS; do
+for arg in "$@"; do
+  if [ "$file_output" = "next" ]; then
+    FILE_OUTPUT="$arg"
+    file_output=""
+    continue
+  fi
   case "$arg" in
+    --file-output)
+      file_output=next
+      continue ;;
+    --file-output=*)
+      FILE_OUTPUT="${arg#--file-output=}"
+      continue ;;
     --opt)
       opt=true ;;
     filename=*)
@@ -18,7 +32,12 @@ for arg in $BUILDCTL_OPTS; do
     *)
       opt="" ;;
   esac
+  BUILDCTL_OPTS="$BUILDCTL_OPTS $arg"
 done
+[ "$file_output" != "next" ] || (echo "--file-output requires a path argument" && exit 1)
+
+METADATA_FILE=""
+[ -z "$FILE_OUTPUT" ] || METADATA_FILE=$(mktemp)
 
 if [ -n "$FILENAME" ]; then
   stat $FILENAME >/dev/null
@@ -153,6 +172,9 @@ REGISTRY_CACHE_DEFAULT=$(echo $IMAGE | sed "s|[^/]*|$BUILDS_REGISTRY/ystack-buil
 OPT_PLATFORM=""
 [ -z "$PLATFORMS" ] || OPT_PLATFORM="--opt platform=$PLATFORMS"
 
+OPT_METADATA_FILE=""
+[ -z "$METADATA_FILE" ] || OPT_METADATA_FILE="--metadata-file $METADATA_FILE"
+
 echo "Build command:"
 set -x
 SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" y-buildctl \
@@ -167,4 +189,26 @@ SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" y-buildctl \
     $IMPORT_CACHE \
     $EXPORT_CACHE \
     $BUILDCTL_OPTS \
+    $OPT_METADATA_FILE \
     --output "$OUTPUT"
+{ set +x; } 2>/dev/null
+
+if [ -n "$FILE_OUTPUT" ]; then
+  # Same JSON shape as skaffold build --file-output and contain build --file-output:
+  # imageName without tag, tag as pushed ref including digest
+  IMAGE_UNTAGGED="${IMAGE%%@*}"
+  IMAGE_NAME="$IMAGE_UNTAGGED"
+  case "${IMAGE_UNTAGGED##*/}" in
+    *:*) IMAGE_NAME="${IMAGE_UNTAGGED%:*}" ;;
+  esac
+  jq -c --arg imageName "$IMAGE_NAME" --arg image "$IMAGE_UNTAGGED" --arg platforms "$PLATFORMS" '{
+    builds: [{
+      imageName: $imageName,
+      tag: ($image + "@" + ."containerimage.digest"),
+      mediaType: ."containerimage.descriptor".mediaType
+    } + (if $platforms != "" then {platforms: ($platforms | split(","))} else {} end)]
+  }' "$METADATA_FILE" > "$FILE_OUTPUT"
+  echo "Build output written to $FILE_OUTPUT:"
+  cat "$FILE_OUTPUT"
+  echo ""
+fi
