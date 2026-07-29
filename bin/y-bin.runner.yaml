@@ -82,14 +82,14 @@ helm:
     path: ${os}-${arch}/helm
 
 buildctl:
-  version: 0.31.1
+  version: 0.31.2
   templates:
     download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: 5bcd31e9f984369dfd44737a7b717bc2b0bad6f85096bb1a987d5c165c671f75
-    darwin_arm64: c667e3f0be409b832e4f695f927324308523723f876d51d9eacaf05ec2a78138
-    linux_amd64: 1fc78750d0c96bdc18799a3c0b551d6807bd4939e8cd79e357823e467451e16e
-    linux_arm64: a4c9bef205f61c1e4253bdfd196e1db303aca25e8756105d75c6fddfbab7903f
+    darwin_amd64: c99fd17d2f37a0bf025b26601fea6fdcf7831ec9858a1fa63bcacb2e06441a2d
+    darwin_arm64: c386267eab33e79f4a0cb6a59230b71cddbacb5bf9e93fdf2d2682f2b4fa1a18
+    linux_amd64: fbabdb72433a35f5bb646e4cd424bf8567e5d055710cf55840f7af2020640791
+    linux_arm64: 41fba1eed480376934fa4c8177ddd7021036b5168a0eb8e7ab5eccdf75d47a05
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
@@ -171,14 +171,14 @@ cluster:
     linux_arm64: 192efa39a50b34ab410d9b6b4ed3aaa9997ee9d3b53061fd8a3532ce3b000b52
 
 contain:
-  version: 0.9.1
+  version: 0.9.2
   templates:
     download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
   sha256:
-    darwin_amd64: 514d8492f5daf2a406c0f5a835e5c8887aa20bea0be83b6096659215bd559d55
-    darwin_arm64: 04e907d9ad93f3b00bd028f60ababefd5edcdd25e39a4f1f9eb730454097caaf
-    linux_amd64: 38c070ca6e6057d8f8ff91f1d1ecc79f57ffd2338f19a0e6a48456c15e342429
-    linux_arm64: 2ad19485957456a08373b820ec7ba491befe27454f36a57ab420bb1de5b45781
+    darwin_amd64: 9bf22db1eb38ae55d3d2abf404999dca43fa6e7a4343f9dbddb6f2d290010645
+    darwin_arm64: abd3154852287d70438708d66a2d24116eae2f52cb434038b210125f0d763739
+    linux_amd64: 802079774989077ed634b19d15ba0ec8b53318246a0f553bd37e8cf001e02201
+    linux_arm64: e6b4f25c72d127273ab6c938f04dcc45a737941febeceb6b9fb3e346ccee3896
 
 kustomize-traverse:
   version: 0.1.0
