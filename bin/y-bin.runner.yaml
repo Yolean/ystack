@@ -171,14 +171,14 @@ cluster:
     linux_arm64: 192efa39a50b34ab410d9b6b4ed3aaa9997ee9d3b53061fd8a3532ce3b000b52
 
 contain:
-  version: 0.9.2
+  version: 1.1.0
   templates:
     download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
   sha256:
-    darwin_amd64: 9bf22db1eb38ae55d3d2abf404999dca43fa6e7a4343f9dbddb6f2d290010645
-    darwin_arm64: abd3154852287d70438708d66a2d24116eae2f52cb434038b210125f0d763739
-    linux_amd64: 802079774989077ed634b19d15ba0ec8b53318246a0f553bd37e8cf001e02201
-    linux_arm64: e6b4f25c72d127273ab6c938f04dcc45a737941febeceb6b9fb3e346ccee3896
+    darwin_amd64: b9b8bb8b5b624dd00a5104428d3b76b1cb394bf126e35e33a67e61b016e08051
+    darwin_arm64: de6e5e4a39aecb26826978b5681f1806b6d64dd3c62def6ec6dc55747d61c04c
+    linux_amd64: c57bdfe45fdfa31f5203aa9c10bf15a86317e3560c39a9fc96af10d02f0700ac
+    linux_arm64: 786554ee9f0ec0a505b95ff9bcfc6813759514cdbd1d8cdbe33371ffeeaa0917
 
 kustomize-traverse:
   version: 0.1.0
