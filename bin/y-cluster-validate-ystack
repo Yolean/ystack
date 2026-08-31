@@ -15,15 +15,6 @@ done
 
 [ -z "$CONTEXT" ] && echo "Usage: y-cluster-validate-ystack --context=<name>" && exit 1
 
-# Blobstore-specific Deployment name. The same y-s3-api Service is
-# in front of both implementations, so only the rollout/restart
-# checks differ by name.
-BLOBSTORE="${BLOBSTORE:-versitygw}"
-case "$BLOBSTORE" in
-  versitygw|minio) BLOBSTORE_DEPLOY="$BLOBSTORE" ;;
-  *) echo "Unknown BLOBSTORE: $BLOBSTORE (expected: versitygw | minio)" >&2; exit 1 ;;
-esac
-
 k() {
   kubectl --context="$CONTEXT" "$@"
 }
@@ -69,9 +60,9 @@ run_pre_build_checks() {
     && report "gateway ystack ($phase)" "ok" \
     || report "gateway ystack ($phase)" "not found"
 
-  ROLLOUT=$(k -n blobs rollout status "deploy/$BLOBSTORE_DEPLOY" --timeout=5s 2>&1) \
-    && report "$BLOBSTORE_DEPLOY rollout ($phase)" "ok" \
-    || report "$BLOBSTORE_DEPLOY rollout ($phase)" "$ROLLOUT"
+  ROLLOUT=$(k -n blobs rollout status "deploy/versitygw" --timeout=5s 2>&1) \
+    && report "versitygw rollout ($phase)" "ok" \
+    || report "versitygw rollout ($phase)" "$ROLLOUT"
 
   CLUSTER_IP=$(k -n ystack get svc builds-registry -o=jsonpath='{.spec.clusterIP}' 2>/dev/null)
   if [ "$CLUSTER_IP" = "10.43.0.50" ]; then
@@ -134,9 +125,9 @@ run_pre_build_checks "run-1"
 echo "[y-cluster-validate-ystack] Restarting stateful services to validate persistence"
 
 if k get ns blobs >/dev/null 2>&1; then
-  echo "[y-cluster-validate-ystack] Restarting $BLOBSTORE_DEPLOY"
-  k -n blobs rollout restart "deploy/$BLOBSTORE_DEPLOY"
-  k -n blobs rollout status "deploy/$BLOBSTORE_DEPLOY" --timeout=60s
+  echo "[y-cluster-validate-ystack] Restarting versitygw"
+  k -n blobs rollout restart "deploy/versitygw"
+  k -n blobs rollout status "deploy/versitygw" --timeout=60s
 fi
 
 if k get ns ystack >/dev/null 2>&1; then
