@@ -3,7 +3,7 @@ kind: Buckety
 metadata:
   name: builds-registry-bucket
 spec:
-  backend: cluster-objects
+  backend: builds-registry-blobs
   # Friendly, operator-chosen S3 bucket name. The s3 driver
   # creates a bucket with this exact name on versitygw.
   name: ystack-builds-registry
