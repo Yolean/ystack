@@ -14,7 +14,6 @@ if [[ "$ENV_IS_CLEAN" != "true" ]]; then
     TERM="$TERM" \
     PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
     ENV_IS_CLEAN=true \
-    BLOBSTORE="${BLOBSTORE:-}" \
     /bin/bash -lic "$SCRIPT_PATH $*"
 
   exit 0
@@ -26,29 +25,6 @@ echo "$PATH"
 set -eo pipefail
 
 CONFIG=cluster-configs/local-docker
-
-# Blobstore selection. Default versitygw (ystack's default); set
-# BLOBSTORE=minio to swap in the parallel minio bases. Picked up
-# below to choose the registry/buildkit converge entry points and
-# is exported so y-cluster-validate-ystack swaps its deploy/<x>
-# checks in lockstep.
-BLOBSTORE="${BLOBSTORE:-versitygw}"
-case "$BLOBSTORE" in
-  versitygw)
-    REGISTRY_BASE=k3s/60-builds-registry
-    BUILDKIT_BASE=k3s/62-buildkit
-    ;;
-  minio)
-    REGISTRY_BASE=k3s/60-builds-registry-minio-disabled
-    BUILDKIT_BASE=k3s/62-buildkit-minio-disabled
-    ;;
-  *)
-    echo "Unknown BLOBSTORE: $BLOBSTORE (expected: versitygw | minio)" >&2
-    exit 1
-    ;;
-esac
-export BLOBSTORE
-echo "# BLOBSTORE=$BLOBSTORE -> registry=$REGISTRY_BASE buildkit=$BUILDKIT_BASE"
 
 # Host reachability flows from y-cluster's yolean.se/dns-hint-ip
 # annotation on the installed GatewayClass: when guest:80 is in
@@ -108,21 +84,6 @@ y-cluster provision -c "$CONFIG"
 # avoids overwriting an existing label on a misclaimed cluster.
 kubectl --context=local label nodes -l '!yolean.se/cluster' yolean.se/cluster=local
 
-# buckety-controller image is built locally (contain) and not yet
-# pushed to a registry. Sideload the OCI layout into the cluster's
-# containerd so kubelet finds it by tag at IfNotPresent.
-# Override with $BUCKETY_CONTROLLER_OCI if the repo lives elsewhere.
-BUCKETY_CONTROLLER_OCI="${BUCKETY_CONTROLLER_OCI:-$HOME/Yolean/buckety-controller/oci}"
-if [ -d "$BUCKETY_CONTROLLER_OCI" ]; then
-  echo ""
-  echo "# Sideload buckety-controller from $BUCKETY_CONTROLLER_OCI"
-  y-cluster images load "$BUCKETY_CONTROLLER_OCI" --context=local
-else
-  echo "ERROR: buckety-controller OCI layout not found at $BUCKETY_CONTROLLER_OCI;" >&2
-  echo "       build it with (in that repo): contain build --output ./oci --push=false" >&2
-  exit 1
-fi
-
 # --- gateway: just the consumer Gateway resource (CRDs + GatewayClass come from y-cluster provision) ---
 
 echo ""
@@ -133,7 +94,7 @@ y-cluster yconverge --context=local -k k3s/20-gateway/
 
 echo ""
 echo "# Phase 1: base platform (registry + buckety-provisioned kafka topic and S3 bucket)"
-y-cluster yconverge --context=local -k "$REGISTRY_BASE/"
+y-cluster yconverge --context=local -k k3s/60-builds-registry/
 
 echo ""
 echo "# Phase 2: kafka stack"
@@ -141,7 +102,7 @@ y-cluster yconverge --context=local -k k3s/40-kafka/
 
 echo ""
 echo "# Phase 3: build infra"
-y-cluster yconverge --context=local -k "$BUILDKIT_BASE/"
+y-cluster yconverge --context=local -k k3s/62-buildkit/
 
 echo ""
 echo "# Phase 4: prod registry"
@@ -153,7 +114,7 @@ y-cluster yconverge --context=local -k k3s/50-monitoring/
 
 echo ""
 echo "# Phase 6: idempotency proof -- re-converge everything"
-y-cluster yconverge --context=local -k "$BUILDKIT_BASE/"
+y-cluster yconverge --context=local -k k3s/62-buildkit/
 y-cluster yconverge --context=local -k k3s/50-monitoring/
 y-cluster yconverge --context=local -k k3s/61-prod-registry/
 y-cluster yconverge --context=local -k k3s/40-kafka/
