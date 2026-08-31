@@ -12,9 +12,14 @@ Options:
 
 kubefwd itself has to run as root: upstream states it needs sudo for /etc/hosts
 and the loopback aliases, and offers no unprivileged mode. What this script does
-not do is give root the cluster credential. It hands kubefwd a generated
-kubeconfig whose credential plugin is re-invoked as the calling user, so the
-plugin, gcloud and their caches stay out of root.
+not do is let root near your login. Whatever credential plugin the context names
+is run here, as you, and kubefwd gets a kubeconfig holding only the static
+credential it returned. No plugin, no gcloud and no token cache runs as root.
+
+A credential that carries an expiry is not renewed for a running kubefwd, so the
+expiry is printed at startup. That is an hour for a GKE token. Contexts that
+authenticate with client certificates, the usual local cluster setup, and static
+tokens in the kubeconfig do not expire and are passed through untouched.
 
 Defaults added unless present in the arguments:
   -l ystack-kubefwd!=never    skip services opting out
@@ -32,7 +37,7 @@ Dependencies:
 Exit codes:
   0   kubefwd exited normally
   1   usage error
-  2   the kubeconfig context has a credential plugin that is not on PATH
+  2   the context credential could not be resolved into a static one
   10  another kubefwd is already running
 '
 
@@ -69,43 +74,66 @@ version=$(y-bin-download "$YBIN/y-bin.optional.yaml" kubefwd)
 BIN="$YBIN/y-kubefwd-v${version}-bin"
 
 KCONF=$(mktemp)
-trap 'rm -f "$KCONF"' EXIT
+KCONF_STATIC=$(mktemp)
+PLUGIN_ERR=$(mktemp)
+trap 'rm -f "$KCONF" "$KCONF_STATIC" "$PLUGIN_ERR"' EXIT
 kubectl config view --raw --minify --context="$CONTEXT_NAME" --request-timeout=5s > "$KCONF"
 
-# Preflight as yourself, so an expired login is reported here rather than from
-# inside the root process
-kubectl --kubeconfig="$KCONF" --request-timeout=10s get pods >/dev/null
-
-USER_NAME=$(kubectl --kubeconfig="$KCONF" config view -o jsonpath='{.users[0].name}')
 EXEC_CMD=$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.command}')
 
 if [ -n "$EXEC_CMD" ]; then
-  # sudo resets PATH, so the plugin has to be named absolutely
-  if ! EXEC_ABS=$(command -v "$EXEC_CMD"); then
-    echo "ERROR: credential plugin $EXEC_CMD of context $CONTEXT_NAME not found in PATH" >&2
-    exit 2
-  fi
-  EXEC_API=$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.apiVersion}')
+  command -v jq >/dev/null || { echo "ERROR: jq is needed to read the credential plugin output" >&2; exit 2; }
+
+  # The client-go exec protocol, not anything gcloud specific: run the plugin
+  # the context names, once, as the invoking user, and keep only its answer.
   EXEC_ARGS=()
   while IFS= read -r a; do
-    [ -z "$a" ] || EXEC_ARGS+=(--exec-arg="$a")
+    [ -z "$a" ] || EXEC_ARGS+=("$a")
   done <<< "$(kubectl --kubeconfig="$KCONF" config view --raw \
     -o jsonpath='{range .users[0].user.exec.args[*]}{@}{"\n"}{end}')"
+  EXEC_ENV=()
+  while IFS= read -r e; do
+    [ -z "$e" ] || EXEC_ENV+=("$e")
+  done <<< "$(kubectl --kubeconfig="$KCONF" config view --raw \
+    -o jsonpath='{range .users[0].user.exec.env[*]}{.name}={.value}{"\n"}{end}')"
+  EXEC_API=$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.apiVersion}')
+  if [ "$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.provideClusterInfo}')" = "true" ]; then
+    EXEC_ENV+=("KUBERNETES_EXEC_INFO=$(jq -n \
+      --arg api "${EXEC_API:-client.authentication.k8s.io/v1beta1}" \
+      --arg server "$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.clusters[0].cluster.server}')" \
+      --arg ca "$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" \
+      '{apiVersion:$api,kind:"ExecCredential",spec:{cluster:{server:$server,"certificate-authority-data":$ca,config:null},interactive:false}}')")
+  fi
 
-  # Drop back to the invoking user for the credential, so the plugin and the
-  # gcloud it calls never run as root. provideClusterInfo is turned off because
-  # sudo would strip KUBERNETES_EXEC_INFO from the plugin environment anyway.
-  # env restores a PATH holding the plugin siblings: under sudo secure_path,
-  # gke-gcloud-auth-plugin cannot find the gcloud it shells out to.
-  kubectl --kubeconfig="$KCONF" config set-credentials "$USER_NAME" \
-    --exec-command="$(command -v sudo)" \
-    --exec-api-version="${EXEC_API:-client.authentication.k8s.io/v1beta1}" \
-    --exec-interactive-mode=IfAvailable \
-    --exec-provide-cluster-info=false \
-    --exec-arg=-u --exec-arg="$(id -un)" --exec-arg=-H --exec-arg=-- \
-    --exec-arg=/usr/bin/env --exec-arg="PATH=$(dirname "$EXEC_ABS"):/usr/bin:/bin" \
-    --exec-arg="$EXEC_ABS" "${EXEC_ARGS[@]}" >/dev/null
+  # Plugin stderr goes to its own file: merging it into stdout would corrupt the
+  # ExecCredential of any plugin that warns while succeeding
+  if ! CREDENTIAL=$(env "${EXEC_ENV[@]}" "$EXEC_CMD" "${EXEC_ARGS[@]}" 2>"$PLUGIN_ERR"); then
+    echo "ERROR: credential plugin $EXEC_CMD of context $CONTEXT_NAME failed:" >&2
+    cat "$PLUGIN_ERR" >&2
+    exit 2
+  fi
+  TOKEN=$(echo "$CREDENTIAL" | jq -r '.status.token // empty' 2>/dev/null || true) # y-script-lint:disable=or-true # a plugin answering with something other than an ExecCredential is reported below
+  if [ -z "$TOKEN" ]; then
+    echo "ERROR: credential plugin $EXEC_CMD returned no usable token" >&2
+    echo "Only a bearer token can be made static here, not client certificates or a non-ExecCredential answer" >&2
+    cat "$PLUGIN_ERR" >&2
+    exit 2
+  fi
+
+  # A fresh user entry, then re-minify to drop the exec one: editing the exec
+  # block in place needs a dotted config path, which breaks on names with dots
+  kubectl --kubeconfig="$KCONF" config set-credentials y-kubefwd --token="$TOKEN" >/dev/null
+  kubectl --kubeconfig="$KCONF" config set-context "$CONTEXT_NAME" --user=y-kubefwd >/dev/null
+  kubectl --kubeconfig="$KCONF" config view --raw --minify > "$KCONF_STATIC"
+  mv "$KCONF_STATIC" "$KCONF"
+
+  EXPIRY=$(echo "$CREDENTIAL" | jq -r '.status.expirationTimestamp // empty')
+  [ -z "$EXPIRY" ] || echo "# note: this credential expires $EXPIRY, kubefwd loses cluster access then"
 fi
+
+# Preflight with exactly what kubefwd will use, so a bad or expired credential
+# is reported here rather than from inside the root process
+kubectl --kubeconfig="$KCONF" --request-timeout=10s get pods >/dev/null
 
 addargs=()
 [[ "$*" == *-l* ]] || addargs+=(-l "ystack-kubefwd!=never")
