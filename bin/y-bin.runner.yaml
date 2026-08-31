@@ -7,26 +7,27 @@
 
 # NOTE yq must be first in the file because this script depends on it
 yq:
-  version: 4.53.3
+  version: 4.53.6
   sha256:
-    darwin_amd64: b4ba1ecce3c47f00803f4f964de38394326c7a32eb6540616e04fb2935a0f08d
-    darwin_arm64: 877de31753a4dd2401aa048937aa9a7fc4d5f6ce858cf31508c5802954297213
-    linux_amd64: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
-    linux_arm64: 578648e463a11c1b6db6010cbf41eafed6bee79466fcffa1bb446672cf7945ea
+    darwin_amd64: caa513cb04f3804b34d4752f0e0d7904fecb9e7cf1d34081289f83259319a7f6
+    darwin_arm64: cceb0b8d71ea5294334121f8429f33f92b920e7217d904a2f9f35443968ac424
+    linux_amd64: c5f056448f973ae7d39b5401949648a78f2dc1947d6a8eb65be60d5c504b9385
+    linux_arm64: 88a1016bc1d657375a35864e4f44b6f333df8ff97b559f51bba0adcb2169df09
   templates:
     download: https://github.com/mikefarah/yq/releases/download/v${version}/yq_${os}_${arch}
     # Must be parsed based on: https://github.com/mikefarah/yq/releases/download/v${version}/checksums_hashes_order
     # sha256: https://github.com/mikefarah/yq/releases/download/v${version}/checksums
 
 jq:
-  version: 1.7.1
+  version: 1.8.2
   templates:
-    download: https://github.com/stedolan/jq/releases/download/jq-${version}/jq-${osmac}-${arch}
+    download: https://github.com/jqlang/jq/releases/download/jq-${version}/jq-${osmac}-${arch}
+    sha256: https://github.com/jqlang/jq/releases/download/jq-${version}/sha256sum.txt
   sha256:
-    darwin_amd64: 4155822bbf5ea90f5c79cf254665975eb4274d426d0709770c21774de5407443
-    darwin_arm64: 0bbe619e663e0de2c550be2fe0d240d076799d6f8a652b70fa04aea8a8362e8a
-    linux_amd64: 5942c9b0934e510ee61eb3e30273f1b3fe2590df93933a93d7c58b81d19c8ff5
-    linux_arm64: 4dd2d8a0661df0b22f1bb9a1f9830f06b6f3b8f7d91211a1ef5d7c4f06a8b4a5
+    darwin_amd64: e94b266e3c26690550006abe63152b782280f4e14374accdf04cbde844f00bc0
+    darwin_arm64: 2d75340ba57a4b4b4c8708a21c2dc8e958a48aaa8bba13b27f77f6e4c0eca07e
+    linux_amd64: b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f
+    linux_arm64: 8b85c817833814ddca00a144c33705546355afccf0cf39b188f3cdb48b852309
 
 kubectl:
   version: 1.35.6
@@ -57,39 +58,39 @@ kustomize:
     path: kustomize
 
 skaffold:
-  version: 2.21.0
+  version: 2.24.0
   templates:
     download: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}
     sha256: https://storage.googleapis.com/skaffold/releases/v${version}/skaffold-${os}-${arch}.sha256
   sha256:
-    darwin_amd64: 2880e06351c21765fe98ecb67abd41b4a326822ec1ea2bafa1c611ee5e8adcd6
-    darwin_arm64: 6c04f832356f7e840b470485d5a97fc21f4ef73a3cfd3050c067f1c9f68f43df
-    linux_amd64: 255bc19ec6ccd8bca3fd122996d2cafd1af0abf3c3740a5b554931ce7b17a10e
-    linux_arm64: 48edae2fe22b8aad4e5f67ee4e9708bc242f2c3399128eaf1c2b1b506a90df40
+    darwin_amd64: d1fdc22b3ca5d99590943d6c476c494bd7862147af002fee7ab1b0237f90d926
+    darwin_arm64: b30ff1735839adf96f3116a0e5ca63ddad37e33a3d6123a5c209ad77ea389c8b
+    linux_amd64: 702344081860a587c57937cd55dfa2e70f124c05d6fb845319832ee23fd144a8
+    linux_arm64: a8331e599223ad9df489b4d956704505b888c24b0d89abf26a0fe61c58d10fc5
 
 helm:
-  version: 3.21.3
+  version: 3.21.4
   templates:
     download: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz
     sha256: https://get.helm.sh/helm-v${version}-${os}-${arch}.tar.gz.sha256sum
   sha256:
-    darwin_amd64: 76d0db4730b05d3d625eee11e80f0721b32b4d8422f4e5d093de6337bf3ac9f8
-    darwin_arm64: 19879a848cad832b7a1ac24b767a481d20fb3b95ab53a220849649422ada144e
-    linux_amd64: 15e041a93a590dce8100f39385cd98c84a765c9e36aeeb9e2dc6ff9e4769e2e0
-    linux_arm64: 67f58155079ff9ffab98ba5c88daff0ed9b542f3a4732f5dd426dde7dd0f5244
+    darwin_amd64: 9173d05edf9592c6be1d0412ffafd935448dfc7a63c2bc732b8c67e55503e8a8
+    darwin_arm64: 6e0bf5eb6daafc2b1ec34bb5ba04ef103f3afc16192fb19805c2924d7ea1033f
+    linux_amd64: 61f88ab166748cb19604d7884cb100ae9ccb13804ddeb98e08af167eacbb6a14
+    linux_arm64: b54c04b4e0b2540bbdc08c17a121dab70e9a2ed0de5705528fec68a5fd3b85a7
   archive:
     tool: tar
     path: ${os}-${arch}/helm
 
 buildctl:
-  version: 0.31.2
+  version: 0.32.2
   templates:
     download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: c99fd17d2f37a0bf025b26601fea6fdcf7831ec9858a1fa63bcacb2e06441a2d
-    darwin_arm64: c386267eab33e79f4a0cb6a59230b71cddbacb5bf9e93fdf2d2682f2b4fa1a18
-    linux_amd64: fbabdb72433a35f5bb646e4cd424bf8567e5d055710cf55840f7af2020640791
-    linux_arm64: 41fba1eed480376934fa4c8177ddd7021036b5168a0eb8e7ab5eccdf75d47a05
+    darwin_amd64: c1e230aec90b79d6a70c28a24f7b13a0427596f95110427ae906621d9011838d
+    darwin_arm64: a404ae44f4ea5c533d22363543c873f94429ebc803da2e2a73b3b4f051cdd92a
+    linux_amd64: 2975d0f651ad96ba8b80b9992ae1f9a964f4408569af5b6dc36544165c3926af
+    linux_arm64: 9e8f46bf309ec0ab262967be5538a4dbe06be756a82621f98253933bac5dcf92
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
@@ -115,14 +116,14 @@ crane:
     path: crane
 
 esbuild:
-  version: 0.28.1
+  version: 0.28.2
   templates:
     download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
   sha256:
-    darwin_amd64: 4cc582287781c171f5ac2d216dc15ab1c40bc83bff59803211a68b66e0c762cb
-    darwin_arm64: 5d64cc9bc527d598450b5f8d47ff293eb9f3aea38dd9eff67fd55d228c5ccb43
-    linux_amd64: 9ed00ab5330c94386f3273eda99a1fb0e8f37cfd6cb5270e4ad2fe3527da3546
-    linux_arm64: 2145e9e686c95ee47c1181f83f272f0ff95820e52d7736fdcd9eeb106fd6456a
+    darwin_amd64: abb6a7a895aaf2cc0df36fecc3bf0042479ffec51a643a056d54e9109f27db55
+    darwin_arm64: 1980cde09749094452b20d36ff267585ccb3f72749c7bc97291cd9996ccf5a2a
+    linux_amd64: 9573bb2233aab0f9ea7647d5cca9726113cc1768de61d66b17267f4db84488f6
+    linux_arm64: a96dbfa41d3ef5dbd1ef22b1c10d5187be9267e86093a870f06402a7ec931596
   archive:
     tool: tar
     path: package/bin/esbuild
@@ -148,14 +149,14 @@ yarn:
     linux_arm64: 05ca3451a6f78a68b08c13b4b0b582cb22220b90ccd00160bffff80224d8c50d
 
 cue:
-  version: 0.17.0
+  version: 0.17.1
   templates:
     download: https://github.com/cue-lang/cue/releases/download/v${version}/cue_v${version}_${os}_${arch}.tar.gz
   sha256:
-    darwin_amd64: f308f5189b5fd233d5af807a7d86d4106ec73c247852eff50245820af49b4b46
-    darwin_arm64: d49d4f97ec1db68f1b3e527a78be06a28f3f1b1ca7b5e6902a605450162e5314
-    linux_amd64: e22219a1cb520ab3d660a486ed2222bb7b8e9cb9502a951ce6b8ac668695713f
-    linux_arm64: f4218d82d2903700ee44615172642146f49c8ddcc3809a46fce6cbd0e5baefa6
+    darwin_amd64: 80aa026c3f47400c7bfc228b3422fd56b7c6c5ea4d70686f8d8f01ced716d3de
+    darwin_arm64: 64921403f012a97f89494c03605db2fbf7d9daa77dc2631819ac4406cb2e8074
+    linux_amd64: a39b0c97695069d95d276d99be0f5dbabb081d801bfdc9ba49b76efaf94e2369
+    linux_arm64: 0d729be30d52c952ca38fc9dcb692caa09d8463fa0b64df5781312779183fbcd
   archive:
     tool: tar
     path: cue
@@ -171,27 +172,14 @@ cluster:
     linux_arm64: 192efa39a50b34ab410d9b6b4ed3aaa9997ee9d3b53061fd8a3532ce3b000b52
 
 contain:
-  version: 0.9.2
+  version: 1.1.0
   templates:
     download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
   sha256:
-    darwin_amd64: 9bf22db1eb38ae55d3d2abf404999dca43fa6e7a4343f9dbddb6f2d290010645
-    darwin_arm64: abd3154852287d70438708d66a2d24116eae2f52cb434038b210125f0d763739
-    linux_amd64: 802079774989077ed634b19d15ba0ec8b53318246a0f553bd37e8cf001e02201
-    linux_arm64: e6b4f25c72d127273ab6c938f04dcc45a737941febeceb6b9fb3e346ccee3896
-
-kustomize-traverse:
-  version: 0.1.0
-  templates:
-    download: https://github.com/Yolean/kustomize-traverse/releases/download/v${version}/kustomize-traverse-${os}-${arch}.tar.gz
-  sha256:
-    darwin_amd64: bdca1fe29afcbc9817557046a3de2661f9ce5044aec3086a263e2724200bb580
-    darwin_arm64: 67acdd588a37cb213afad319ef18b67090214ee1d3bad06a469137cb5ef2b2b8
-    linux_amd64: e643fe6a162ef22ef8ecffc960e0fc6c76741613098b3f583c16d9206a4f3628
-    linux_arm64: d5e564c54d043350e928fb366a4ab004b09381e1aa3f07c750b598bc2bf2b85c
-  archive:
-    tool: tar
-    path: kustomize-traverse
+    darwin_amd64: b9b8bb8b5b624dd00a5104428d3b76b1cb394bf126e35e33a67e61b016e08051
+    darwin_arm64: de6e5e4a39aecb26826978b5681f1806b6d64dd3c62def6ec6dc55747d61c04c
+    linux_amd64: c57bdfe45fdfa31f5203aa9c10bf15a86317e3560c39a9fc96af10d02f0700ac
+    linux_arm64: 786554ee9f0ec0a505b95ff9bcfc6813759514cdbd1d8cdbe33371ffeeaa0917
 
 npx:
   version: 0.2.1
