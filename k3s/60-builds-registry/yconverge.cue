@@ -6,10 +6,10 @@ import (
 	"yolean.se/ystack/k3s/30-blobs:blobs"
 )
 
-// y-kustomize is retired from this dep chain: kafka topic and
-// blobs bucket are both provisioned via Buckety. blobs (the
-// versitygw Deployment + Service) is still needed because the
-// s3 buckety driver talks to its admin/data endpoint.
+// buckety provisions both of the registry's backing resources: the
+// kafka topic and the s3 bucket. blobs is a separate dep because the
+// s3 driver needs versitygw's endpoint reachable to create the
+// bucket, so the Deployment and Service must be up first.
 _dep_buckety: buckety.step
 _dep_blobs:   blobs.step
 

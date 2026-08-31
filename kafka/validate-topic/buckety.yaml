@@ -3,7 +3,7 @@ kind: Buckety
 metadata:
   name: validate-ystack
 spec:
-  backend: cluster-kafka
+  backend: acceptance-validation-stream
   # Topic name is operator-chosen; the validate-ystack script
   # hardcodes "y-cluster-validate-ystack", so the Buckety pins
   # it explicitly here rather than defaulting to metadata.name.

@@ -3,7 +3,7 @@ kind: Buckety
 metadata:
   name: builds-registry-topic
 spec:
-  backend: cluster-kafka
+  backend: builds-registry-stream
   # Friendly, operator-chosen topic name on the broker — the COSI
   # blocker that motivated buckety. Resolves verbatim.
   name: ystack.builds-registry.stream.json
