@@ -1,0 +1,66 @@
+# Backends are named by USE CASE, not by provider or by cluster
+# (buckety-controller#18, and cluster-g2/buckety in checkit does the same).
+# The name is the portable contract: a Buckety CR names the use case it wants
+# and the same CR resolves to versitygw here and to GCS on g2, so the object
+# can be byte-identical across clusters. A backend called "cluster-objects"
+# would have made every CR name the local implementation instead.
+#
+# Duplicating one physical backend into several named instances is deliberate
+# and expected: the two kadm entries below are the same broker, kept apart so
+# each CR's spec.backend states what the topic is for, and so moving one use
+# case to another broker is a config change rather than a CR rewrite.
+#
+# No `defaults:` map anywhere here. defaults resolve ${backend.X} substitutions
+# in Buckety.spec.name templates and never reach the driver; every ystack CR
+# spells its name as a literal, so a defaults entry would be inert config that
+# reads as if it did something. Add one only alongside a name template that
+# actually references it.
+#
+# Operator-owned driver PARAMETER defaults go in a `parameters:` map on the
+# entry (merged under each CR's spec.parameters, CR wins per key). None of the
+# ystack use cases needs one yet: partitions are per-CR, and the object-store
+# family knobs (versioning, lifecycle) are not something a local builds cache
+# wants. That is the place for them when they are.
+
+backends:
+
+# The Kafka topic behind the builds registry's stream of image metadata.
+- name: builds-registry-stream
+  driver: kadm
+  config:
+    seedBrokers:
+    - y-bootstrap.kafka.svc.cluster.local:9092
+    clientID: buckety-controller
+
+# The acceptance suite's produce/consume probe topic. Same broker as
+# builds-registry-stream today; separate because it is a different use case
+# with a different lifetime - it exists to be written and read by
+# y-cluster-validate-ystack, and nothing else should end up on it.
+- name: acceptance-validation-stream
+  driver: kadm
+  config:
+    seedBrokers:
+    - y-bootstrap.kafka.svc.cluster.local:9092
+    clientID: buckety-controller
+
+# The S3 bucket behind the builds registry's blob storage.
+#
+# Deliberately NOT named site-userdata-blobs, which is what checkit's g2
+# backend is called: that name belongs to per-site end-user blobs, and this
+# bucket holds build artifacts. When cluster-local starts hosting sites, the
+# right move is to ADD a site-userdata-blobs entry pointing at this same
+# versitygw - at which point checkit's per-site CRs become byte-identical here,
+# which is the whole point of the naming contract.
+- name: builds-registry-blobs
+  driver: s3
+  config:
+    implementation: versitygw
+    endpoint: http://y-s3-api.blobs.svc.cluster.local:9000
+    region: us-east-1
+    forcePathStyle: true
+    # Root credentials are sourced from env vars the controller
+    # Deployment populates from the local-copy versitygw-creds
+    # Secret (see kustomization.yaml's secretGenerator and
+    # deployment-patch.yaml).
+    accessKeyID:     ${VERSITYGW_ROOT_ACCESSKEY}
+    secretAccessKey: ${VERSITYGW_ROOT_SECRETKEY}

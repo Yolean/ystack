@@ -9,18 +9,21 @@ Converge principles:
   `1*` bases use `--server-side=true --force-conflicts` (required for large CRDs).
 - Between digit groups (0→1, 1→2, etc.), wait for all deployment rollouts.
 - After `1*`, validate that CRDs are registered and served.
-- Before `6*`, verify y-kustomize serves real content via
-  `curl http://y-kustomize:8944/openapi.yaml` (live spec from y-cluster serve;
-  secrets from `3*` and `4*` need time to propagate to the watch).
 
 Each base is applied with `kubectl apply -k` — no label selectors, no multi-pass.
 
 Bases:
 
-- 0*: namespaces + y-kustomize empty secret init (never deleted)
-- 1*: Gateway API, CRDs
-- 2*: y-kustomize deployment, gateway
-- 3*: blobs (real y-kustomize blobs secret)
-- 4*: kafka (real y-kustomize kafka secret)
+- 0*: namespaces
+- 1*: Gateway API, CRDs, buckety-controller (operator + Buckety/BucketyAccess CRDs)
+- 2*: gateway
+- 3*: blobs (versitygw)
+- 4*: kafka
 - 5*: monitoring
-- 6*: registries, buildkit (depend on y-kustomize HTTP for remote bases)
+- 6*: registries, buildkit
+
+Per-resource backend provisioning (Kafka topics, S3 buckets) is
+authored as `Buckety` + `BucketyAccess` resources consumed by the
+`buckety-controller` Deployment in `1*`. See the consumer
+kustomizations under `registry/builds-{bucket,topic}/` and
+`kafka/validate-topic/`.

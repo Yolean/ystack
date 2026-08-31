@@ -2,14 +2,16 @@ package builds_registry
 
 import (
 	"yolean.se/ystack/yconverge/verify"
-	"yolean.se/ystack/k3s/31-blobs-y-kustomize:blobs_y_kustomize"
-	"yolean.se/ystack/k3s/41-kafka-y-kustomize:kafka_y_kustomize"
-	"yolean.se/ystack/k3s/29-y-kustomize:y_kustomize"
+	"yolean.se/ystack/k3s/15-buckety:buckety"
+	"yolean.se/ystack/k3s/30-blobs:blobs"
 )
 
-_dep_blobs:     blobs_y_kustomize.step
-_dep_kafka:     kafka_y_kustomize.step
-_dep_kustomize: y_kustomize.step
+// buckety provisions both of the registry's backing resources: the
+// kafka topic and the s3 bucket. blobs is a separate dep because the
+// s3 driver needs versitygw's endpoint reachable to create the
+// bucket, so the Deployment and Service must be up first.
+_dep_buckety: buckety.step
+_dep_blobs:   blobs.step
 
 step: verify.#Step & {
 	checks: [
@@ -24,6 +26,12 @@ step: verify.#Step & {
 			command:     "kubectl --context=$CONTEXT get --raw /api/v1/namespaces/ystack/services/builds-registry:80/proxy/v2/_catalog"
 			timeout:     "30s"
 			description: "registry v2 API responds"
+		},
+		{
+			kind:        "exec"
+			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write"
+			timeout:     "10s"
+			description: "update /etc/hosts for gateway routes"
 		},
 	]
 }
