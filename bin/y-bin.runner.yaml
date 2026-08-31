@@ -115,14 +115,14 @@ crane:
     path: crane
 
 esbuild:
-  version: 0.28.1
+  version: 0.28.2
   templates:
     download: https://registry.npmjs.org/@esbuild/${os}-${xarm}64/-/${os}-${xarm}64-${version}.tgz
   sha256:
-    darwin_amd64: 4cc582287781c171f5ac2d216dc15ab1c40bc83bff59803211a68b66e0c762cb
-    darwin_arm64: 5d64cc9bc527d598450b5f8d47ff293eb9f3aea38dd9eff67fd55d228c5ccb43
-    linux_amd64: 9ed00ab5330c94386f3273eda99a1fb0e8f37cfd6cb5270e4ad2fe3527da3546
-    linux_arm64: 2145e9e686c95ee47c1181f83f272f0ff95820e52d7736fdcd9eeb106fd6456a
+    darwin_amd64: abb6a7a895aaf2cc0df36fecc3bf0042479ffec51a643a056d54e9109f27db55
+    darwin_arm64: 1980cde09749094452b20d36ff267585ccb3f72749c7bc97291cd9996ccf5a2a
+    linux_amd64: 9573bb2233aab0f9ea7647d5cca9726113cc1768de61d66b17267f4db84488f6
+    linux_arm64: a96dbfa41d3ef5dbd1ef22b1c10d5187be9267e86093a870f06402a7ec931596
   archive:
     tool: tar
     path: package/bin/esbuild
