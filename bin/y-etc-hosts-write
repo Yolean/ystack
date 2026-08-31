@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+[ -z "${DEBUG:-}" ] || set -x
+set -eo pipefail
+
+YHELP='y-etc-hosts-write - Replace /etc/hosts with content read from stdin
+
+Usage: y-etc-hosts-write < newhosts
+
+The single privileged step of the /etc/hosts tooling. It takes no arguments, so
+the NOPASSWD rule y-cluster-sudoers grants for it cannot be pointed at another
+path the way a rule for a flag-taking binary can.
+
+Refuses input that is empty or has no 127.0.0.1 entry, and swaps the file in
+with rename(2) so a reader never sees a half-written hosts file.
+
+Environment:
+  Y_ETC_HOSTS  Target path (default: /etc/hosts)
+
+Dependencies:
+
+Exit codes:
+  0            Written, or already identical
+  1            Usage error
+  2            Input refused by the safety checks
+  3            Target not writable (run through sudo)
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+esac
+
+if [ $# -ne 0 ]; then
+  echo "ERROR: takes no arguments, reads the new file from stdin" >&2
+  exit 1
+fi
+
+TARGET="${Y_ETC_HOSTS:-/etc/hosts}"
+TARGET_DIR="$(dirname "$TARGET")"
+
+if [ ! -w "$TARGET" ] || [ ! -w "$TARGET_DIR" ]; then
+  echo "ERROR: $TARGET is not writable as $(id -un), run through sudo" >&2
+  exit 3
+fi
+
+# Same directory as the target, so the swap below is a rename within one filesystem
+TMP=$(mktemp "$TARGET_DIR/.hosts.XXXXXX")
+trap 'rm -f "$TMP"' EXIT
+
+cat > "$TMP"
+
+if [ ! -s "$TMP" ]; then
+  echo "ERROR: refusing to write an empty $TARGET" >&2
+  exit 2
+fi
+if ! grep -qE '^[[:space:]]*127\.0\.0\.1[[:space:]]' "$TMP"; then
+  echo "ERROR: refusing input without a 127.0.0.1 entry" >&2
+  exit 2
+fi
+
+if cmp -s "$TMP" "$TARGET"; then
+  echo "# $TARGET already up to date"
+  exit 0
+fi
+
+chmod 0644 "$TMP"
+mv "$TMP" "$TARGET"
+echo "# wrote $TARGET"

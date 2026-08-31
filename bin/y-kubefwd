@@ -1,34 +1,149 @@
 #!/usr/bin/env bash
-[ -z "$DEBUG" ] || set -x
+[ -z "${DEBUG:-}" ] || set -x
 set -eo pipefail
-YBIN="$(dirname $0)"
+YBIN="$(dirname "$0")"
 
-ctx=$1
-case $ctx in
-  "--context="*) shift 1 ;;
-  *) echo "Initial arg must be --context=" && exit 1 ;;
+YHELP='y-kubefwd - Port-forward cluster services, escalating the forwarder only
+
+Usage: y-kubefwd --context=NAME [kubefwd args]
+
+Options:
+  --context=NAME  kubeconfig context name (required, must be the first argument)
+
+kubefwd itself has to run as root: upstream states it needs sudo for /etc/hosts
+and the loopback aliases, and offers no unprivileged mode. What this script does
+not do is let root near your login. Whatever credential plugin the context names
+is run here, as you, and kubefwd gets a kubeconfig holding only the static
+credential it returned. No plugin, no gcloud and no token cache runs as root.
+
+A credential that carries an expiry is not renewed for a running kubefwd, so the
+expiry is printed at startup. That is an hour for a GKE token. Contexts that
+authenticate with client certificates, the usual local cluster setup, and static
+tokens in the kubeconfig do not expire and are passed through untouched.
+
+Defaults added unless present in the arguments:
+  -l ystack-kubefwd!=never    skip services opting out
+  --domain=NAME               for contexts other than local
+
+Examples:
+  y-kubefwd --context=local svc -n ystack -m 443:59443
+
+Environment:
+  KUBECONFIG               required
+  YSTACK_BUILDKIT_REQUIRE  when true, require buildkitd before forwarding
+
+Dependencies:
+
+Exit codes:
+  0   kubefwd exited normally
+  1   usage error
+  2   the context credential could not be resolved into a static one
+  10  another kubefwd is already running
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
 esac
 
+ctx="${1:-}"
+case "$ctx" in
+  --context=*) shift ;;
+  *) echo "ERROR: initial arg must be --context=NAME" >&2; exit 1 ;;
+esac
 CONTEXT_NAME="${ctx#--context=}"
 
-[ "$YSTACK_BUILDKIT_REQUIRE" != "true" ] || [ $(id -u) -eq 0 ] || [ -z "$ctx" ] || y-buildkitd-available $ctx
+[ -z "$KUBECONFIG" ] && echo "ERROR: this script requires a KUBECONFIG" >&2 && exit 1
 
-version=$(y-bin-download $YBIN/y-bin.optional.yaml kubefwd)
-
-# Fail early if there's already a kubefwd process running
-# corrupt /etc/hosts and cause DNS resolution failures
-if [ $(id -u) -ne 0 ] && pgrep -f "y-kubefwd-v.*-bin" >/dev/null 2>&1; then
-  echo "ERROR: An existing kubefwd process is already running:"
-  pgrep -la "y-kubefwd-v.*-bin"
-  echo "Kill it first: sudo pkill -f 'y-kubefwd-v.*-bin'"
+if [ "$(id -u)" -eq 0 ]; then
+  echo "ERROR: run y-kubefwd as yourself, it escalates the forwarder on its own" >&2
   exit 1
 fi
 
-[ $(id -u) -eq 0 ] || kubectl $ctx get pods >/dev/null
-[ $(id -u) -ne 0 ] && echo "su privileges required for kubefwd" && exec sudo -E $0 $ctx "$@"
+[ "${YSTACK_BUILDKIT_REQUIRE:-}" != "true" ] || y-buildkitd-available "$ctx"
 
-addargs="$ctx"
-[[ "$*" == *-l* ]] || addargs="$addargs -l ystack-kubefwd!=never"
-[[ "$CONTEXT_NAME" == "local" ]] || [[ "$*" == *--domain* ]] || addargs="$addargs --domain=$CONTEXT_NAME"
+# A second kubefwd would fight over the same /etc/hosts block
+if pgrep -f "y-kubefwd-v.*-bin" >/dev/null 2>&1; then
+  echo "ERROR: a kubefwd process is already running:" >&2
+  pgrep -l -f "y-kubefwd-v.*-bin" >&2
+  echo "Kill it first: sudo pkill -f 'y-kubefwd-v.*-bin'" >&2
+  exit 10
+fi
 
-$YBIN/y-kubefwd-v${version}-bin $addargs "$@" || exit $?
+version=$(y-bin-download "$YBIN/y-bin.optional.yaml" kubefwd)
+BIN="$YBIN/y-kubefwd-v${version}-bin"
+
+KCONF=$(mktemp)
+KCONF_STATIC=$(mktemp)
+PLUGIN_ERR=$(mktemp)
+trap 'rm -f "$KCONF" "$KCONF_STATIC" "$PLUGIN_ERR"' EXIT
+kubectl config view --raw --minify --context="$CONTEXT_NAME" --request-timeout=5s > "$KCONF"
+
+EXEC_CMD=$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.command}')
+
+if [ -n "$EXEC_CMD" ]; then
+  command -v jq >/dev/null || { echo "ERROR: jq is needed to read the credential plugin output" >&2; exit 2; }
+
+  # The client-go exec protocol, not anything gcloud specific: run the plugin
+  # the context names, once, as the invoking user, and keep only its answer.
+  EXEC_ARGS=()
+  while IFS= read -r a; do
+    [ -z "$a" ] || EXEC_ARGS+=("$a")
+  done <<< "$(kubectl --kubeconfig="$KCONF" config view --raw \
+    -o jsonpath='{range .users[0].user.exec.args[*]}{@}{"\n"}{end}')"
+  EXEC_ENV=()
+  while IFS= read -r e; do
+    [ -z "$e" ] || EXEC_ENV+=("$e")
+  done <<< "$(kubectl --kubeconfig="$KCONF" config view --raw \
+    -o jsonpath='{range .users[0].user.exec.env[*]}{.name}={.value}{"\n"}{end}')"
+  EXEC_API=$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.apiVersion}')
+  if [ "$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.users[0].user.exec.provideClusterInfo}')" = "true" ]; then
+    EXEC_ENV+=("KUBERNETES_EXEC_INFO=$(jq -n \
+      --arg api "${EXEC_API:-client.authentication.k8s.io/v1beta1}" \
+      --arg server "$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.clusters[0].cluster.server}')" \
+      --arg ca "$(kubectl --kubeconfig="$KCONF" config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" \
+      '{apiVersion:$api,kind:"ExecCredential",spec:{cluster:{server:$server,"certificate-authority-data":$ca,config:null},interactive:false}}')")
+  fi
+
+  # Plugin stderr goes to its own file: merging it into stdout would corrupt the
+  # ExecCredential of any plugin that warns while succeeding
+  if ! CREDENTIAL=$(env "${EXEC_ENV[@]}" "$EXEC_CMD" "${EXEC_ARGS[@]}" 2>"$PLUGIN_ERR"); then
+    echo "ERROR: credential plugin $EXEC_CMD of context $CONTEXT_NAME failed:" >&2
+    cat "$PLUGIN_ERR" >&2
+    exit 2
+  fi
+  TOKEN=$(echo "$CREDENTIAL" | jq -r '.status.token // empty' 2>/dev/null || true) # y-script-lint:disable=or-true # a plugin answering with something other than an ExecCredential is reported below
+  if [ -z "$TOKEN" ]; then
+    echo "ERROR: credential plugin $EXEC_CMD returned no usable token" >&2
+    echo "Only a bearer token can be made static here, not client certificates or a non-ExecCredential answer" >&2
+    cat "$PLUGIN_ERR" >&2
+    exit 2
+  fi
+
+  # A fresh user entry, then re-minify to drop the exec one: editing the exec
+  # block in place needs a dotted config path, which breaks on names with dots
+  kubectl --kubeconfig="$KCONF" config set-credentials y-kubefwd --token="$TOKEN" >/dev/null
+  kubectl --kubeconfig="$KCONF" config set-context "$CONTEXT_NAME" --user=y-kubefwd >/dev/null
+  kubectl --kubeconfig="$KCONF" config view --raw --minify > "$KCONF_STATIC"
+  mv "$KCONF_STATIC" "$KCONF"
+
+  EXPIRY=$(echo "$CREDENTIAL" | jq -r '.status.expirationTimestamp // empty')
+  [ -z "$EXPIRY" ] || echo "# note: this credential expires $EXPIRY, kubefwd loses cluster access then"
+fi
+
+# Preflight with exactly what kubefwd will use, so a bad or expired credential
+# is reported here rather than from inside the root process
+kubectl --kubeconfig="$KCONF" --request-timeout=10s get pods >/dev/null
+
+addargs=()
+[[ "$*" == *-l* ]] || addargs+=(-l "ystack-kubefwd!=never")
+[[ "$CONTEXT_NAME" == "local" ]] || [[ "$*" == *--domain* ]] || addargs+=("--domain=$CONTEXT_NAME")
+
+case " $* " in
+  *" -n "*|*" --namespace"*|*" -A "*|*" --all-namespaces "*) ;;
+  *) echo "# note: no namespace given, kubefwd $version starts in idle mode with its REST API enabled" ;;
+esac
+
+# Only the forwarder is escalated, and without -E: root gets no KUBECONFIG, no
+# HOME and no PATH of yours, just the generated kubeconfig above.
+sudo -- "$BIN" -c "$KCONF" "${addargs[@]}" "$@"

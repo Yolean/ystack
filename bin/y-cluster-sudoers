@@ -50,7 +50,10 @@ rules() {
 $u ALL=(root) NOPASSWD: $YBIN/y-localhost *
 
 # y-k8s-ingress-hosts: /etc/hosts management ($u)
-$u ALL=(root) NOPASSWD: $YBIN/y-k8s-ingress-hosts-v*-bin *
+# Argument-free on purpose: the rule this replaced covered the
+# k8s-ingress-hosts binary with any flags, and its -host-file flag
+# turned that into a write-any-file-as-root grant.
+$u ALL=(root) NOPASSWD: $YBIN/y-etc-hosts-write
 EOF
   done
 }
