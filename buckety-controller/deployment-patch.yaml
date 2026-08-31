@@ -7,14 +7,11 @@ spec:
     spec:
       containers:
       - name: controller
-        # ystack has no cert-manager; disable the webhook server.
-        # Per-driver parameter validation moves to the reconcile
-        # loop and surfaces on Buckety.status.conditions.
-        # See buckety-controller PR #3 / commit cb45545.
-        args:
-        - "-c"
-        - "/etc/buckety"
-        - "--enable-webhook=false"
+        # args are NOT patched: the base already passes -c /etc/buckety, and
+        # the webhook runs with the certgen-minted cert that
+        # release-tls-selfsigned provides. The base mounts that Secret
+        # optional:true, so the Pod starts before the Jobs finish and picks
+        # the cert up when it lands.
         env:
         # Sourced for the s3 backend's envsubst:"true" fields in
         # buckety-controller.yaml. See secretGenerator

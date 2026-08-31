@@ -3,9 +3,40 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: buckety
 resources:
+# The namespace IS ours to create, unlike cluster-g2/buckety in checkit which
+# takes it as a precondition: ystack converges local clusters from nothing, so
+# a base that assumed an existing namespace could not be applied by acceptance.
 - namespace.yaml
-- upstream/crd
-- upstream/controller
+# Upstream release base + self-signed webhook TLS, by git ref rather than a
+# vendored copy. Vendoring is reserved for what y-site-generate converges
+# unattended; a backend base like this one is applied by yconverge from a
+# checkout that already needs the network for images, so a transient fetch
+# failure is a retry, not an outage.
+#
+# release-tls-selfsigned = release + webhook-certgen. It carries the image pin
+# (20260729T151707Z, digest 0b083f26), so there is nothing to bump here
+# separately - the ref IS the version.
+#
+# 9afdccb is the same ref cluster-g2/buckety pins, and is chosen for the two
+# defects the checkit #7555 rollout hit in production:
+#   - a condition message no longer drives a status patch. A persistently
+#     failing reconcile fed its own watch at ~18/s, because the provider error
+#     went verbatim into Ready and GCS mints a fresh errorId per 403, so every
+#     message was a real change and the exponential limiter - which governs
+#     requeues, not watch events - never applied.
+#   - the first bind of a freshly created service account counts as
+#     provisioning, not failure: IAM has not propagated the member yet and the
+#     provider reports that as a 400.
+# Neither is gcs-only in nature; both are reconciler behaviour we would meet on
+# any driver that can fail repeatedly. Supersedes v0.1.1 (eb0ce42).
+#
+# The webhook is ENABLED. ystack has no cert-manager, which is why PR #80
+# originally passed --enable-webhook=false, and buckety-controller#5c7ccf5 was
+# written to remove that excuse - it cites this repo by name. Without admission
+# validation, bad parameters, immutability violations, unresolvable name
+# templates and refused adoptions surface as Ready=False on an object that was
+# accepted, instead of failing the apply where yconverge would report them.
+- github.com/Yolean/buckety-controller/deploy/kustomize/release-tls-selfsigned?ref=9afdccb4daa57f01b41c52fdd475f8dba943efb0
 secretGenerator:
 - name: buckety-controller-config
   files:
