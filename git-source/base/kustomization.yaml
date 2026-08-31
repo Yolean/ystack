@@ -9,4 +9,4 @@ resources:
 images:
 - name: gitea/gitea
   newName: ghcr.io/yolean/gitea
-  newTag: 1.27.0-rootless@sha256:414ba5b2b1163480e9ed4213a989cd798579cfa88582a2359303273009b2b852
+  newTag: 1.27.3-rootless@sha256:1c17ecaead42eb3b5391553d8708103a4beb0e86edf5b9ebc1eb269c318845f2
