@@ -1,44 +1,68 @@
 #!/usr/bin/env bash
-[ -z "$DEBUG" ] || set -x
+[ -z "${DEBUG:-}" ] || set -x
 set -eo pipefail
-YBIN="$(dirname $0)"
+YBIN="$(dirname "$0")"
 
-[ -z "$KUBECONFIG" ] && echo "This script requires a KUBECONFIG" && exit 1
+YHELP='y-k8s-ingress-hosts - Sync /etc/hosts with cluster ingress and gateway hosts
 
-CTX=""
-CHECK=false
-ENSURE=false
-EXPLICIT_HOST_IP=""
-PASSTHROUGH=()
+Usage: y-k8s-ingress-hosts --context=NAME [options]
 
-while [ $# -gt 0 ]; do
-  case "$1" in
-    -h|--help)
-      cat >&2 <<EOF
-Usage: y-k8s-ingress-hosts [flags]
+Options:
+  --context=NAME   kubeconfig context name (required)
+  -write           write the entries to the hosts file
+  -check           report drift without writing (never escalates)
+  --ensure         check, then write if needed
+  --host-ip=IP     override IP for all entries (otherwise resolved from
+                   the GatewayClass yolean.se/dns-hint-ip annotation)
 
-Flags:
-  --context=NAME        kubeconfig context name (required)
-  -write                rewrite host file
-  -check|--check        check if /etc/hosts includes required entries (no sudo)
-  --ensure              check, then write if needed (combines -check and -write)
-  --host-ip=IP          override IP for all entries (otherwise resolved from
-                        the GatewayClass yolean.se/dns-hint-ip annotation)
-  -h, --help            show this help
+Cluster reads and the rendering of the new hosts file both run as the invoking
+user. Only the swap of /etc/hosts is escalated, via y-etc-hosts-write, which
+takes no arguments. Nothing here runs kubectl or the k8s-ingress-hosts binary
+as root.
 
 If --host-ip is not given, resolution walks (in order):
   1. Gateway/ystack.ystack -> spec.gatewayClassName -> GatewayClass
      metadata.annotations[yolean.se/dns-hint-ip]
   2. Any GatewayClass carrying yolean.se/dns-hint-ip (used when no
-     consumer Gateway/ystack.ystack exists, e.g. y-cluster's
+     consumer Gateway/ystack.ystack exists, e.g. the y-cluster
      appliance flow where the GatewayClass is the only artefact).
   3. Gateway/ystack.ystack metadata.annotations[yolean.se/override-ip]
      (legacy, pre-dates the dns-hint-ip contract).
 y-cluster provision stamps the dns-hint-ip annotation when the
 host forwards guest:80.
-EOF
-      exit 0 ;;
+
+Environment:
+  KUBECONFIG       required
+  Y_HOST_IP        same as --host-ip
+  Y_ETC_HOSTS      target hosts file (default: /etc/hosts)
+
+Dependencies:
+
+Exit codes:
+  0                Up to date, written, or no entries to write
+  1                Usage error, or -check found drift without --ensure
+  3                The k8s-ingress-hosts binary failed
+'
+
+case "${1:-}" in
+  help) echo "$YHELP"; exit 0 ;;
+  --help) echo "$YHELP"; exit 0 ;;
+  -h) echo "$YHELP"; exit 0 ;;
+esac
+
+[ -z "$KUBECONFIG" ] && echo "ERROR: this script requires a KUBECONFIG" >&2 && exit 1
+
+CTX=""
+CHECK=false
+ENSURE=false
+WRITE=false
+EXPLICIT_HOST_IP=""
+PASSTHROUGH=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
     --context=*) CTX="${1#*=}"; shift ;;
+    -write|--write) WRITE=true; shift ;;
     -check|--check) CHECK=true; shift ;;
     --ensure) ENSURE=true; shift ;;
     --host-ip=*) EXPLICIT_HOST_IP="${1#*=}"; shift ;;
@@ -55,10 +79,13 @@ EOF
   esac
 done
 
-[ -z "$CTX" ] && echo "Required: --context=NAME" && exit 1
+[ -z "$CTX" ] && echo "ERROR: required: --context=NAME" >&2 && exit 1
+
+HOSTS_FILE="${Y_ETC_HOSTS:-/etc/hosts}"
 
 CONTEXT_KUBECONFIG=$(mktemp)
-trap "rm -f $CONTEXT_KUBECONFIG" EXIT
+NEW_HOSTS=$(mktemp)
+trap 'rm -f "$CONTEXT_KUBECONFIG" "$NEW_HOSTS"' EXIT
 kubectl config view --raw --minify --context="$CTX" --request-timeout=5s > "$CONTEXT_KUBECONFIG"
 
 # Resolve the host-side dial IP, in priority order:
@@ -96,7 +123,7 @@ if [ -z "$HOST_IP" ]; then
     -o go-template='{{range .items}}{{$ip := index .metadata.annotations "yolean.se/dns-hint-ip"}}{{if $ip}}{{.metadata.name}}={{$ip}}{{"\n"}}{{end}}{{end}}' \
     2>/dev/null || true) # y-script-lint:disable=or-true # no GatewayClasses is a normal pre-install state
   DISTINCT_IPS=$(echo "$HINT_LIST" | awk -F= 'NF==2 && $2!="" {print $2}' | sort -u)
-  IP_COUNT=$(echo "$DISTINCT_IPS" | grep -c .)
+  IP_COUNT=$(echo "$DISTINCT_IPS" | grep -c . || true) # y-script-lint:disable=or-true # grep -c prints 0 but exits 1 with no matches, which is the no-annotation case
   if [ "$IP_COUNT" = "1" ]; then
     HOST_IP="$DISTINCT_IPS"
     GC_NAME=$(echo "$HINT_LIST" | awk -F= 'NF==2 && $2!="" {print $1; exit}')
@@ -118,16 +145,24 @@ if [ -n "$HOST_IP" ]; then
   PASSTHROUGH+=("-override-ip" "$HOST_IP")
 fi
 
-version=$(y-bin-download $YBIN/y-bin.optional.yaml k8s-ingress-hosts)
+version=$(y-bin-download "$YBIN/y-bin.optional.yaml" k8s-ingress-hosts)
+BIN="$YBIN/y-k8s-ingress-hosts-v${version}-bin"
+
+echo "# reading k8s ingress resources..."
+if ! RENDERED=$("$BIN" -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" 2>&1); then
+  echo "ERROR: $BIN failed:" >&2
+  echo "$RENDERED" >&2
+  exit 3
+fi
+ENTRIES=$(echo "$RENDERED" | grep -v '^#' || true) # y-script-lint:disable=or-true # grep exits 1 when the binary emitted comments only, which is the no-entries case handled below
 
 if $CHECK || $ENSURE; then
-  NEEDED=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" 2>/dev/null | grep -v '^#')
   STALE=0
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     EXPECTED_IP=$(echo "$line" | awk '{print $1}')
     HOST=$(echo "$line" | awk '{print $2}')
-    ACTUAL=$(grep -E "^[^#]*[[:space:]]$HOST([[:space:]]|$)" /etc/hosts 2>/dev/null || true) # y-script-lint:disable=or-true # grep exits 1 on no match -- expected for a missing-host check
+    ACTUAL=$(grep -E "^[^#]*[[:space:]]$HOST([[:space:]]|$)" "$HOSTS_FILE" 2>/dev/null || true) # y-script-lint:disable=or-true # grep exits 1 on no match -- expected for a missing-host check
     if [ -z "$ACTUAL" ]; then
       echo "Missing: $line"
       STALE=1
@@ -136,46 +171,46 @@ if $CHECK || $ENSURE; then
       echo "Stale: $HOST has $ACTUAL_IP, expected $EXPECTED_IP"
       STALE=1
     fi
-  done <<< "$NEEDED"
+  done <<< "$ENTRIES"
   if [ $STALE -eq 0 ]; then
-    echo "# /etc/hosts is up to date"
+    echo "# $HOSTS_FILE is up to date"
     exit 0
   fi
   if ! $ENSURE; then
-    echo "# /etc/hosts needs updating. Run with -write or --ensure to fix."
+    echo "# $HOSTS_FILE needs updating. Run with -write or --ensure to fix."
     exit 1
   fi
-  echo "# /etc/hosts needs updating, writing ..."
-  PASSTHROUGH+=("-write")
+  echo "# $HOSTS_FILE needs updating, writing ..."
+  WRITE=true
 fi
 
-# Guard: don't write an empty block that clears existing entries.
-# Preview without -write to check if there are entries.
-_PREVIEW_ARGS=()
-for _a in "${PASSTHROUGH[@]}"; do
-  [ "$_a" = "-write" ] || _PREVIEW_ARGS+=("$_a")
-done
-echo "# reading k8s ingress resources..."
-_PREVIEW=$($YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${_PREVIEW_ARGS[@]}" 2>/dev/null | grep -v '^#')
-if [ -z "$_PREVIEW" ]; then
-  echo "# no ingress/gateway entries found, skipping write to preserve existing /etc/hosts"
+# Without -write/-check/--ensure this is a preview, like the binary itself
+if ! $WRITE; then
+  echo "$RENDERED"
   exit 0
 fi
 
-# One-line stdout log when this invocation will actually mutate
-# /etc/hosts (i.e. -write is in PASSTHROUGH, set either explicitly
-# by the caller or appended above by --ensure on detected drift).
-# Useful as a converge-trace breadcrumb so a yconverge exec check
-# that ran y-k8s-ingress-hosts is visibly attributable.
-WRITE_MODE=false
-for _a in "${PASSTHROUGH[@]}"; do
-  [ "$_a" = "-write" ] && WRITE_MODE=true
-done
-if $WRITE_MODE; then
-  HOST_COUNT=$(echo "$_PREVIEW" | wc -l | tr -d ' ')
-  echo "y-k8s-ingress-hosts: writing $HOST_COUNT host entries to /etc/hosts"
+# Guard: an empty render would otherwise clear the managed block
+if [ -z "$ENTRIES" ]; then
+  echo "# no ingress/gateway entries found, skipping write to preserve existing $HOSTS_FILE"
+  exit 0
 fi
 
-[ $(id -u) -ne 0 ] && exec sudo $YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}"
+HOST_COUNT=$(echo "$ENTRIES" | wc -l | tr -d ' ')
+echo "y-k8s-ingress-hosts: writing $HOST_COUNT host entries to $HOSTS_FILE"
 
-$YBIN/y-k8s-ingress-hosts-v${version}-bin -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" || exit $?
+# Render as the invoking user: the binary merges its managed block into a copy,
+# and only that copy is handed to the privileged step.
+cp "$HOSTS_FILE" "$NEW_HOSTS"
+"$BIN" -kubeconfig "$CONTEXT_KUBECONFIG" -host-file "$NEW_HOSTS" -write "${PASSTHROUGH[@]}" >/dev/null
+
+if cmp -s "$NEW_HOSTS" "$HOSTS_FILE"; then
+  echo "# $HOSTS_FILE already up to date"
+  exit 0
+fi
+
+if [ "$HOSTS_FILE" = "/etc/hosts" ] && [ "$(id -u)" -ne 0 ]; then
+  sudo "$YBIN/y-etc-hosts-write" < "$NEW_HOSTS"
+else
+  Y_ETC_HOSTS="$HOSTS_FILE" "$YBIN/y-etc-hosts-write" < "$NEW_HOSTS"
+fi
