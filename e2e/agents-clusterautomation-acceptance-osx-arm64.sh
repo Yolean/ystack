@@ -29,13 +29,48 @@ set -eo pipefail
 # this test exercises the same flow as -osx-amd64.
 CONFIG=cluster-configs/local-docker
 
-cleanup() {
+KEEP=false
+KEEP_ON_FAILURE=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    # Leave the cluster up when the run ends, so it can be poked at
+    # (kubectl, y-build, the Gateway on :80) without re-provisioning.
+    --keep) KEEP=true; shift ;;
+    --keep-on-failure) KEEP_ON_FAILURE=true; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
+
+# Unconditional teardown. Both the pre-run wipe and the default EXIT
+# path go through here; only the EXIT path consults --keep/--keep-on-
+# failure, because a kept cluster from a *previous* run must still be
+# removed before this run provisions.
+teardown_cluster() {
   echo "# Cleaning up cluster ..."
   y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
 }
+
+keep_notice() {
+  echo "# Cluster left up for inspection ($1)."
+  echo "#   kubectl --context=local get pods -A"
+  echo "#   Manual cleanup: y-cluster teardown -c $CONFIG"
+}
+
+cleanup() {
+  local rc=$?
+  if [ "$KEEP" = "true" ]; then
+    keep_notice "--keep, rc=$rc"
+    return
+  fi
+  if [ "$KEEP_ON_FAILURE" = "true" ] && [ "$rc" -ne 0 ]; then
+    keep_notice "--keep-on-failure, rc=$rc"
+    return
+  fi
+  teardown_cluster
+}
 trap cleanup EXIT
 
-cleanup
+teardown_cluster
 
 lsof -iTCP:80 -iTCP:443 -sTCP:LISTEN -P -n >/dev/null 2>&1 && echo "port 80 and 443 must be available for local cluster vm to bind to" && exit 1
 
