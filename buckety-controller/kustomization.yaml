@@ -14,11 +14,12 @@ resources:
 # failure is a retry, not an outage.
 #
 # release-tls-selfsigned = release + webhook-certgen. It carries the image pin
-# (20260729T151707Z, digest 0b083f26), so there is nothing to bump here
+# (20260904T064507Z, digest 19e3172a), so there is nothing to bump here
 # separately - the ref IS the version.
 #
-# 9afdccb is the same ref cluster-g2/buckety pins, and is chosen for the two
-# defects the checkit #7555 rollout hit in production:
+# v0.2.0 (11059b8) is the first tag carrying the fixes for the two defects the
+# checkit #7555 rollout hit in production, which is why we previously pinned an
+# untagged main commit (9afdccb, the same ref cluster-g2/buckety pinned):
 #   - a condition message no longer drives a status patch. A persistently
 #     failing reconcile fed its own watch at ~18/s, because the provider error
 #     went verbatim into Ready and GCS mints a fresh errorId per 403, so every
@@ -30,13 +31,21 @@ resources:
 # Neither is gcs-only in nature; both are reconciler behaviour we would meet on
 # any driver that can fail repeatedly. Supersedes v0.1.1 (eb0ce42).
 #
+# v0.2.0 also narrows the controller ClusterRole: bucketies drop to
+# get/list/watch/update/patch, and create/delete remain only on
+# bucketyaccesses, which the controller mints itself. Every ystack Buckety is
+# applied by yconverge, never by the controller, so nothing here wants a verb
+# it lost. The upstream bases now set `namespace: buckety` themselves, so the
+# `namespace:` above states the same thing twice rather than being the only
+# thing putting these resources in the right place.
+#
 # The webhook is ENABLED. ystack has no cert-manager, which is why PR #80
 # originally passed --enable-webhook=false, and buckety-controller#5c7ccf5 was
 # written to remove that excuse - it cites this repo by name. Without admission
 # validation, bad parameters, immutability violations, unresolvable name
 # templates and refused adoptions surface as Ready=False on an object that was
 # accepted, instead of failing the apply where yconverge would report them.
-- github.com/Yolean/buckety-controller/deploy/kustomize/release-tls-selfsigned?ref=9afdccb4daa57f01b41c52fdd475f8dba943efb0
+- github.com/Yolean/buckety-controller/deploy/kustomize/release-tls-selfsigned?ref=11059b8d529220b2b40793b814edcbe73fe58a4d
 secretGenerator:
 - name: buckety-controller-config
   files:
