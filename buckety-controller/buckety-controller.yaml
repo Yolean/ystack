@@ -6,7 +6,7 @@
 # would have made every CR name the local implementation instead.
 #
 # Duplicating one physical backend into several named instances is deliberate
-# and expected: the two kadm entries below are the same broker, kept apart so
+# and expected: every kadm entry below is the same broker, kept apart so
 # each CR's spec.backend states what the topic is for, and so moving one use
 # case to another broker is a config change rather than a CR rewrite.
 #
@@ -37,6 +37,26 @@ backends:
 # with a different lifetime - it exists to be written and read by
 # y-cluster-validate-ystack, and nothing else should end up on it.
 - name: acceptance-validation-stream
+  driver: kadm
+  config:
+    seedBrokers:
+    - y-bootstrap.kafka.svc.cluster.local:9092
+    clientID: buckety-controller
+
+# Application usecases for topics, same backend
+- name: userdata-stream
+  driver: kadm
+  config:
+    seedBrokers:
+    - y-bootstrap.kafka.svc.cluster.local:9092
+    clientID: buckety-controller
+- name: backend-messaging-stream
+  driver: kadm
+  config:
+    seedBrokers:
+    - y-bootstrap.kafka.svc.cluster.local:9092
+    clientID: buckety-controller
+- name: observability-stream
   driver: kadm
   config:
     seedBrokers:
