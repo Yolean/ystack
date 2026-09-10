@@ -1,5 +1,5 @@
 # syntax=docker.io/docker/dockerfile:1.7.1
-FROM --platform=$TARGETPLATFORM ubuntu:26.04@sha256:b7f48194d4d8b763a478a621cdc81c27be222ba2206ca3ca6bc42b49685f3d9e \
+FROM --platform=$TARGETPLATFORM ubuntu:26.04@sha256:513c074113a871b51a8d16ab445c88779d6452d937a164fb5cc479f32668a41d \
   as base
 
 RUN set -ex; \
