@@ -9,7 +9,7 @@ RUN set -ex; \
   ); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
-  runDeps='ca-certificates curl git jq unzip findutils patch xz-utils'; \
+  runDeps='ca-certificates curl git jq unzip findutils patch xz-utils libatomic1'; \
   buildDeps='gpg apt-transport-https'; \
   apt-get update -o APT::Update::Error-Mode=any; \
   apt-get install -y $runDeps $buildDeps --no-install-recommends; \
