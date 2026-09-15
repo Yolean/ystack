@@ -33,19 +33,41 @@ CONFIG=cluster-configs/local-docker
 # Gateway -> gatewayClassName -> GatewayClass annotation to find
 # it. No env var, no per-cluster operator setup.
 
+KEEP=false
 KEEP_ON_FAILURE=false
 while [ $# -gt 0 ]; do
   case "$1" in
+    # Leave the cluster up when the run ends, so it can be poked at
+    # (kubectl, y-build, the Gateway on :80) without re-provisioning.
+    --keep) KEEP=true; shift ;;
     --keep-on-failure) KEEP_ON_FAILURE=true; shift ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
+# Unconditional teardown. Both the pre-run wipe and the default EXIT
+# path go through here; only the EXIT path consults --keep/--keep-on-
+# failure, because a kept cluster from a *previous* run must still be
+# removed before this run provisions.
+teardown_cluster() {
+  echo "# Cleaning up cluster ..."
+  y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
+}
+
+keep_notice() {
+  echo "# Cluster left up for inspection ($1)."
+  echo "#   kubectl --context=local get pods -A"
+  echo "#   Manual cleanup: y-cluster teardown -c $CONFIG"
+}
+
 cleanup() {
   local rc=$?
+  if [ "$KEEP" = "true" ]; then
+    keep_notice "--keep, rc=$rc"
+    return
+  fi
   if [ "$KEEP_ON_FAILURE" = "true" ] && [ "$rc" -ne 0 ]; then
-    echo "# Acceptance failed (rc=$rc); cluster left up for inspection."
-    echo "# Manual cleanup: y-cluster teardown -c $CONFIG"
+    keep_notice "--keep-on-failure, rc=$rc"
     return
   fi
   # Default: teardown on every EXIT (success or failure).
@@ -54,25 +76,13 @@ cleanup() {
   # a window for post-mortem inspection without leaving stale VMs
   # around forever. --keep-on-failure is the manual opt-in until
   # that timed-keep mode lands.
-  echo "# Cleaning up cluster ..."
-  y-cluster teardown -c "$CONFIG" || true # y-script-lint:disable=or-true # best-effort cleanup in EXIT trap
-  # The acceptance flow uses the in-cluster y-kustomize Deployment via
-  # the qemu hostfwd 8944. If 8944 is still bound on the host after
-  # teardown, a leftover host-local `y-cluster serve` from a downstream
-  # user's run (or a developer poking at bin/acceptance-y-kustomize-local)
-  # would block the next provision's hostfwd from binding. Probe and
-  # best-effort stop -- not fatal if the binding is something else
-  # entirely.
-  if ss -lnt 'sport = :8944' 2>/dev/null | grep -q ':8944 '; then
-    echo "# Port 8944 still in use; attempting host-local y-cluster serve stop"
-    y-cluster serve stop || true # y-script-lint:disable=or-true # best-effort
-  fi
+  teardown_cluster
 }
 trap cleanup EXIT
 
 # --- acceptance tests begin here ---
 
-cleanup
+teardown_cluster
 
 # --- provision (no converge) ---
 #
@@ -101,27 +111,14 @@ echo ""
 echo "# ystack Gateway resource"
 y-cluster yconverge --context=local -k k3s/20-gateway/
 
-# --- y-kustomize served by the in-cluster Deployment (no host-local serve) ---
-#
-# k3s/29-y-kustomize applies a LoadBalancer Service on port 8944 that
-# ServiceLB binds on the node. cluster-configs/local-qemu/y-cluster-provision.yaml
-# adds host:8944 -> guest:8944 to PortForwards, so the host reaches the
-# in-cluster Deployment via 127.0.0.1:8944. /etc/hosts maps
-# `y-kustomize -> 127.0.0.1` (y-k8s-ingress-hosts walks the dummy
-# y-kustomize HTTPRoute hostname).
-#
-# Downstream users that want to run y-cluster serve locally can do so
-# via `y-cluster serve -c y-kustomize/` -- see
-# bin/acceptance-y-kustomize-local for the standalone test of that path.
-
 # --- progressive convergence: proves DAG resolves deps without include/exclude ---
 
 echo ""
-echo "# Phase 1: base platform (registry + y-kustomize serving)"
+echo "# Phase 1: base platform (registry + buckety-provisioned kafka topic and S3 bucket)"
 y-cluster yconverge --context=local -k k3s/60-builds-registry/
 
 echo ""
-echo "# Phase 2: kafka stack (transitive deps through y-kustomize)"
+echo "# Phase 2: kafka stack"
 y-cluster yconverge --context=local -k k3s/40-kafka/
 
 echo ""

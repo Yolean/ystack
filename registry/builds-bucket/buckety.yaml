@@ -1,0 +1,13 @@
+apiVersion: buckety.yolean.se/v1alpha1
+kind: Buckety
+metadata:
+  name: builds-registry-bucket
+spec:
+  backend: builds-registry-blobs
+  # Friendly, operator-chosen S3 bucket name. The s3 driver
+  # creates a bucket with this exact name on versitygw.
+  name: ystack-builds-registry
+  retentionPolicy: Retain
+  defaultAccess:
+    role: ReadWrite
+    credentialsSecretName: builds-registry-bucket

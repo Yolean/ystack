@@ -11,7 +11,6 @@ resources:
 - ../../registry/generic
 - ../../registry/gateway
 - ../../blobs-versitygw/defaultsecret
-- ../../registry/builds-prep
 - ../../registry/builds-bucket
 - ../../registry/builds-topic
 
