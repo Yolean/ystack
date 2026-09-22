@@ -16,7 +16,7 @@ step: verify.#Step & {
 		// TODO pending https://github.com/Yolean/y-cluster/issues/11
 		{
 			kind:        "exec"
-			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write || echo 'WARNING: /etc/hosts update failed (may need manual sudo)'"
+			command:     "y-k8s-ingress-hosts --context=$CONTEXT -write"
 			timeout:     "10s"
 			description: "update /etc/hosts for gateway routes"
 		},

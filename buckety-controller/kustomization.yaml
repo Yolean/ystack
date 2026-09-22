@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: buckety
+resources:
+# The namespace IS ours to create, unlike cluster-g2/buckety in checkit which
+# takes it as a precondition: ystack converges local clusters from nothing, so
+# a base that assumed an existing namespace could not be applied by acceptance.
+- namespace.yaml
+# Upstream release base + self-signed webhook TLS, by git ref rather than a
+# vendored copy. Vendoring is reserved for what y-site-generate converges
+# unattended; a backend base like this one is applied by yconverge from a
+# checkout that already needs the network for images, so a transient fetch
+# failure is a retry, not an outage.
+#
+# release-tls-selfsigned = release + webhook-certgen. It carries the image pin
+# (20260904T064507Z, digest 19e3172a), so there is nothing to bump here
+# separately - the ref IS the version.
+#
+# v0.2.0 (11059b8) is the first tag carrying the fixes for the two defects the
+# checkit #7555 rollout hit in production, which is why we previously pinned an
+# untagged main commit (9afdccb, the same ref cluster-g2/buckety pinned):
+#   - a condition message no longer drives a status patch. A persistently
+#     failing reconcile fed its own watch at ~18/s, because the provider error
+#     went verbatim into Ready and GCS mints a fresh errorId per 403, so every
+#     message was a real change and the exponential limiter - which governs
+#     requeues, not watch events - never applied.
+#   - the first bind of a freshly created service account counts as
+#     provisioning, not failure: IAM has not propagated the member yet and the
+#     provider reports that as a 400.
+# Neither is gcs-only in nature; both are reconciler behaviour we would meet on
+# any driver that can fail repeatedly. Supersedes v0.1.1 (eb0ce42).
+#
+# v0.2.0 also narrows the controller ClusterRole: bucketies drop to
+# get/list/watch/update/patch, and create/delete remain only on
+# bucketyaccesses, which the controller mints itself. Every ystack Buckety is
+# applied by yconverge, never by the controller, so nothing here wants a verb
+# it lost. The upstream bases now set `namespace: buckety` themselves, so the
+# `namespace:` above states the same thing twice rather than being the only
+# thing putting these resources in the right place.
+#
+# The webhook is ENABLED. ystack has no cert-manager, which is why PR #80
+# originally passed --enable-webhook=false, and buckety-controller#5c7ccf5 was
+# written to remove that excuse - it cites this repo by name. Without admission
+# validation, bad parameters, immutability violations, unresolvable name
+# templates and refused adoptions surface as Ready=False on an object that was
+# accepted, instead of failing the apply where yconverge would report them.
+- github.com/Yolean/buckety-controller/deploy/kustomize/release-tls-selfsigned?ref=11059b8d529220b2b40793b814edcbe73fe58a4d
+secretGenerator:
+- name: buckety-controller-config
+  files:
+  - buckety-controller.yaml
+# Local copy of versitygw root creds for the s3 backend. Same
+# example values as blobs-versitygw/defaultsecret/ — the
+# versitygw-server Secret is in the blobs namespace and Secrets
+# don't cross namespaces; the controller Pod needs these as env
+# vars at startup for envsubst on the s3 backend config.
+- name: versitygw-creds
+  literals:
+  - root-accesskey=YstackEXAMPLEKEY
+  - root-secretkey=github.com/Yolean/ystack-EXAMPLE
+patches:
+- path: clusterrolebinding-patch.yaml
+- path: deployment-patch.yaml
