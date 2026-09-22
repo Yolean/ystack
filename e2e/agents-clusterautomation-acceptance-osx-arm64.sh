@@ -14,6 +14,7 @@ if [[ "$ENV_IS_CLEAN" != "true" ]]; then
     SHELL="/bin/zsh" \
     TERM="$TERM" \
     PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+    Y_CLUSTER_BIN="$Y_CLUSTER_BIN" \
     ENV_IS_CLEAN=true \
     /bin/zsh -ilc "$SCRIPT_PATH $*"
 
