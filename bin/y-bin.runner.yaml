@@ -194,8 +194,8 @@ npx:
 uv:
   version: 0.12.19
   templates:
-    download: https://github.com/astral-sh/uv/releases/download/${version}/uv-${aarch}-$([ ${os} = darwin ] && echo apple-darwin || echo unknown-linux-gnu).tar.gz
-    sha256: https://github.com/astral-sh/uv/releases/download/${version}/uv-${aarch}-$([ ${os} = darwin ] && echo apple-darwin || echo unknown-linux-gnu).tar.gz.sha256
+    download: https://github.com/astral-sh/uv/releases/download/${version}/uv-${aarch}-${ostriple}.tar.gz
+    sha256: https://github.com/astral-sh/uv/releases/download/${version}/uv-${aarch}-${ostriple}.tar.gz.sha256
   sha256:
     darwin_amd64: cb5fa57bafe68fc0fb94b17f06bee0b0b9a7feb94ccbd110445afa0696e39273
     darwin_arm64: a9a8df1eedeb192f2e47e40e2faabfb387db4b850209118786d42f89dde3e0ba
@@ -203,4 +203,4 @@ uv:
     linux_arm64: 0804e9b164c64b6914182d5920c08551958a095986f10a3731056df701126436
   archive:
     tool: tar
-    path: uv-${aarch}-$([ ${os} = darwin ] && echo apple-darwin || echo unknown-linux-gnu)/uv
+    path: uv-${aarch}-${ostriple}/uv
