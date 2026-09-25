@@ -6,7 +6,7 @@ namespace: ystack
 images:
 - name: moby/buildkit:rootless
   newName: ghcr.io/yolean/buildkit
-  newTag: v0.31.1-rootless@sha256:946cf909534b789c9b84af75e6d4f8cb23c3b9cb387daec5ba0f4878a3e4647c
+  newTag: v0.33.0-rootless@sha256:80b15f0735e87bab7bf59ec4d695dfb4a7cfb25521cf56dc75d6f256285b63ef
 
 resources:
 - service.yaml
