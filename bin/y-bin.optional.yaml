@@ -177,14 +177,14 @@ shellcheck:
     path: shellcheck-v${version}/shellcheck
 
 bun:
-  version: 1.0.31
+  version: 1.4.2
   templates:
     download: https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-${os}-${aarch64}.zip
   sha256:
-    darwin_amd64: da1902808760742888110cce8bf7168b83f04b84a166bdaa4671e7c6c28bf77f
-    darwin_arm64: d30f95a754a46776ebc791c93a9dfabc40f82bf0d63e8e30f3eb588b994780e9
-    linux_amd64: 67c78e162a1d984fd5ad8cbc81e8c96e5064707b29a4e6a68386a47e233fa041
-    linux_arm64: 4c00f8d5395532eb76163968f0518905ff11ecc20c967b6ce514d12ea170bd3e
+    darwin_amd64: 80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012
+    darwin_arm64: 90987a3a16d7db556d886ac3d551e7b6d3edf0a1cf43acaed622e8676be1d12f
+    linux_amd64: 36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913
+    linux_arm64: 54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7
   archive:
     tool: zip
     path: bun-${os}-${aarch64}/bun
