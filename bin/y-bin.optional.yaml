@@ -49,14 +49,14 @@ container-structure-test:
     linux_arm64: 5a77d3d9fddec7187265a4a45ec7a04cfee454dbc56c59df468a3d2e9e61e683
 
 kubie:
-  version: 0.25.1
+  version: 0.28.0
   templates:
-    download: https://github.com/sbstp/kubie/releases/download/v${version}/kubie-${os}-${arch}
+    download: https://github.com/kubie-org/kubie/releases/download/v${version}/kubie-${os}-${arch}
   sha256:
-    darwin_amd64: 98d44cb0b920167709de74d1bbe3d5327ac0e6965cb559d15e28b04f3e5cbbbe
-    darwin_arm64: 63a9ecebb7d7453c302eb2d915ddd8b62e89103d56503e5fc5339bc5fc66c6de
-    linux_amd64: bfda2327d045da96408a1b3e02a201eaefbb208852e3e89cb114b2bdf640478c
-    linux_arm64: 20280f60451878b8534af13521a243ae3d4e735829f78e76e33e6e002e6fe12b
+    darwin_amd64: 5d1ea93a84a75c955b99c2486a95a74d7be7d28825c3ecc3c951453a398a1165
+    darwin_arm64: d5e757c5cc608fefb7450dd4d395aaf9fc6a52f194af220c9a1fe7ed38570960
+    linux_amd64: 73c33bf140e3a6bf4cb603c371d1189f5bcce85ccc4e48fcfef9cd64642ffead
+    linux_arm64: 04e85711d515d2a81998677d2cdfd6e3d8943dd050b6cd1a5d29ee837b47913e
 
 fzf:
   version: 0.66.1
