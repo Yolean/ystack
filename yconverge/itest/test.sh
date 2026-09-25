@@ -220,16 +220,22 @@ kubectl --context="$CTX" -n default delete configmap example-replace-dependent >
 
 _OUT=$(mktemp /tmp/yconverge-itest-out.XXXXXX)
 
-# --- assert: indirection output shows referenced path ---
+# --- assert: indirection inherits the base's dependencies ---
 
 echo ""
-echo "[cue itest] Indirection output must reference the base directory"
+echo "[cue itest] Indirection must inherit the base's dependencies, not apply the base as a step"
 y-cluster yconverge --context="$CTX" -k yconverge/itest/example-indirect/ 2>&1 | tee "$_OUT"
-# yconverge progress lines reference the base by relpath without a
-# `/yconverge.cue` suffix; example-indirect's kustomization.yaml
-# pulls example-configmap as a kustomize resource, and the dep
-# walker must surface that as a yconverge progress line.
-grep -q 'yconverge dependency .*example-configmap' "$_OUT"
+# example-indirect's kustomization.yaml pulls example-configmap as a
+# kustomize resource. Since y-cluster 0.6.0 the base is not applied as
+# a separate step (it was applied twice); the overlay inherits the
+# base's dependencies, here example-namespace, and progress lines
+# reference directories by relpath without a `/yconverge.cue` suffix.
+grep -q 'yconverge dependency yconverge/itest/example-namespace$' "$_OUT"
+if grep -q 'yconverge dependency .*example-configmap' "$_OUT"; then
+  echo "[cue itest] FAIL: base example-configmap was applied as a separate step" >&2
+  exit 1
+fi
+grep -q 'yconverge target yconverge/itest/example-indirect$' "$_OUT"
 
 # --- negative: --skip-checks suppresses check invocation ---
 
