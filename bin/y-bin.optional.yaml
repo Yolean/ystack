@@ -226,14 +226,14 @@ deno:
     path: deno
 
 parquet-tools:
-  version: 1.37.1
+  version: 1.55.2
   templates:
     download: https://github.com/hangxie/parquet-tools/releases/download/v${version}/parquet-tools-v${version}-${os}-${arch}.gz
   sha256:
-    darwin_amd64: d858c17a73ddac416b16a10f661c743f857c00bfc4639b6e446848a2b676522f
-    darwin_arm64: 7cf36ebfff6bbb4307c99b7fc59256a277f72ef46ac43bfaa0b8c47a5294e344
-    linux_amd64: d39755ffa0b055d952f37a29e03779f00c52c6c8d24010956338f6b9d52fd8f7
-    linux_arm64: 95da208b2454cd2c456a57f17618ef8cebaa9d9ae279bade9add5a26a83e74df
+    darwin_amd64: d6a9d7cc6115b7c8e59b9ace1c37e02dc645161cfddc9acca596d53f5a5dc4c7
+    darwin_arm64: f19caeed820cb772a0877d73efd888ba29982666bbcb6491774a713e703451e2
+    linux_amd64: dfff645920251efccb1fa3ae55fcebefb0fc19616393d20cd57042aa1d5c991a
+    linux_arm64: 88dfdec2050ffd0af49fcb270153a742ac4a0373a5c59171cd4611e5ca520795
   archive:
     tool: gunzip
 
