@@ -213,19 +213,6 @@ clickhouse:
     linux_amd64: 2a59de52790131d5cab2018886d65c04b7dc41db7ff07b0419a70eb0990002d4
     linux_arm64: d9e3453c16843b8f33d42c6b9044ebe3469fe79c306a5825a86808b64ec1e0df
 
-deno:
-  version: 2.1.1
-  templates:
-    download: https://github.com/denoland/deno/releases/download/v${version}/deno-${aarch}-apple-${os}.zip
-  sha256:
-    darwin_amd64: 475e7d0d91ba2e6916a00ccf60368cb4d6b122a6757938dda045a10a2bdfa846
-    darwin_arm64: 91a95616381f9f5d1a7108dac5957221bbbc10a7af13bac67e718bdd2500fff7
-    linux_amd64: For_deno_on_linux_use_a_package_manager
-    linux_arm64: For_deno_on_linux_use_a_package_manager
-  archive:
-    tool: zip
-    path: deno
-
 parquet-tools:
   version: 1.55.2
   templates:
