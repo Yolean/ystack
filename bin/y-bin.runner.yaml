@@ -43,16 +43,16 @@ kubectl:
     path: kubernetes/client/bin/kubectl
 
 kustomize:
-  # https://github.com/kubernetes/kubernetes/blob/v1.35.6/staging/src/k8s.io/kubectl/go.mod#L44
-  version: 5.7.1
+  # https://github.com/kubernetes/kubernetes/blob/v1.36.5/staging/src/k8s.io/kubectl/go.mod#L45
+  version: 5.8.1
   templates:
     download: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/kustomize_v${version}_${os}_${arch}.tar.gz
     sha256: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${version}/checksums.txt
   sha256:
-    darwin_amd64: 4a0dff80c5644df6bc8f51b342842969004cb6ba5f94dddaabbea7483493273d
-    darwin_arm64: 073e9d16d5a235e2ff83e62d6b76edb5d962adbc33be1e4860c4b3f1f39b33b9
-    linux_amd64: ea375e7372f9aa029129d4b2d16c66b7750b7f1213c4f66f910d981c895818d8
-    linux_arm64: 4261a040217df3bd6896597c3986d1465925726e4f22a945304b5233a4dcdbda
+    darwin_amd64: ee7cf0c1e3592aa7bb66ba82b359933a95e7f2e0b36e5f53ed0a4535b017f2f8
+    darwin_arm64: 8886f8a78474e608cc81234f729fda188a9767da23e28925802f00ece2bab288
+    linux_amd64: 029a7f0f4e1932c52a0476cf02a0fd855c0bb85694b82c338fc648dcb53a819d
+    linux_arm64: 0953ea3e476f66d6ddfcd911d750f5167b9365aa9491b2326398e289fef2c142
   archive:
     tool: tar
     path: kustomize
