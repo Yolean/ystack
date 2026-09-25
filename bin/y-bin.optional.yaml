@@ -69,6 +69,7 @@ fzf:
     linux_arm64: 5d673b849f494f0d64ec471d8640b153ca8849e3846a31da17abdcfce8df6b46
   archive:
     tool: tar
+    path: fzf
 
 oauth2l:
   version: 1.2.2
