@@ -59,3 +59,5 @@ npx
 scc
 duckdb
 uv
+stern
+watchexec
