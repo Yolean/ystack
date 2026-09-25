@@ -82,6 +82,16 @@ osmac_() {
   esac
 }
 
+# vendor-os part of rust style target triples, i.e. ${aarch}-${ostriple}
+ostriple() {
+  os=$(os)
+  case $os in
+    darwin) echo 'apple-darwin' ;;
+    linux) echo 'unknown-linux-gnu' ;;
+    *) echo "$os" ;;
+  esac
+}
+
 Os() {
   uname -s
 }
@@ -164,6 +174,7 @@ run() {
   xarch=$(xarch)
   osx=$(osx)
   osmac=$(osmac)
+  ostriple=$(ostriple)
   Os=$(Os)
   arm=$(arm)
   xarm=$(xarm)
