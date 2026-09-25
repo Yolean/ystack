@@ -265,14 +265,14 @@ static-web-server:
     path: static-web-server-v${version}-${aarch}-${ostriple}/static-web-server
 
 osv-scanner:
-  version: 2.2.1
+  version: 2.6.0
   templates:
     download: https://github.com/google/osv-scanner/releases/download/v${version}/osv-scanner_${os}_${arch}
   sha256:
-    darwin_amd64: e8b802665e8db98207944bb90ee0cfa49a47bd0365c9234bf700d6baf860bab7
-    darwin_arm64: c43b0ec62d0208be61d1080b0df34f0f5ebd8e02ef93cfa84ea7cbd29effd3a7
-    linux_amd64: 59e3bbd49f964265efc495b7ff896bff3c725b14c9fcce2e82088e053af98e7b
-    linux_arm64: cd62c3f13d73fe454ba0518e9c738fdedc8e5e37203bdb4f6b7eaefc7d137878
+    darwin_amd64: 60c5296637e977b28eeda5c7f13573e447659a632922737f94d11fa7e30ad6ca
+    darwin_arm64: 98c460dcd37de25819babd757d04542045b6243113e209edcd4d89fedb0256b4
+    linux_amd64: ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108
+    linux_arm64: 2c71403eb443d05891c4f268c3ad771cf4f16e5443463fd7851ef8f454d3c7e4
 
 scc:
   version: 4.1.0
