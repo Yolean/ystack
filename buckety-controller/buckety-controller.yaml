@@ -67,10 +67,8 @@ backends:
 #
 # Deliberately NOT named site-userdata-blobs, which is what checkit's g2
 # backend is called: that name belongs to per-site end-user blobs, and this
-# bucket holds build artifacts. When cluster-local starts hosting sites, the
-# right move is to ADD a site-userdata-blobs entry pointing at this same
-# versitygw - at which point checkit's per-site CRs become byte-identical here,
-# which is the whole point of the naming contract.
+# bucket holds build artifacts; site-userdata-blobs below points at the same
+# versitygw so checkit's per-site CRs are byte-identical here and on g2.
 - name: builds-registry-blobs
   driver: s3
   config:
@@ -82,5 +80,17 @@ backends:
     # Deployment populates from the local-copy versitygw-creds
     # Secret (see kustomization.yaml's secretGenerator and
     # deployment-patch.yaml).
+    accessKeyID:     ${VERSITYGW_ROOT_ACCESSKEY}
+    secretAccessKey: ${VERSITYGW_ROOT_SECRETKEY}
+
+# Per-site end-user blobs: checkit's blobs-v3/site-apply Buckety CR asks for this
+# backend by name, one bucket per site, on g2 a GCS bucket, here versitygw.
+- name: site-userdata-blobs
+  driver: s3
+  config:
+    implementation: versitygw
+    endpoint: http://y-s3-api.blobs.svc.cluster.local:9000
+    region: us-east-1
+    forcePathStyle: true
     accessKeyID:     ${VERSITYGW_ROOT_ACCESSKEY}
     secretAccessKey: ${VERSITYGW_ROOT_SECRETKEY}
