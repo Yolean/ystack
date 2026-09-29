@@ -83,7 +83,7 @@ grantee_owned_sources() {
   for h in "${HELPERS[@]}" ""; do
     owner=$(file_owner "$YBIN/$h")
     for u in "${USERS[@]}"; do
-      [ "$owner" = "$u" ] && echo "$YBIN/$h is owned by grantee $u"
+      if [ "$owner" = "$u" ]; then echo "$YBIN/$h is owned by grantee $u"; fi
     done
   done
 }
