@@ -19,7 +19,8 @@ the block k8s-ingress-hosts owns: everything outside the lines
   # generated using k8s-ingress-hosts end #
 must stay as it is in the current file, there is at most one such block, and each
 entry in it maps plain hostnames to a loopback or private IPv4 address (127/8,
-10/8, 172.16/12, 192.168/16). Other edits of /etc/hosts are for root to make.
+10/8, 172.16/12, 192.168/16), optionally followed by a # comment. Other edits of
+/etc/hosts are for root to make.
 
 Environment:
   Y_ETC_HOSTS  Target path (default: /etc/hosts)
@@ -94,9 +95,14 @@ BAD_ENTRIES=$(awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
   $0 == s {inb=1; next}
   $0 == e {inb=0; next}
   inb && $0 !~ /^[[:space:]]*(#|$)/ {
-    ok = allowed($1) && NF >= 2
-    for (i = 2; i <= NF; i++) if ($i !~ /^[A-Za-z0-9]([-A-Za-z0-9.]*[A-Za-z0-9])?$/) ok = 0
-    if (!ok) print
+    ok = allowed($1)
+    names = 0
+    # k8s-ingress-hosts ends each entry with a comment naming its route
+    for (i = 2; i <= NF && $i !~ /^#/; i++) {
+      names++
+      if ($i !~ /^[A-Za-z0-9]([-A-Za-z0-9.]*[A-Za-z0-9])?$/) ok = 0
+    }
+    if (!ok || names == 0) print
   }' "$TMP")
 if [ -n "$BAD_ENTRIES" ]; then
   echo "ERROR: refusing k8s-ingress-hosts entries that are not a loopback or private IPv4 address followed by hostnames:" >&2
