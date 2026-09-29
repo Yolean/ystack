@@ -13,6 +13,14 @@ path the way a rule for a flag-taking binary can.
 Refuses input that is empty or has no 127.0.0.1 entry, and swaps the file in
 with rename(2) so a reader never sees a half-written hosts file.
 
+It runs as root for users who are not root otherwise, so it only lets them manage
+the block k8s-ingress-hosts owns: everything outside the lines
+  # generated using k8s-ingress-hosts start #
+  # generated using k8s-ingress-hosts end #
+must stay as it is in the current file, there is at most one such block, and each
+entry in it maps plain hostnames to a loopback or private IPv4 address (127/8,
+10/8, 172.16/12, 192.168/16). Other edits of /etc/hosts are for root to make.
+
 Environment:
   Y_ETC_HOSTS  Target path (default: /etc/hosts)
 
@@ -55,6 +63,44 @@ if [ ! -s "$TMP" ]; then
 fi
 if ! grep -qE '^[[:space:]]*127\.0\.0\.1[[:space:]]' "$TMP"; then
   echo "ERROR: refusing input without a 127.0.0.1 entry" >&2
+  exit 2
+fi
+
+BLOCK_START='# generated using k8s-ingress-hosts start #'
+BLOCK_END='# generated using k8s-ingress-hosts end #'
+
+# Lines outside the managed block, markers excluded
+outside_block() {
+  awk -v s="$BLOCK_START" -v e="$BLOCK_END" '$0 == s {inb=1; next} $0 == e {inb=0; next} !inb' "$1"
+}
+
+if [ "$(grep -cxF "$BLOCK_START" "$TMP")" -gt 1 ] || [ "$(grep -cxF "$BLOCK_START" "$TMP")" != "$(grep -cxF "$BLOCK_END" "$TMP")" ]; then
+  echo "ERROR: refusing input without exactly zero or one k8s-ingress-hosts block" >&2
+  exit 2
+fi
+
+if [ -f "$TARGET" ] && ! cmp -s <(outside_block "$TARGET") <(outside_block "$TMP"); then
+  echo "ERROR: refusing input that changes $TARGET outside the k8s-ingress-hosts block:" >&2
+  diff <(outside_block "$TARGET") <(outside_block "$TMP") >&2 || true # y-script-lint:disable=or-true # diff exits 1 when it has output, which is the case being reported
+  exit 2
+fi
+
+BAD_ENTRIES=$(awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
+  function octet(x) { return x ~ /^[0-9]+$/ && x + 0 <= 255 }
+  function allowed(ip,   o) {
+    if (split(ip, o, ".") != 4 || !octet(o[1]) || !octet(o[2]) || !octet(o[3]) || !octet(o[4])) return 0
+    return o[1] == 127 || o[1] == 10 || (o[1] == 172 && o[2] >= 16 && o[2] <= 31) || (o[1] == 192 && o[2] == 168)
+  }
+  $0 == s {inb=1; next}
+  $0 == e {inb=0; next}
+  inb && $0 !~ /^[[:space:]]*(#|$)/ {
+    ok = allowed($1) && NF >= 2
+    for (i = 2; i <= NF; i++) if ($i !~ /^[A-Za-z0-9]([-A-Za-z0-9.]*[A-Za-z0-9])?$/) ok = 0
+    if (!ok) print
+  }' "$TMP")
+if [ -n "$BAD_ENTRIES" ]; then
+  echo "ERROR: refusing k8s-ingress-hosts entries that are not a loopback or private IPv4 address followed by hostnames:" >&2
+  echo "$BAD_ENTRIES" >&2
   exit 2
 fi
 

@@ -4,33 +4,62 @@ set -eo pipefail
 
 [ "$1" = "help" ] && echo '
 Tries to bring up a loopback interface so port bindings can be done without conflicts
+
+Only 127.0.0.0/8 addresses: it runs as root through a NOPASSWD rule, and a public
+address on lo would take over the host'"'"'s traffic to it. Escalates through the
+root-owned copy that y-cluster-sudoers --write installs, when there is one.
 ' && exit 0
+
+PRIVILEGED_DIR=/usr/local/libexec/ystack
 
 hostname=$1
 
 [ -z "$hostname" ] && echo "First arg must be a hostname" && exit 1
+[[ "$hostname" =~ ^[A-Za-z0-9]([-A-Za-z0-9.]*[A-Za-z0-9])?$ ]] || { echo "Not a hostname: '$hostname'" >&2; exit 1; }
+
+# Root-owned and not writable by others, so a NOPASSWD rule for it grants only what it does
+privileged_self() {
+  local f="$PRIVILEGED_DIR/y-localhost" perm
+  [ -f "$f" ] || return 1
+  case "$(uname -s)" in
+    Darwin) perm=$(stat -f '%u %Lp' "$f") ;;
+    *) perm=$(stat -c '%u %a' "$f") ;;
+  esac
+  [[ "$perm" =~ ^0\ [0-7]?[0-7][0145][0145]$ ]] && echo "$f"
+}
+escalate() {
+  local self
+  if self=$(privileged_self); then exec sudo "$self" "$@"; fi
+  exec sudo "$0" "$@"
+}
 
 platform="$(uname -s)"
 
-ip=$(cat /etc/hosts | grep -e "[[:blank:]]\<$hostname\>" | awk '{ print $1 }')
+ip=$(awk -v h="$hostname" '$1 !~ /^#/ { for (i = 2; i <= NF; i++) if ($i == h) { print $1; exit } }' /etc/hosts)
 [ -z "$ip" ] && >&2 echo "Host '$hostname' not found in /etc/hosts" && exit 1
 
 [ "$2" = "show" ] && echo -n "$ip" && exit 0
 
-num=$(echo -n $ip | cut -d '.' -f 4)
+if ! [[ "$ip" =~ ^127\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$ ]] \
+  || [ "${BASH_REMATCH[1]}" -gt 255 ] || [ "${BASH_REMATCH[2]}" -gt 255 ] || [ "${BASH_REMATCH[3]}" -gt 255 ]; then
+  echo "Refusing $ip for $hostname: loopback aliases must be in 127.0.0.0/8" >&2
+  exit 1
+fi
+
+num=$(echo -n "$ip" | cut -d '.' -f 4)
 
 case "$platform" in
   Darwin)
-    ifconfig lo0 | grep $ip > /dev/null && exit 0
+    ifconfig lo0 | grep -F "$ip" > /dev/null && exit 0
     echo "Loopback alias for $ip $hostname not found. Will try to create ..."
-    [ $(id -u) -eq 0 ] || exec sudo $0 "$@"
-    ifconfig lo0 alias $ip up
+    [ "$(id -u)" -eq 0 ] || escalate "$@"
+    ifconfig lo0 alias "$ip" up
     ;;
   Linux)
-    if [ -z "$(ip addr show dev lo label lo:$num)" ]; then
+    if [ -z "$(ip addr show dev lo label "lo:$num")" ]; then
       echo "Adding missing interface lo:$num ..."
-      [ $(id -u) -eq 0 ] || exec sudo $0 "$@"
-      ip addr add $ip/32 dev lo label lo:$num
+      [ "$(id -u)" -eq 0 ] || escalate "$@"
+      ip addr add "$ip/32" dev lo label "lo:$num"
     fi
     ;;
   *)
