@@ -104,7 +104,7 @@ BAD_ENTRIES=$(awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
   NR == FNR {
     if ($0 == s) { inb = 1 } else if ($0 == e) { inb = 0 }
     else if (!inb && $0 !~ /^[[:space:]]*(#|$)/) {
-      for (i = 2; i <= NF && $i !~ /^#/; i++) if (!($i in outside)) outside[$i] = $1
+      for (i = 2; i <= NF && $i !~ /^#/; i++) if (!(tolower($i) in outside)) outside[tolower($i)] = $1
     }
     next
   }
@@ -118,7 +118,8 @@ BAD_ENTRIES=$(awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
     for (i = 2; i <= NF && $i !~ /^#/; i++) {
       names++
       if ($i !~ /^[A-Za-z0-9]([-A-Za-z0-9.]*[A-Za-z0-9])?$/) ok = 0
-      if (($i in outside) && outside[$i] != $1) ok = 0
+      # Host lookups ignore case, so DB.INTERNAL is db.internal
+      if ((tolower($i) in outside) && outside[tolower($i)] != $1) ok = 0
     }
     if (!ok || names == 0) print
   }' "$TMP" "$TMP")
