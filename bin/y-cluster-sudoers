@@ -2,7 +2,7 @@
 [ -z "$DEBUG" ] || set -x
 set -eo pipefail
 
-YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+YSTACK_HOME="$(cd "$(dirname "$0")/.." && pwd -P)"
 YBIN="$YSTACK_HOME/bin"
 SUDOERS_FILE="/etc/sudoers.d/ystack-cluster"
 # Root-owned snapshots of the helpers: a NOPASSWD rule for a file its grantee can edit
@@ -25,8 +25,12 @@ Usernames: one or more users to grant NOPASSWD rules to.
            Defaults to the current user (via SUDO_USER or USER).
 
 Run --write from a checkout you trust at a commit you have reviewed, as it copies
-the helpers that will run as root. It refuses a checkout owned by one of the
-grantees, whose content they control, unless --allow-grantee-source is given.
+the helpers that will run as root. It refuses when a grantee owns or can write the
+helpers, this script or any directory above them, or when one of those is a symlink,
+unless --allow-grantee-source is given. It cannot vouch for itself: if a grantee
+could write this script, running it as root in any mode runs their code. The show
+mode run as yourself lists what a grantee owns; group and ACL write access you check
+without executing the checkout, e.g. ls -ld on the path, before running it with sudo.
 Rerun it after updating ystack to refresh the copies; y-k8s-ingress-hosts warns
 when they differ.
 EOF
@@ -77,15 +81,35 @@ file_owner() {
   esac
 }
 
-# A grantee who owns the checkout could change a helper right before the copy is taken
-grantee_owned_sources() {
-  local h owner u
-  for h in "${HELPERS[@]}" ""; do
-    owner=$(file_owner "$YBIN/$h")
-    for u in "${USERS[@]}"; do
-      if [ "$owner" = "$u" ]; then echo "$YBIN/$h is owned by grantee $u"; fi
+# The helpers, this script, and every directory above them
+source_paths() {
+  local p d
+  for p in "${HELPERS[@]/#/$YBIN/}" "$YBIN/y-cluster-sudoers"; do
+    d=$p
+    while :; do
+      echo "$d"
+      [ "$d" = / ] && break
+      d=$(dirname "$d")
     done
-  done
+  done | sort -u
+}
+
+# A grantee who owns or can write any source path can change a helper between this check
+# and the copy, or swap the checkout itself; a symlink can point anywhere. Write access
+# (group, other, ACL) is checked only as root, which --write is.
+grantee_controlled_sources() {
+  local p owner u
+  while IFS= read -r p; do
+    if [ -L "$p" ]; then echo "$p is a symlink"; fi
+    owner=$(file_owner "$p")
+    for u in "${USERS[@]}"; do
+      if [ "$owner" = "$u" ]; then
+        echo "$p is owned by grantee $u"
+      elif [ "$(id -u)" -eq 0 ] && sudo -n -u "$u" test -w "$p"; then
+        echo "$p is writable by grantee $u"
+      fi
+    done
+  done < <(source_paths)
 }
 
 sudo_rs_check() {
@@ -104,8 +128,8 @@ sudo_rs_check() {
 if [ "$MODE" = "show" ]; then
   rules
   echo "# --write would install: ${HELPERS[*]/#/$YBIN/} -> $PRIVILEGED_DIR/ (root:0 0755)"
-  GRANTEE_OWNED=$(grantee_owned_sources)
-  [ -z "$GRANTEE_OWNED" ] || { echo "# --write would refuse, a grantee controls the source:"; echo "$GRANTEE_OWNED" | sed 's/^/#   /'; }
+  GRANTEE_CONTROLLED=$(grantee_controlled_sources)
+  [ -z "$GRANTEE_CONTROLLED" ] || { echo "# --write would refuse, a grantee controls the source:"; echo "$GRANTEE_CONTROLLED" | sed 's/^/#   /'; }
   sudo_rs_check
   exit 0
 fi
@@ -116,10 +140,10 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-GRANTEE_OWNED=$(grantee_owned_sources)
-if [ -n "$GRANTEE_OWNED" ] && [ "$ALLOW_GRANTEE_SOURCE" != "true" ]; then
+GRANTEE_CONTROLLED=$(grantee_controlled_sources)
+if [ -n "$GRANTEE_CONTROLLED" ] && [ "$ALLOW_GRANTEE_SOURCE" != "true" ]; then
   echo "ERROR: refusing to install root-run helpers from a checkout a grantee controls:" >&2
-  echo "$GRANTEE_OWNED" >&2
+  echo "$GRANTEE_CONTROLLED" >&2
   echo "Run from your own ystack checkout, or pass --allow-grantee-source after reviewing it." >&2
   exit 1
 fi
