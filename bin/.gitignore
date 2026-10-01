@@ -1,5 +1,8 @@
 *-bin
 *-dist
+# y-bin-dependency-download's temporaries, left only by a killed run
+.download-*
+.link-*
 
 # our executables are symlinked to real names
 buildctl

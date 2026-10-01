@@ -43,32 +43,39 @@ bin_link=$YBIN/$bin_name
   [ -z "$YSTACK_BIN_DOWNLOAD_CACHE" ] || bin_cache="$YSTACK_BIN_DOWNLOAD_CACHE/$bin_uniq"
   [ -z "$bin_cache" ] || [ ! -f "$bin_cache" ] || url="file://$bin_cache"
   echo "Missing $bin_name binary. Downloading a known version from $url ..." 1>&2
-  case "$url" in
-    *.tar.gz) ;;
-    *.gz) bin_file=$bin_file.gz ;;
-  esac
-  curl -o $bin_file -L -f $url
-  if ! echo "$sha256  $bin_file" | $SHA256SUM -c - 1>&2; then $SHA256SUM $bin_file && rm $bin_file && exit 1; fi
+  # Download and unpack under a temporary name, renamed to $bin_file only when complete:
+  # an interrupted download (a caller's `| head` is enough) or one still running in another
+  # process must never be taken for the binary.
+  dl=$(mktemp "$YBIN/.download-$bin_uniq.XXXXXX")
+  trap 'rm -f "$dl" "$dl.gunzip"' EXIT
+  curl -o $dl -L -f $url
+  if ! echo "$sha256  $dl" | $SHA256SUM -c - 1>&2; then $SHA256SUM $dl && exit 1; fi
   if [ ! -z "$bin_tar_path" ]; then
     tmp=$(mktemp -d)
-    (cd $tmp; tar -xv${bin_tar_compression}f $bin_file --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_extract) \
-      || (cd $tmp; tar -tv${bin_tar_compression}f $bin_file; exit 1)
-    mv "$tmp/$(basename $bin_tar_path)" $bin_file
+    (cd $tmp; tar -xv${bin_tar_compression}f $dl --strip-components=$(echo $bin_tar_path | awk -F'/' '{print NF-1}') $bin_tar_extract) \
+      || (cd $tmp; tar -tv${bin_tar_compression}f $dl; exit 1)
+    mv "$tmp/$(basename $bin_tar_path)" $dl
+    rm -rf "$tmp"
   fi
   if [ ! -z "$bin_zip_path" ]; then
     tmp=$(mktemp -d)
-    (cd $tmp; unzip $bin_file)
-    mv "$tmp/$bin_zip_path" $bin_file
+    (cd $tmp; unzip $dl)
+    mv "$tmp/$bin_zip_path" $dl
+    rm -rf "$tmp"
   fi
   case "$url" in
     *.tar.gz) ;;
-    *.gz) gunzip $bin_file && bin_file=$(echo $bin_file | sed 's/\.gz$//g') ;;
+    *.gz) gzip -dc $dl > $dl.gunzip && mv $dl.gunzip $dl ;;
   esac
+  chmod 755 $dl
+  mv -f $dl $bin_file
+  trap - EXIT
   [ -z "$bin_cache" ] || [ -f "$bin_cache" ] || cp -v $bin_file $bin_cache 1>&2
-  chmod a+x $bin_file
 }
 
 if [ "$(readlink $bin_link)" != "$bin_file" ]; then
-  [ -L $bin_link ] && rm $bin_link
-  ln -s $bin_file $bin_link
+  [ ! -e $bin_link ] || [ -L $bin_link ] || { echo "Not a symlink, not replacing: $bin_link" >&2; exit 1; }
+  # replaced by rename, so a concurrent run never sees the link missing
+  ln -s $bin_file $YBIN/.link-$bin_name.$$
+  mv -f $YBIN/.link-$bin_name.$$ $bin_link
 fi

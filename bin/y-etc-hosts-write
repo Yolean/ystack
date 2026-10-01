@@ -13,6 +13,16 @@ path the way a rule for a flag-taking binary can.
 Refuses input that is empty or has no 127.0.0.1 entry, and swaps the file in
 with rename(2) so a reader never sees a half-written hosts file.
 
+It runs as root for users who are not root otherwise, so it only lets them manage
+the block k8s-ingress-hosts owns: everything outside the lines
+  # generated using k8s-ingress-hosts start #
+  # generated using k8s-ingress-hosts end #
+must stay as it is in the current file, there is at most one such block, and each
+entry in it maps plain hostnames to a loopback or private IPv4 address (127/8,
+10/8, 172.16/12, 192.168/16), optionally followed by a # comment. A name that has
+an entry outside the block keeps that address. Input is limited to 1 MiB. Other
+edits of /etc/hosts are for root to make.
+
 Environment:
   Y_ETC_HOSTS  Target path (default: /etc/hosts)
 
@@ -47,7 +57,13 @@ fi
 TMP=$(mktemp "$TARGET_DIR/.hosts.XXXXXX")
 trap 'rm -f "$TMP"' EXIT
 
-cat > "$TMP"
+# Root writes this into the target's filesystem, so the input is bounded
+MAX_BYTES=1048576
+head -c $((MAX_BYTES + 1)) > "$TMP"
+if [ "$(wc -c < "$TMP")" -gt "$MAX_BYTES" ]; then
+  echo "ERROR: refusing input over $MAX_BYTES bytes" >&2
+  exit 2
+fi
 
 if [ ! -s "$TMP" ]; then
   echo "ERROR: refusing to write an empty $TARGET" >&2
@@ -55,6 +71,61 @@ if [ ! -s "$TMP" ]; then
 fi
 if ! grep -qE '^[[:space:]]*127\.0\.0\.1[[:space:]]' "$TMP"; then
   echo "ERROR: refusing input without a 127.0.0.1 entry" >&2
+  exit 2
+fi
+
+BLOCK_START='# generated using k8s-ingress-hosts start #'
+BLOCK_END='# generated using k8s-ingress-hosts end #'
+
+# Lines outside the managed block, markers excluded
+outside_block() {
+  awk -v s="$BLOCK_START" -v e="$BLOCK_END" '$0 == s {inb=1; next} $0 == e {inb=0; next} !inb' "$1"
+}
+
+if [ "$(grep -cxF "$BLOCK_START" "$TMP")" -gt 1 ] || [ "$(grep -cxF "$BLOCK_START" "$TMP")" != "$(grep -cxF "$BLOCK_END" "$TMP")" ]; then
+  echo "ERROR: refusing input without exactly zero or one k8s-ingress-hosts block" >&2
+  exit 2
+fi
+
+if [ -f "$TARGET" ] && ! cmp -s <(outside_block "$TARGET") <(outside_block "$TMP"); then
+  echo "ERROR: refusing input that changes $TARGET outside the k8s-ingress-hosts block:" >&2
+  diff <(outside_block "$TARGET") <(outside_block "$TMP") >&2 || true # y-script-lint:disable=or-true # diff exits 1 when it has output, which is the case being reported
+  exit 2
+fi
+
+# Two passes over the input: the first records the addresses of names outside the block,
+# so a block entry cannot give such a name another address (the block may come first)
+BAD_ENTRIES=$(awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
+  function octet(x) { return x ~ /^[0-9]+$/ && x + 0 <= 255 }
+  function allowed(ip,   o) {
+    if (split(ip, o, ".") != 4 || !octet(o[1]) || !octet(o[2]) || !octet(o[3]) || !octet(o[4])) return 0
+    return o[1] == 127 || o[1] == 10 || (o[1] == 172 && o[2] >= 16 && o[2] <= 31) || (o[1] == 192 && o[2] == 168)
+  }
+  NR == FNR {
+    if ($0 == s) { inb = 1 } else if ($0 == e) { inb = 0 }
+    else if (!inb && $0 !~ /^[[:space:]]*(#|$)/) {
+      for (i = 2; i <= NF && $i !~ /^#/; i++) if (!(tolower($i) in outside)) outside[tolower($i)] = $1
+    }
+    next
+  }
+  FNR == 1 {inb=0}
+  $0 == s {inb=1; next}
+  $0 == e {inb=0; next}
+  inb && $0 !~ /^[[:space:]]*(#|$)/ {
+    ok = allowed($1)
+    names = 0
+    # k8s-ingress-hosts ends each entry with a comment naming its route
+    for (i = 2; i <= NF && $i !~ /^#/; i++) {
+      names++
+      if ($i !~ /^[A-Za-z0-9]([-A-Za-z0-9.]*[A-Za-z0-9])?$/) ok = 0
+      # Host lookups ignore case, so DB.INTERNAL is db.internal
+      if ((tolower($i) in outside) && outside[tolower($i)] != $1) ok = 0
+    }
+    if (!ok || names == 0) print
+  }' "$TMP" "$TMP")
+if [ -n "$BAD_ENTRIES" ]; then
+  echo "ERROR: refusing k8s-ingress-hosts entries that are not a loopback or private IPv4 address followed by hostnames, or that give a name from outside the block another address:" >&2
+  echo "$BAD_ENTRIES" >&2
   exit 2
 fi
 

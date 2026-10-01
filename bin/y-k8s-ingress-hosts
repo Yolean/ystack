@@ -210,7 +210,20 @@ if cmp -s "$NEW_HOSTS" "$HOSTS_FILE"; then
 fi
 
 if [ "$HOSTS_FILE" = "/etc/hosts" ] && [ "$(id -u)" -ne 0 ]; then
-  sudo "$YBIN/y-etc-hosts-write" < "$NEW_HOSTS"
+  # The root-owned copy y-cluster-sudoers --write installs is what its NOPASSWD rule names;
+  # the checkout's own copy only works with a sudo password (or an old, broader rule)
+  WRITER=/usr/local/libexec/ystack/y-etc-hosts-write
+  case "$(uname -s)" in
+    Darwin) WRITER_PERM=$(stat -f '%u %Lp' "$WRITER" 2>/dev/null) || WRITER_PERM= ;;
+    *) WRITER_PERM=$(stat -c '%u %a' "$WRITER" 2>/dev/null) || WRITER_PERM= ;;
+  esac
+  if [[ "$WRITER_PERM" =~ ^0\ [0-7]?[0-7][0145][0145]$ ]]; then
+    cmp -s "$WRITER" "$YBIN/y-etc-hosts-write" \
+      || echo "# $WRITER differs from $YBIN/y-etc-hosts-write, rerun y-cluster-sudoers --write to update it" >&2
+  else
+    WRITER="$YBIN/y-etc-hosts-write"
+  fi
+  sudo "$WRITER" < "$NEW_HOSTS"
 else
   Y_ETC_HOSTS="$HOSTS_FILE" "$YBIN/y-etc-hosts-write" < "$NEW_HOSTS"
 fi
