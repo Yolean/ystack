@@ -5,4 +5,8 @@ YBIN="$(dirname $0)"
 
 version=$(y-bin-download $YBIN/y-bin.runner.yaml buildctl)
 
+# buildctl takes TLS client files only as flags; BUILDKIT_HOST is its only env.
+# BUILDKIT_TLS_DIR holds ca.pem, cert.pem and key.pem, the layout of DOCKER_CERT_PATH.
+[ -z "$BUILDKIT_TLS_DIR" ] || set -- --tlsdir "$BUILDKIT_TLS_DIR" "$@"
+
 y-buildctl-v${version}-bin "$@" || exit $?
