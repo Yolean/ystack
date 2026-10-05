@@ -9,6 +9,8 @@ set -eo pipefail
 #   --format <oci|tarball> format for --output, as in crane pull --format (default oci)
 #   --tarball <path>       shorthand for --output <path> --format tarball
 #   --push=false           skip push to registry
+# Env BUILDKIT_HOST selects buildkitd (default: ystack's in-cluster one), and BUILDKIT_TLS_DIR
+# its TLS client files (see y-buildctl).
 BUILDCTL_OPTS=""
 FILE_OUTPUT=""
 OUTPUT_PATH=""
@@ -155,6 +157,10 @@ fi
 DEFAULT_REGISTRY=builds-registry.ystack.svc.cluster.local
 [ -z "$BUILDS_REGISTRY" ] && BUILDS_REGISTRY=$DEFAULT_REGISTRY
 [ -z "$PUSH_REGISTRY" ]   && PUSH_REGISTRY=$DEFAULT_REGISTRY
+if [ -z "$BUILDKIT_HOST" ] && [ -n "$BUILDKIT_TLS_DIR" ]; then
+  echo "ERROR BUILDKIT_TLS_DIR is set but BUILDKIT_HOST is not; ystack's in-cluster buildkitd has no TLS" >&2
+  exit 1
+fi
 if [ -z "$BUILDKIT_HOST" ]; then
   BUILDKIT_HOSTNAME=buildkitd.ystack.svc.cluster.local
   # Prefer port 80 (Gateway API) for local clusters, fall back to 8547 (y-kubefwd for remote clusters)
