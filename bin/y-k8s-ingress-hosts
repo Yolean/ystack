@@ -155,6 +155,9 @@ if ! RENDERED=$("$BIN" -kubeconfig "$CONTEXT_KUBECONFIG" "${PASSTHROUGH[@]}" 2>&
   exit 3
 fi
 ENTRIES=$(echo "$RENDERED" | grep -v '^#' || true) # y-script-lint:disable=or-true # grep exits 1 when the binary emitted comments only, which is the no-entries case handled below
+# A hosts file can't resolve a wildcard, and y-etc-hosts-write refuses one: a route for
+# *.example.net gets no entry
+ENTRIES=$(echo "$ENTRIES" | awk '!/[[:space:]]\*\./')
 
 if $CHECK || $ENSURE; then
   STALE=0
@@ -203,6 +206,8 @@ echo "y-k8s-ingress-hosts: writing $HOST_COUNT host entries to $HOSTS_FILE"
 # and only that copy is handed to the privileged step.
 cp "$HOSTS_FILE" "$NEW_HOSTS"
 "$BIN" -kubeconfig "$CONTEXT_KUBECONFIG" -host-file "$NEW_HOSTS" -write "${PASSTHROUGH[@]}" >/dev/null
+awk '!/^[^#]*[[:space:]]\*\./' "$NEW_HOSTS" > "$NEW_HOSTS.entries"
+mv "$NEW_HOSTS.entries" "$NEW_HOSTS"
 
 if cmp -s "$NEW_HOSTS" "$HOSTS_FILE"; then
   echo "# $HOSTS_FILE already up to date"
