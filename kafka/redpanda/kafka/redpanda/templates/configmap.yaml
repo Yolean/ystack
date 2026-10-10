@@ -26,6 +26,7 @@ data:
     compacted_log_segment_size: 16777216
     group_topic_partitions: 1
     kafka_batch_max_bytes: 1048576
+    log_retention_ms: -1
     kafka_connection_rate_limit: 1000
     log_segment_size: 16777216
     log_segment_size_max: 33554432
