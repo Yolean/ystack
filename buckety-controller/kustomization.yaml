@@ -14,12 +14,33 @@ resources:
 # failure is a retry, not an outage.
 #
 # release-tls-selfsigned = release + webhook-certgen. It carries the image pin
-# (20260904T064507Z, digest 19e3172a), so there is nothing to bump here
+# (20261012T050156Z, digest 107d7d0e), so there is nothing to bump here
 # separately - the ref IS the version.
 #
-# v0.2.0 (11059b8) is the first tag carrying the fixes for the two defects the
-# checkit #7555 rollout hit in production, which is why we previously pinned an
-# untagged main commit (9afdccb, the same ref cluster-g2/buckety pinned):
+# v0.4.1 (4d984a9). From v0.2.0 to v0.4.1 upstream deploy/kustomize changed
+# nothing but that image pin: the same v1alpha1 CRDs (no storage version or
+# conversion to migrate), ClusterRole, Deployment args, webhook and certgen
+# Jobs, so this overlay carries over unchanged. What changed is controller
+# behaviour, all of it with defaults that suit ystack:
+#   - one reconcile pass has a deadline (--reconcile-timeout, 2m), so a backend
+#     that stops answering fails the pass and backs off instead of holding the
+#     controller's only worker; the leader lease tolerates a slow single-node
+#     apiserver (60s/40s/15s) and is released on a graceful stop.
+#   - a re-check that finds nothing changed writes no status; re-checks are
+#     jittered and, after a controller start, the first pass over Ready
+#     objects is spread out rather than sent to the backends in one burst.
+#   - s3: HeadBucket before CreateBucket, so re-checking the versitygw buckets
+#     makes read calls only; a bucket teardown that removes nothing backs off.
+#   - kadm: partition increases and topic config alters become Events and
+#     metrics, and a key the broker accepts but does not report back (Redpanda)
+#     is no longer altered again on every pass.
+#   - dropping a config.* key from spec.parameters is admitted with a warning:
+#     the backend keeps the value last applied, unmanaged.
+#   - a mysql driver, compiled in and unused: no backend below names it.
+#
+# v0.2.0 (11059b8) was the first tag carrying the fixes for the two defects the
+# checkit #7555 rollout hit in production, which is why an untagged main commit
+# (9afdccb, the same ref cluster-g2/buckety pinned) came before it:
 #   - a condition message no longer drives a status patch. A persistently
 #     failing reconcile fed its own watch at ~18/s, because the provider error
 #     went verbatim into Ready and GCS mints a fresh errorId per 403, so every
@@ -29,13 +50,13 @@ resources:
 #     provisioning, not failure: IAM has not propagated the member yet and the
 #     provider reports that as a 400.
 # Neither is gcs-only in nature; both are reconciler behaviour we would meet on
-# any driver that can fail repeatedly. Supersedes v0.1.1 (eb0ce42).
+# any driver that can fail repeatedly.
 #
-# v0.2.0 also narrows the controller ClusterRole: bucketies drop to
+# Since v0.2.0 the controller ClusterRole is narrowed: bucketies get only
 # get/list/watch/update/patch, and create/delete remain only on
 # bucketyaccesses, which the controller mints itself. Every ystack Buckety is
 # applied by yconverge, never by the controller, so nothing here wants a verb
-# it lost. The upstream bases now set `namespace: buckety` themselves, so the
+# it lacks. The upstream bases set `namespace: buckety` themselves, so the
 # `namespace:` above states the same thing twice rather than being the only
 # thing putting these resources in the right place.
 #
@@ -45,7 +66,7 @@ resources:
 # validation, bad parameters, immutability violations, unresolvable name
 # templates and refused adoptions surface as Ready=False on an object that was
 # accepted, instead of failing the apply where yconverge would report them.
-- github.com/Yolean/buckety-controller/deploy/kustomize/release-tls-selfsigned?ref=11059b8d529220b2b40793b814edcbe73fe58a4d
+- github.com/Yolean/buckety-controller/deploy/kustomize/release-tls-selfsigned?ref=4d984a9d2e958e358a66228b7219e5e539408ff4
 secretGenerator:
 - name: buckety-controller-config
   files:
