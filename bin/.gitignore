@@ -27,6 +27,7 @@ mimirtool
 minikube
 mkcert
 promtool
+prometheus
 rio
 skaffold
 k3d
