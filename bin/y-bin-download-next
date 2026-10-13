@@ -49,6 +49,7 @@ ostriple=apple-darwin
 Os=Darwin
 arm=""
 xarm=x
+_arm64=""
 echo -n "    darwin_amd64: " && checksum
 
 os=darwin
@@ -63,6 +64,7 @@ ostriple=apple-darwin
 Os=Darwin
 arm=arm
 xarm=arm
+_arm64="-arm64"
 echo -n "    darwin_arm64: " && checksum
 
 os=linux
@@ -77,6 +79,7 @@ ostriple=unknown-linux-gnu
 Os=Linux
 arm=""
 xarm=x
+_arm64=""
 echo -n "    linux_amd64: " && checksum
 
 os=linux
@@ -91,4 +94,5 @@ ostriple=unknown-linux-gnu
 Os=Linux
 arm=arm
 xarm=arm
+_arm64="-arm64"
 echo -n "    linux_arm64: " && checksum

@@ -302,3 +302,18 @@ duckdb:
   archive:
     tool: zip
     path: duckdb
+
+# Bitwarden's CLI, for Vaultwarden at opsv.yolean.se. The bw-oss build is GPLv3; Bitwarden's
+# other builds are under its commercial licence from the release after 2026.9.
+bw:
+  version: 2026.9.0
+  templates:
+    download: https://github.com/bitwarden/clients/releases/download/cli-v${version}/bw-oss-${osmac}${_arm64}-${version}.zip
+  sha256:
+    darwin_amd64: 6d6ab08255d08c7492c288ec1d6a314fea52d9660ffb1cb7741db8cad548cb65
+    darwin_arm64: fc378d79fefb36128d2b401d19649a88d036646eba6b21b2c305fe53528d2e96
+    linux_amd64: b34fcaa0a8c96df0783e09ed6c9c22003497e5b429351c42127206b794c6b69b
+    linux_arm64: b2da40ee84aa8794f9f7567e8fc71d5a0c02c6b2355c60c71c9df6334c5d33b8
+  archive:
+    tool: zip
+    path: bw

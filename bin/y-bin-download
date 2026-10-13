@@ -82,6 +82,15 @@ osmac_() {
   esac
 }
 
+# "-arm64" on arm64 and nothing on amd64, for names that mark only the non-default arch
+_arm64() {
+  x=$(arch)
+  case $x in
+    arm64) echo '-arm64' ;;
+    *) echo '' ;;
+  esac
+}
+
 # vendor-os part of rust style target triples, i.e. ${aarch}-${ostriple}
 ostriple() {
   os=$(os)
@@ -178,6 +187,7 @@ run() {
   Os=$(Os)
   arm=$(arm)
   xarm=$(xarm)
+  _arm64=$(_arm64)
   eval $(to_eval $yaml $name)
   install "$name" "$version" "$url" "$sha256" "$archivetool" "$archivepath"
 }
