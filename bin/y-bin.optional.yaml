@@ -38,15 +38,15 @@ kubefwd:
     path: kubefwd
 
 container-structure-test:
-  version: 1.14.0
+  version: 1.22.1
   templates:
-    download: https://github.com/solsson/container-structure-test/releases/download//v${version}/container-structure-test-${os}-${arch}
-    sha256: https://github.com/solsson/container-structure-test/releases/download//v${version}/container-structure-test-${os}-${arch}.sha256
+    download: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/container-structure-test-${os}-${arch}
+    sha256: https://github.com/GoogleContainerTools/container-structure-test/releases/download/v${version}/checksums.txt
   sha256:
-    darwin_amd64: d55ba0ba697fc6e62808f930d587a5699747c77047a72b09828c12386d59da21
-    darwin_arm64: e02f98d4a3086b00c6f9592e9ae3c868c1e500fd667f596b91af6e0c1c428fb9
-    linux_amd64: 1a5fb5f7ba8aefafe30561be81f825c208a4fb66e6889979efffadf131e91070
-    linux_arm64: 5a77d3d9fddec7187265a4a45ec7a04cfee454dbc56c59df468a3d2e9e61e683
+    darwin_amd64: 1ca7265ed9061785a39cda83d5a8104c769bbf432dab40a269596ea6f1a13c45
+    darwin_arm64: ba00172029ecec3afda7fd93a5eee7cdaef710196df7103689da3386eba56b0a
+    linux_amd64: fa35e89512a8978585f76cf41397956d2e3a30c62c2ad3fb857b1597074d14ca
+    linux_arm64: 801826ed107222120eb6df8c143b7de752cfebbe3aebfeea576e7098486917c2
 
 kubie:
   version: 0.28.0
