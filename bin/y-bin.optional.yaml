@@ -290,14 +290,14 @@ scc:
     path: scc
 
 duckdb:
-  version: 1.5.5
+  version: 1.5.6
   templates:
     download: https://github.com/duckdb/duckdb/releases/download/v${version}/duckdb_cli-${osx}-${arch}.zip
   sha256:
-    darwin_amd64: 47cbda17c5d4643a58833617dfae649a6a8722d7e54435a08161b98ac1c4e832
-    darwin_arm64: da5177b8869c4ed8c65d514fb47a8ed0f6fa7427f103304932d5e83851e46abd
-    linux_amd64: 08c0ca117111fcede14239d0093792352befdc174218c344d232c13279643d05
-    linux_arm64: 02163197027a42149147364d31fa67cac82108517a4be43304a1cc226eaef07a
+    darwin_amd64: ae74c8cd74304bde1d92d941aca37bc72084ee8daa5660913819d8a9e9d29331
+    darwin_arm64: 8e0f6825653f8d057922e6147db920bebf072cb41f4b041fd35521c18d7d126e
+    linux_amd64: 6e89deac1ebbc36eed0291caf8b567b030c7b86ac35998f71854e22b3c5d5e2f
+    linux_arm64: c544e92c9b7c31fc53c2139802cabd8e2d1b2b3e3f933117f31611239c1402db
   archive:
     tool: zip
     path: duckdb
