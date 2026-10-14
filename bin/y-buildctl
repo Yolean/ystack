@@ -3,7 +3,23 @@
 set -e
 YBIN="$(dirname $0)"
 
+YHELP='y-buildctl - buildctl, with TLS client files from an env var
+
+Usage: y-buildctl [buildctl args]
+
+Environment:
+  BUILDKIT_HOST     buildkitd address, read by buildctl itself
+  BUILDKIT_TLS_DIR  Dir with ca.pem, cert.pem and key.pem, passed as --tlsdir
+
+Dependencies:
+'
+
 version=$(y-bin-download $YBIN/y-bin.runner.yaml buildctl)
+
+case "${1:-}" in
+  help) echo "$YHELP"; y-buildctl-v${version}-bin --help; exit 0 ;;
+  --help) echo "$YHELP"; y-buildctl-v${version}-bin --help; exit 0 ;;
+esac
 
 # buildctl takes TLS client files only as flags; BUILDKIT_HOST is its only env.
 # BUILDKIT_TLS_DIR holds ca.pem, cert.pem and key.pem, the layout of DOCKER_CERT_PATH.
