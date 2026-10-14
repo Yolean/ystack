@@ -37,7 +37,6 @@ kpt
 k8s-ingress-hosts
 istioctl
 logcli
-golangci-lint
 vault
 jq
 yq
