@@ -5,7 +5,6 @@ FROM --platform=$TARGETPLATFORM ubuntu:26.04@sha256:f144425ff09be612d6d9ad965196
 RUN set -ex; \
   (cd /usr/local/bin; \
     ln -s ../lib/node_modules/npm/bin/npm-cli.js npm; \
-    ln -s ../lib/node_modules/corepack/dist/corepack.js corepack; \
   ); \
   \
   export DEBIAN_FRONTEND=noninteractive; \
