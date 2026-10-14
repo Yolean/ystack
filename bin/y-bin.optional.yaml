@@ -72,15 +72,14 @@ fzf:
     path: fzf
 
 oauth2l:
-  version: 1.2.2
+  version: 1.3.6
   templates:
-    download: https://github.com/solsson/oauth2l/releases/download/v${version}/${os}_${arch}.tgz
-    sha256: https://github.com/solsson/oauth2l/releases/download/v${version}/sha256sum.txt
+    download: https://storage.googleapis.com/oauth2l/${version}/${os}_${arch}.tgz
   sha256:
-    darwin_amd64: fdd77f8fbcb27cd19d808675db80963279b7bbb9d80267405f5909250a5ea246
-    darwin_arm64: 1e134219665af5229b43cd294f95f79d1601048fbde46d666fd23e4e876f82d9
-    linux_amd64: 0803872f2afb447fee4767fca6af9aa1eb96506895d4d7713d2fbe780202016c
-    linux_arm64: d1f3e456b314ed4a40dc432b84f9d2ea7d30eea0e04a9f975a8069e66c9ff699
+    darwin_amd64: 8961b77ff45084e6c0790eee2e4a6d328fab5a75a46e465972bb966e85190ab4
+    darwin_arm64: 36c21280155fe0b6f4275a70cb4ae28652c6c7ea2b549849b441d7f0b806daa8
+    linux_amd64: f3dd56b6b1fa67f7f4cc10339dcfd94a36cb7475e916047b83bc4466a68ecfd4
+    linux_arm64: 2a70b21f5981e5d0c9bb68ee17a702430bb02bb7d654b912ff0c9edf5996654b
   archive:
     tool: tar
     path: ${os}_${arch}/oauth2l
