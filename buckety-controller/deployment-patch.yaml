@@ -4,6 +4,12 @@ metadata:
   name: buckety-controller
 spec:
   template:
+    metadata:
+      annotations:
+        # controller-runtime metrics server, --metrics-addr default :8080
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
     spec:
       containers:
       - name: controller
