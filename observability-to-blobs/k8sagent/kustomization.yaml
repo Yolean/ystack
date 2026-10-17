@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The cluster agent: one Deployment that uploads the API objects and Events. It has no Namespace of
+# its own and reads the node agent's Secret, so it comes next to ../nodeagent (README.md).
+# The ref is the same in every base here; README.md, "Ref".
+resources:
+- https://github.com/Yolean/observability-to-blobs/k8sagent?ref=c6ea793d9f33438ea7eb319d3a7fd1b07ae2f443
+
+components:
+- ../nodeagent-image

@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# One image for the node agent and the cluster agent, pinned once. The tag is the commit CI built it
+# from, which is not the ref of ../nodeagent and ../k8sagent: a build of the same agent/ and
+# k8sagent/ trees (README.md, "Ref").
+images:
+- name: ghcr.io/yolean/observability-nodeagent
+  newTag: af3f11ef0e7856e765a04693eb56d4bad4319c73@sha256:7f52c7a59335523a8fbeba1411b625bc097425722cf5a97d9d96f0fc97c5dd60
