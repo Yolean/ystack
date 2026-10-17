@@ -316,3 +316,13 @@ bw:
   archive:
     tool: zip
     path: bw
+
+obs:
+  version: 0.2.0
+  templates:
+    download: https://github.com/Yolean/observability-to-blobs/releases/download/v${version}/obs-${os}-${arch}
+  sha256:
+    darwin_amd64: 90c6d35c391fabd96816d647fae28ee3320368313cf663d2ee9ebbf1c055e58b
+    darwin_arm64: 52d623811f6a9f4be44dd95f9c501afb310cf3510c457537e80cfae6a3d69f3b
+    linux_amd64: 1a5371cf12c4d0d23aab68c0649bbe1ad62f02211b38ae753333c28eba42c084
+    linux_arm64: 2fb00ce828b7f1c487cb467fa3a7cd4a707624664389ee4d046e98463d85940b
