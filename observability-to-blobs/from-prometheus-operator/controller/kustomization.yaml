@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The controller and mutating webhook that write scrape annotations onto pods from PodMonitors.
+# Needs the PodMonitor CRD (../crds) and cert-manager. Namespace observability, which is not created here.
+# The ref is the same in every base here; README.md, "Ref".
+resources:
+- https://github.com/Yolean/observability-to-blobs/operator-to-annotations/controller?ref=1170b7abf704d633315a230c9125b337fe54401a
+
+images:
+- name: ghcr.io/yolean/observability-operator-to-annotations
+  newTag: 1170b7abf704d633315a230c9125b337fe54401a@sha256:7d966d3c4e74dfc2926141f2f426e029aabade7e7d7b4f8a2c6699e4d27751d4

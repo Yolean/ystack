@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Both parts. Apply with --server-side: the Prometheus and Alertmanager CRDs are larger than the
+# annotation of a client-side apply.
+resources:
+- crds
+- controller

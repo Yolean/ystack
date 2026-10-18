@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# CLUSTER_NAME for the node agent and the cluster agent, from key CLUSTER_NAME of ConfigMap
+# observability-cluster, which the consumer's overlay creates (README.md). There is no default:
+# without the ConfigMap or the key, the kubelet does not start the container and the pod shows
+# CreateContainerConfigError, naming what is missing. An overlay that sets CLUSTER_NAME as an env
+# value instead is refused by the API server, as an env entry cannot have both value and valueFrom.
+patches:
+- target:
+    kind: DaemonSet
+    name: node-agent
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: CLUSTER_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: observability-cluster
+            key: CLUSTER_NAME
+- target:
+    kind: Deployment
+    name: k8sagent
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: CLUSTER_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: observability-cluster
+            key: CLUSTER_NAME

@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The prometheus-operator CRDs (v1) that shared manifests carry, for a cluster without the operator.
+# A cluster that has some of them already composes ../controller with its own.
+# The ref is the same in every base here; README.md, "Ref".
+resources:
+- https://github.com/Yolean/observability-to-blobs/operator-to-annotations/crds?ref=1170b7abf704d633315a230c9125b337fe54401a
