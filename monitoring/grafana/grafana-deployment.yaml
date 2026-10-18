@@ -9,6 +9,10 @@ spec:
       app: grafana
   template:
     metadata:
+      annotations:
+        # Port-scoped, because two containers expose metrics; both on /metrics, the default path
+        io.opentelemetry.discovery.metrics.3000/enabled: "true"
+        io.opentelemetry.discovery.metrics.8081/enabled: "true"
       labels:
         app: grafana
     spec:

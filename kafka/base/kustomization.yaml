@@ -11,3 +11,4 @@ resources:
 
 patches:
 - path: ./redpanda-resources.yaml
+- path: ./redpanda-scrape.yaml
