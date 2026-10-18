@@ -6,7 +6,8 @@ kind: Kustomization
 # its own and reads the node agent's Secret, so it comes next to ../nodeagent (README.md).
 # The ref is the same in every base here; README.md, "Ref".
 resources:
-- https://github.com/Yolean/observability-to-blobs/k8sagent?ref=c6ea793d9f33438ea7eb319d3a7fd1b07ae2f443
+- https://github.com/Yolean/observability-to-blobs/k8sagent?ref=1170b7abf704d633315a230c9125b337fe54401a
 
 components:
 - ../nodeagent-image
+- ../cluster-name

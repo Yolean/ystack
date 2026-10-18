@@ -6,7 +6,8 @@ kind: Kustomization
 # node's logs, journal and metrics to S3. The bucket and the credentials are the overlay's (README.md).
 # The ref is the same in every base here; README.md, "Ref".
 resources:
-- https://github.com/Yolean/observability-to-blobs/agent?ref=c6ea793d9f33438ea7eb319d3a7fd1b07ae2f443
+- https://github.com/Yolean/observability-to-blobs/agent?ref=1170b7abf704d633315a230c9125b337fe54401a
 
 components:
 - ../nodeagent-image
+- ../cluster-name

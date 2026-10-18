@@ -6,8 +6,8 @@ kind: Kustomization
 # Needs the PodMonitor CRD (../crds) and cert-manager. Namespace observability, which is not created here.
 # The ref is the same in every base here; README.md, "Ref".
 resources:
-- https://github.com/Yolean/observability-to-blobs/operator-to-annotations/controller?ref=c6ea793d9f33438ea7eb319d3a7fd1b07ae2f443
+- https://github.com/Yolean/observability-to-blobs/operator-to-annotations/controller?ref=1170b7abf704d633315a230c9125b337fe54401a
 
 images:
 - name: ghcr.io/yolean/observability-operator-to-annotations
-  newTag: c6ea793d9f33438ea7eb319d3a7fd1b07ae2f443@sha256:3bc0c2b15ef01f2b68341bae12bba8068b7045b08159ea0283832970841645b4
+  newTag: 1170b7abf704d633315a230c9125b337fe54401a@sha256:7d966d3c4e74dfc2926141f2f426e029aabade7e7d7b4f8a2c6699e4d27751d4
