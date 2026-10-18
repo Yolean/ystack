@@ -14,9 +14,13 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
-        prometheus.io/path: /metrics
+        # The OpenTelemetry form, because prometheus.io/* has no honor_labels.
+        # kube-state-metrics reports on other objects, so its samples' own
+        # namespace and pod labels must win over the scraped pod's, as the
+        # ServiceMonitor's honorLabels does. The path is the default, /metrics.
+        io.opentelemetry.discovery.metrics.8080/enabled: "true"
+        io.opentelemetry.discovery.metrics.8080/config: |
+          honor_labels: true
       labels:
         app.kubernetes.io/component: exporter
         app.kubernetes.io/name: kube-state-metrics
