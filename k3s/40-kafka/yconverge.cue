@@ -21,5 +21,12 @@ step: verify.#Step & {
 			timeout:     "30s"
 			description: "redpanda cluster healthy"
 		},
+		{
+			kind:      "wait"
+			resource:  "job/redpanda-cluster-config"
+			for:       "condition=complete"
+			namespace: "kafka"
+			timeout:   "300s"
+		},
 	]
 }

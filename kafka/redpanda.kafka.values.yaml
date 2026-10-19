@@ -27,8 +27,10 @@ config:
     default_topic_partitions: 1
     storage_min_free_bytes: 10485760
     group_topic_partitions: 1
-    # like Kafka brokers set up by Yolean/kubernetes-kafka: a topic deletes by age only when it says so
-    log_retention_ms: -1
+    # Like Kafka brokers set up by Yolean/kubernetes-kafka, a topic deletes by age only when it says so.
+    # log_retention_ms: -1 is set by base/redpanda-cluster-config-job.yaml, not here: redpanda v24.2
+    # imports a negative value from bootstrap.yaml as 18446744073709551615, rejects that,
+    # and uses the 7 day default after the first restart.
 tuning:
   tune_aio_events: false
 tls:

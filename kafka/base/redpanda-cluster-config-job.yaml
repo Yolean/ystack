@@ -1,0 +1,101 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redpanda-cluster-config
+  labels:
+    # The pod template is immutable, so yconverge deletes and re-creates this Job at every converge.
+    # Each run sets only what differs from args.
+    yolean.se/converge-mode: replace
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redpanda
+        app.kubernetes.io/component: redpanda-cluster-config
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+      - name: rpk
+        image: docker.redpanda.com/redpandadata/redpanda:v23.3.7
+        command:
+        - /bin/sh
+        - -ec
+        - |
+          for property in "$@"; do
+            case "$property" in
+              ?*=*) ;;
+              *) echo "Expected key=value, got: $property" >&2; exit 1 ;;
+            esac
+          done
+
+          attempt=0
+          until rpk cluster config status >/dev/null; do
+            attempt=$((attempt + 1))
+            [ "$attempt" -lt 60 ] || { echo "No answer from the admin API" >&2; exit 1; }
+            sleep 5
+          done
+
+          # rpk prints an infinite duration as -9223372036854775808
+          matches() {
+            [ "$2" = "$1" ] || { [ "$1" = "-1" ] && [ "$2" = "-9223372036854775808" ]; }
+          }
+
+          for property in "$@"; do
+            key="${property%%=*}"
+            value="${property#*=}"
+            current=$(rpk cluster config get "$key")
+            if matches "$value" "$current"; then
+              echo "$key is $current"
+            else
+              echo "$key is $current, setting $value"
+              # key=value form: in "set key -1" rpk reads -1 as a flag
+              rpk cluster config set "$key=$value"
+            fi
+          done
+
+          attempt=0
+          while :; do
+            ok=true
+            for property in "$@"; do
+              key="${property%%=*}"
+              value="${property#*=}"
+              current=$(rpk cluster config get "$key")
+              matches "$value" "$current" || { echo "$key is $current, expected $value"; ok=false; }
+            done
+            status=$(rpk cluster config status)
+            echo "$status"
+            invalid=$(echo "$status" | awk 'NR > 1 && $4 != "[]"')
+            [ -z "$invalid" ] || { echo "INVALID properties listed"; ok=false; }
+            [ "$ok" = false ] || exit 0
+            attempt=$((attempt + 1))
+            [ "$attempt" -lt 10 ] || exit 1
+            sleep 3
+          done
+        - cluster-config
+        # Cluster properties, key=value, one per line. Add here those that bootstrap.yaml can't carry.
+        args:
+        - log_retention_ms=-1
+        securityContext:
+          runAsUser: 101
+          runAsGroup: 101
+          allowPrivilegeEscalation: false
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            memory: 100Mi
+        volumeMounts:
+        # rpk reads the admin API addresses from redpanda.yaml, as the brokers' own rpk does
+        - name: config
+          mountPath: /etc/redpanda
+      volumes:
+      - name: config
+        configMap:
+          name: redpanda
