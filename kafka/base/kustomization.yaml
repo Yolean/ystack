@@ -8,6 +8,7 @@ namespace: kafka
 resources:
 - ../redpanda
 - y-bootstrap-service.yaml
+- redpanda-cluster-config-job.yaml
 
 patches:
 - path: ./redpanda-resources.yaml
