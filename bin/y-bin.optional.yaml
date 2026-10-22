@@ -290,16 +290,16 @@ scc:
     path: scc
 
 duckdb:
-  version: 1.5.6
+  version: 2.0.0
   templates:
-    download: https://github.com/duckdb/duckdb/releases/download/v${version}/duckdb_cli-${osx}-${arch}.zip
+    download: https://github.com/duckdb/duckdb/releases/download/v${version}/duckdb-cli-${osx}-${arch}.tar.gz
   sha256:
-    darwin_amd64: ae74c8cd74304bde1d92d941aca37bc72084ee8daa5660913819d8a9e9d29331
-    darwin_arm64: 8e0f6825653f8d057922e6147db920bebf072cb41f4b041fd35521c18d7d126e
-    linux_amd64: 6e89deac1ebbc36eed0291caf8b567b030c7b86ac35998f71854e22b3c5d5e2f
-    linux_arm64: c544e92c9b7c31fc53c2139802cabd8e2d1b2b3e3f933117f31611239c1402db
+    darwin_amd64: fbc7013ba09d117396dabf16783281c2add47fc01cdac4855464a03526dc96ee
+    darwin_arm64: 188a36fe8883ef52e69165a0cbb6031ef679c8e6c448a1ce22951964149b7f96
+    linux_amd64: c6507206baf7793c6013dbd82368469a45f20dc0e17a6f92f204602f652ed2bc
+    linux_arm64: 859e1875d2a9515fbb4bf8871061437a14af82320da68c753f094c4b776348fe
   archive:
-    tool: zip
+    tool: tar
     path: duckdb
 
 # Bitwarden's CLI, for Vaultwarden at opsv.yolean.se. The bw-oss build is GPLv3; Bitwarden's
