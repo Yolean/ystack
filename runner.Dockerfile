@@ -36,7 +36,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   DO_NOT_TRACK=1 \
   npm_config_update_notifier=false
 
-FROM --platform=$TARGETPLATFORM node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0 \
+FROM --platform=$TARGETPLATFORM node:26.12.1-trixie-slim@sha256:36793bcbb160a6a16cede1e62b93f84e26b78a972a8a4c0b879c1c12f22761ec \
   as node
 
 FROM base as bin
