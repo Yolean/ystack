@@ -1,0 +1,28 @@
+apiVersion: skaffold/v2beta5
+kind: Config
+metadata:
+  name: buildkit-cache
+build:
+  artifacts:
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/buildkit-cache-1
+    custom:
+      buildCommand: y-build --opt filename=1.Dockerfile --progress=plain
+      dependencies:
+        dockerfile:
+          path: 1.Dockerfile
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/buildkit-cache-2
+    custom:
+      buildCommand: y-build --opt filename=2.Dockerfile --progress=plain
+      dependencies:
+        dockerfile:
+          path: 2.Dockerfile
+  - image: builds-registry.ystack.svc.cluster.local/ystack-examples/buildkit-cache-3
+    custom:
+      buildCommand: y-build --opt filename=3.Dockerfile --progress=plain
+      dependencies:
+        dockerfile:
+          path: 3.Dockerfile
+deploy:
+  kubectl:
+    manifests:
+    - k8s/buildkit-cache-test-job.yaml
