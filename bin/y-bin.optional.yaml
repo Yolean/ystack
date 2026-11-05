@@ -252,15 +252,15 @@ stern:
     path: stern
 
 static-web-server:
-  version: 2.44.0
+  version: 2.44.1
   templates:
     download: https://github.com/static-web-server/static-web-server/releases/download/v${version}/static-web-server-v${version}-${aarch}-${ostriple}.tar.gz
     sha256: https://github.com/static-web-server/static-web-server/releases/download/v${version}/static-web-server-v${version}-SHA256SUM
   sha256:
-    darwin_amd64: 484708863fa0fa39fbfe1a46d99c3671f46c72862dff724da2b480cdc79ced1b
-    darwin_arm64: 5f22e1d0072a0f5bf8bb32468885d6ba7bc9df470d37f16bdd71f9697832964f
-    linux_amd64: e52f775824a8a44a79d5ee3debb5174442d36cdaaef86a12bfc14920aedd1c57
-    linux_arm64: 0d986a28e0e609172c2d3a13a27dbfe19d5d425807167152a94cb71301783f91
+    darwin_amd64: cf1e911c44ba8fd7b6e3641532293228d2c70829f13adf9d3664e56bdbc9672c
+    darwin_arm64: 7f8dfb36f6902ea72878634438e76e63461300a0d154abe561834ab434a5a7fe
+    linux_amd64: a71fb43143d0964f82417178fa56d8f6ee4b33f49ddde4b2263d97404fdfbbc4
+    linux_arm64: 94ff6d02390c28a8b32fc379fb7706a73d2ea54911790ad231a067f28ef96a0e
   archive:
     tool: tar
     path: static-web-server-v${version}-${aarch}-${ostriple}/static-web-server
