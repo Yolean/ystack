@@ -83,14 +83,14 @@ helm:
     path: ${os}-${arch}/helm
 
 buildctl:
-  version: 0.33.0
+  version: 0.34.2
   templates:
     download: https://github.com/moby/buildkit/releases/download/v${version}/buildkit-v${version}.${os}-${arch}.tar.gz
   sha256:
-    darwin_amd64: 3c51f59d731c2882226f564c56ff3fe2a726b9bded6c4626c6868862c986a08c
-    darwin_arm64: 730ac4ffd6f4a88dc404fc675aeaf4cfee414915036042847f0a60861cc8790c
-    linux_amd64: b6242896d343100808dcbe37565caf381e0a444a6a83d7255926bb1519248ead
-    linux_arm64: e5acfb5929f967fde3b925ddb39f79fd481a0e96774c641fab3a0e83950d7bfa
+    darwin_amd64: e93be26829578f6bc7cfdb7f8b0b6ee1f7641757e6147989edea1433ff3530ce
+    darwin_arm64: a1e588828f21424dc686441091e5d04c2d2957d385d14a65d43cf823ff3ee508
+    linux_amd64: b9f18b8e37eb450e9e5df03117045237cdd12d3c4a0034ffeeaa857852a15e13
+    linux_arm64: a4ad483a33b2f1544c5ccce1c5956c559e1a6e84b8bf6cedd847d695885237a3
   archive:
     tool: tar
     #path: $(test 'linux' = $os && echo "bin/buildctl" || echo "buildctl")
