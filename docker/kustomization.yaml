@@ -5,10 +5,10 @@ kind: Kustomization
 images:
 - name: docker:dind
   newName: ghcr.io/yolean/dockerd
-  newTag: 29.4.1-dind@sha256:c77e5d7912f9b137cc67051fdc2991d8f5ae22c55ddf532bb836dcb693a04940
+  newTag: 29.9.3-dind@sha256:08a98015fce594af7c382883bea080ea206de74402a95da9dc52b6428c8cd121
 - name: docker:dind-rootless
   newName: ghcr.io/yolean/dockerd
-  newTag: 29.4.1-dind-rootless@sha256:b195ea3784d101abfe1ac68a47f95bcde74bb7ea4e4e8d277d29bc2661a6ae0e
+  newTag: 29.9.3-dind-rootless@sha256:e3d0fa70055956693134873845b743bbe35b5199c68a52347032ae3e5dbac9a0
 
 resources:
 - dockerd-service.yaml
