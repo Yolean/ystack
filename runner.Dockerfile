@@ -1,5 +1,5 @@
 # syntax=docker.io/docker/dockerfile:1.7.1
-FROM --platform=$TARGETPLATFORM ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c \
+FROM --platform=$TARGETPLATFORM ubuntu:26.04@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db \
   as base
 
 RUN set -ex; \
@@ -36,7 +36,7 @@ ENV YSTACK_HOME=/usr/local/src/ystack \
   DO_NOT_TRACK=1 \
   npm_config_update_notifier=false
 
-FROM --platform=$TARGETPLATFORM node:26.13.0-trixie-slim@sha256:5adad64f9a1fca2d51972caa65983634c8a774eb300d72b20f7f2a0f60368072 \
+FROM --platform=$TARGETPLATFORM node:26.13.1-trixie-slim@sha256:abe7e5a82b61a8ef67b315b85497c9e65173387ccf2f4a029248184b8e020be5 \
   as node
 
 FROM base as bin
@@ -66,6 +66,9 @@ RUN y-buildctl --version
 
 COPY bin/y-crane /usr/local/src/ystack/bin/
 RUN y-crane version
+
+COPY bin/y-contain /usr/local/src/ystack/bin/
+RUN y-contain --version
 
 COPY bin/y-yq /usr/local/src/ystack/bin/
 RUN y-yq --version

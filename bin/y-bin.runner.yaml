@@ -162,24 +162,24 @@ cue:
     path: cue
 
 cluster:
-  version: 1.0.0
+  version: 1.1.0
   templates:
     download: https://github.com/Yolean/y-cluster/releases/download/v${version}/y-cluster_v${version}_${os}_${arch}
   sha256:
-    darwin_amd64: 7d13e2df581417f8147e8e8e2590f8d957df50ea86b6dd791c00928ca564c595
-    darwin_arm64: 1e996f81312db15ddaa366b25b9ba7b8a9f51f52cf4f0f0b2a8845bd217f56f3
-    linux_amd64: d2daad30653848a63d1412b10730af71f74d02c36f720d0e08de4eb0e7c8b3df
-    linux_arm64: 9ab44efd1220af23b4e38c5a9cd771f22ceee20b7a37e98a2bd7482f17126c02
+    darwin_amd64: 745676cfe076842bf89a7d1f764d438e30024d90687184a7e0db86a67bfc6301
+    darwin_arm64: a63a508cd395f62ff9e7fc7dc9caeb53146d8bcb363bfaf08bcf32265e818290
+    linux_amd64: 7ba77c819fb9ebc8a7335955305d24ac1045a3b284bbeda0fe3a26f0922b9dab
+    linux_arm64: 40026dd6cfc1185d83ba364af98de054949a506cf4d6f8774d8895a7f5696aab
 
 contain:
-  version: 1.1.0
+  version: 1.2.0
   templates:
     download: https://github.com/turbokube/contain/releases/download/v${version}/contain-v${version}-${os}-${arch}
   sha256:
-    darwin_amd64: b9b8bb8b5b624dd00a5104428d3b76b1cb394bf126e35e33a67e61b016e08051
-    darwin_arm64: de6e5e4a39aecb26826978b5681f1806b6d64dd3c62def6ec6dc55747d61c04c
-    linux_amd64: c57bdfe45fdfa31f5203aa9c10bf15a86317e3560c39a9fc96af10d02f0700ac
-    linux_arm64: 786554ee9f0ec0a505b95ff9bcfc6813759514cdbd1d8cdbe33371ffeeaa0917
+    darwin_amd64: 697b63382187a66267af78c1a4e7550ed4aea0ed89f2a4021a05cea7c9c15ebd
+    darwin_arm64: 02b1dc3effa9b3a71218fef0662371e6f83b4c709fc71603fd8427faa3e80543
+    linux_amd64: 8e6e42997917a94537ec63689da4c9f4843b254f68b29471c01da9b60e3dc37c
+    linux_arm64: 80632d4e9338d1b1ed25d045665dd9905c08d0128e8efbc22584f9aca3195cec
 
 npx:
   version: 0.2.1
